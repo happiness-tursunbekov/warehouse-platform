@@ -1,0 +1,184 @@
+<template>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Products</h1>
+    </div>
+    <div class="position-relative">
+        <form @submit.prevent="getProducts(true)">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">Product ID</th>
+                        <th scope="col">Barcodes</th>
+                        <th scope="col">Description</th>
+                        <th scope="col" class="text-nowrap">On Hand</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Price</th>
+                        <th scope="col">Cost</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                    <tr>
+                        <th scope="col"><input v-model="filter.identifier" type="text" class="form-control"/></th>
+                        <th scope="col"><input v-model="filter.barcode" type="text" class="form-control"/></th>
+                        <th scope="col"><input v-model="filter.description" type="text" class="form-control"/></th>
+                        <th scope="col"><button type="submit" class="btn btn-light">🔎</button></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th scope="col"><pagination :meta="meta" @change="handlePagination"/></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(product, key) in products" :key="key">
+                        <th scope="row">{{ product.identifier }}</th>
+                        <td>
+                            <div>{{ product.barcodes.join("\n") }}</div>
+                            <button @click.prevent="showBarcodeLinkModal(product)" type="button" class="btn btn btn-secondary btn-sm">Link a barcode</button>
+                        </td>
+                        <td>{{ product.description }}</td>
+                        <td>
+                            <button v-if="typeof product.onHand === ('undefined' || null)" class="btn btn-success btn-sm" type="button" @click.prevent="getProductOnHand(product)">Load</button>
+                            <span v-else>{{ product.onHand }}</span>
+                        </td>
+                        <td>{{ product.category.name }}</td>
+                        <td>{{ product.price }}</td>
+                        <td>{{ product.cost }}</td>
+                        <td><button @click.prevent="getPos(product)" type="button" class="btn btn-primary btn-sm">Get PO's</button></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+        <modal v-model:show="posModal" modal-title="Po's">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="sticky-top">
+                    <tr>
+                        <th scope="col">Product ID</th>
+                        <th>PO Number</th>
+                        <th>PO Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(po, key) in pos" :key="key">
+                        <td>{{ po.productIdentifier }}</td>
+                        <td>{{ po.poNumber }}</td>
+                        <td>
+                            <span v-if="po.closedFlag">Closed</span>
+                            <span v-else-if="po.canceledFlag">Cancelled</span>
+                            <span v-else>Open</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </modal>
+        <barcode-link-modal @handled="getProducts()" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedProduct"/>
+    </div>
+</template>
+
+<script>
+import Pagination from "../../Pagination.vue";
+import Modal from "../../Modal.vue";
+import BarcodeLinkModal from "../../BarcodeLinkModal.vue";
+
+export default {
+    name: "Index",
+    components: {BarcodeLinkModal, Modal, Pagination},
+
+    data() {
+        return {
+            products: [],
+            meta: {
+                total: 0,
+                currentPage: 1,
+                perPage: 25,
+                totalPages: 0
+            },
+            filter: {
+                page: this.$route.query.page || 1,
+                identifier: this.$route.query.identifier || '',
+                description: this.$route.query.description || '',
+                barcode: this.$route.query.barcode || ''
+            },
+            pos: [],
+            posModal: false,
+            barcodeLinkModal: false,
+            selectedProduct: null
+        }
+    },
+
+    computed: {
+        barcode() {
+            return this.$store.getters.barcode
+        }
+    },
+
+    watch: {
+        'barcode' (val) {
+            if (val && !this.barcodeLinkModal) {
+                this.clearFilter()
+                this.filter.barcode = val
+                this.getProducts()
+            }
+        }
+    },
+
+    created() {
+        this.getProducts()
+    },
+
+    methods: {
+        getProducts(isSearch) {
+            if (isSearch) {
+                this.filter.page = 1
+            }
+
+            this.$router.push({
+                query: this.filter
+            })
+
+            axios.get('/api/products', {
+                params: this.filter
+            }).then(res => {
+                this.products = res.data.products
+                this.meta = res.data.meta
+            })
+        },
+
+        getProductOnHand(product) {
+            axios.get(`/api/products/${product.id}/on-hand`).then(res => {
+                product.onHand = res.data
+            })
+        },
+
+        handlePagination(page) {
+            this.filter.page = page
+            this.getProducts()
+        },
+
+        getPos(item) {
+            axios.get(`/api/products/find-po-by-product?productIdentifier=${item.identifier}`).then(res => {
+                this.pos = res.data.items
+                this.posModal = true
+            })
+        },
+
+        showBarcodeLinkModal(product) {
+            this.selectedProduct = product
+            this.barcodeLinkModal = true
+        },
+
+        clearFilter() {
+            this.filter.barcode = ''
+            this.filter.description = ''
+            this.filter.identifier = ''
+            this.filter.page = 1
+        }
+    }
+}
+</script>
+
+<style scoped>
+
+</style>
