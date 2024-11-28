@@ -29,6 +29,7 @@
                 <tr>
                     <th scope="col">Select</th>
                     <th scope="col">Product ID</th>
+                    <th scope="col">Barcodes</th>
                     <th scope="col">Description</th>
                 </tr>
                 </thead>
@@ -36,6 +37,7 @@
                 <tr v-for="(item, key) in items" :key="key">
                     <td><input v-model="selectedItems" type="checkbox" :value="item.id" :required="selectedItems.length === 0"></td>
                     <th scope="row">{{ item.identifier }}</th>
+                    <td>{{ item.barcodes.join("\n") }}</td>
                     <td>{{ item.description }}</td>
                 </tr>
                 </tbody>
@@ -79,6 +81,9 @@ export default {
             if (this.product) {
                 this.$store.dispatch('setBarcode', '')
             }
+            if (this.barcode && val) {
+                this.searchItem()
+            }
         }
     },
 
@@ -90,7 +95,8 @@ export default {
         searchItem() {
             axios.get('/api/products', {
                 params: {
-                    identifier: this.identifier
+                    identifier: this.identifier,
+                    barcode: !this.identifier ? this.barcode : ''
                 }
             }).then(res => {
                 this.items = res.data.products
