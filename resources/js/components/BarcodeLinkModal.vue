@@ -24,24 +24,26 @@
         </form>
 
         <form @submit.prevent="link">
-            <table v-if="items.length > 0" class="table table-striped">
-                <thead>
-                <tr>
-                    <th scope="col">Select</th>
-                    <th scope="col">Product ID</th>
-                    <th scope="col">Barcodes</th>
-                    <th scope="col">Description</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="(item, key) in items" :key="key">
-                    <td><input v-model="selectedItems" type="checkbox" :value="item.id" :required="selectedItems.length === 0"></td>
-                    <th scope="row">{{ item.identifier }}</th>
-                    <td>{{ item.barcodes.join("\n") }}</td>
-                    <td>{{ item.description }}</td>
-                </tr>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table v-if="items.length > 0" class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">Select</th>
+                        <th scope="col">Product ID</th>
+                        <th scope="col">Barcodes</th>
+                        <th scope="col">Description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(item, key) in items" :key="key">
+                        <td><input v-model="selectedItems" type="checkbox" :value="item.id" :required="selectedItems.length === 0"></td>
+                        <th scope="row">{{ item.identifier }}</th>
+                        <td>{{ item.barcodes.join("\n") }}</td>
+                        <td>{{ item.description }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
             <div class="mb-3">
                 <button type="submit" class="btn btn-success">Link</button>
             </div>
@@ -84,6 +86,9 @@ export default {
             if (this.barcode && val) {
                 this.searchItem()
             }
+            if (!val) {
+                this.identifier = ''
+            }
         }
     },
 
@@ -101,7 +106,7 @@ export default {
             }).then(res => {
                 this.items = res.data.products
 
-                if (res.data.meta.total === 0)
+                if (res.data.meta.total === 0 && this.identifier)
                     this.$snotify.error('There is no product with Product ID: ' + this.identifier)
             })
         },
@@ -114,7 +119,6 @@ export default {
                 this.$emit('handled', items)
                 this.$snotify.success('Barcode linked successfully!')
                 this.modal = false
-                this.identifier = ''
             })
         }
     }
