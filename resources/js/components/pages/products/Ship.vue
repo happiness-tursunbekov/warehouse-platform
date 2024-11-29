@@ -40,6 +40,55 @@
             </div>
         </div>
     </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th style="width:40px">Order Number</th>
+                <th style="width:50px">Status</th>
+                <th style="width:40px">Items qty</th>
+                <th>Project</th>
+                <th>Team</th>
+                <th>Customer</th>
+                <th>Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(order, key) in orders.data" :key="key">
+                <td class="fw-bold"><a @click.prevent="fetchOrder(order.id)" href="#">#{{ order.id }}</a></td>
+                <td>{{ order.status }}</td>
+                <td>{{ order.itemsCount }}</td>
+                <td>{{ order.project.name }}</td>
+                <td>{{ order.team.name }}</td>
+                <td>{{ order.customer.name }}</td>
+                <td>{{ order.createdAt }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <modal v-if="selectedOrder" v-model:show="selectedOrderModal" :modal-title="'#' + selectedOrder.id + ' - ' + selectedOrder.project.name">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th scope="col">NO</th>
+                    <th scope="col">ITEM #</th>
+                    <th scope="col">QTY</th>
+                    <th scope="col">ITEM DESCRIPTION</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(item, key) in selectedOrder.items" :key="key">
+                    <td>{{ key + 1 }}</td>
+                    <th scope="row">{{ item.product.identifier }}</th>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.product.description }}</td>
+                </tr>
+                </tbody>
+            </table>
+            <button type="button" class="btn btn-success">Ready to pick-up</button>
+        </div>
+    </modal>
     <modal v-if="selectedForm !== null" v-model:show="addItemModal" :modal-title="'Adding new item - #' + forms[selectedForm].project.id">
         <form @submit.prevent="searchItem">
             <div class="mb-3">
@@ -160,6 +209,7 @@ export default {
             addModal: false,
             addItemModal: false,
             barcodeLinkModal: false,
+            selectedOrderModal: false,
             newForm: null,
             newItem: null,
             selectedForm: null,
@@ -168,6 +218,11 @@ export default {
                 items: [],
                 barcode: ''
             },
+            orders: {
+                data: [],
+                meta: {}
+            },
+            selectedOrder: null,
         }
     },
 
@@ -196,7 +251,7 @@ export default {
             this.resetNewForm()
             this.resetNewItem()
         })
-
+        this.fetchOrders()
     },
 
     methods: {
@@ -272,6 +327,19 @@ export default {
             this.addItemModal = false
             this.$snotify.success(`Product ${this.newItem.product.identifier} added successfully!`)
             this.resetNewItem()
+        },
+
+        fetchOrders() {
+            axios.get('/api/orders').then(res => {
+                this.orders = res.data
+            })
+        },
+
+        fetchOrder(id) {
+            axios.get('/api/orders/' + id).then(res => {
+                this.selectedOrder = res.data
+                this.selectedOrderModal = true
+            })
         }
     }
 }

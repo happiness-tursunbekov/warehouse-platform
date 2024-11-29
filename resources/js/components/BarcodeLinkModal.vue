@@ -16,7 +16,7 @@
         <form @submit.prevent="searchItem">
             <div class="mb-3">
                 <label for="barcodeLinkItem" class="form-label">Product ID</label>
-                <input v-model="identifier" type="text" class="form-control" id="barcodeLinkItem" placeholder="Product ID">
+                <input ref="barcodeLinkIdentifier" v-model="identifier" type="text" class="form-control" id="barcodeLinkItem" placeholder="Product ID">
             </div>
             <div class="mb-3">
                 <button type="submit" class="btn btn-primary">Search</button>
@@ -83,11 +83,15 @@ export default {
             if (this.product) {
                 this.$store.dispatch('setBarcode', '')
             }
-            if (this.barcode && val) {
+            if (!this.product && this.barcode && val) {
                 this.searchItem()
             }
             if (!val) {
                 this.identifier = ''
+            } else {
+                setTimeout(() => {
+                    this.$refs.barcodeLinkIdentifier.focus()
+                }, 100)
             }
         }
     },

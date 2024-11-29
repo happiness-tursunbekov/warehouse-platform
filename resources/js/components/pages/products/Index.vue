@@ -9,7 +9,7 @@
                     <thead>
                     <tr>
                         <th scope="col">Product ID</th>
-                        <th scope="col">Barcodes</th>
+                        <th scope="col">Barcode</th>
                         <th scope="col">Description</th>
                         <th scope="col" class="text-nowrap">On Hand</th>
                         <th scope="col">Category</th>
@@ -43,7 +43,10 @@
                         <td>{{ product.category.name }}</td>
                         <td>{{ product.price }}</td>
                         <td>{{ product.cost }}</td>
-                        <td><button @click.prevent="getPos(product)" type="button" class="btn btn-primary btn-sm">Get PO's</button></td>
+                        <td>
+                            <button @click.prevent="getPos(product)" type="button" class="btn btn-outline-primary btn-sm">Get PO's</button>
+                            <button @click.prevent="showUploadPhotoModal(product)" type="button" class="btn btn-outline-primary btn-sm" title="Manage product photos"><i class="bi-images"></i></button>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -74,6 +77,17 @@
             </div>
         </modal>
         <barcode-link-modal @handled="getProducts()" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedProduct"/>
+        <modal v-model:show="photoModal" modal-title="Manage product photos">
+            <form @submit.prevent="uploadPhotos">
+                <div class="mb-3">
+                    <label for="upload-photos" class="form-label">File</label>
+                    <input v-on:change="handleProductPhotos" multiple type="file" class="form-control" id="upload-photos" required>
+                </div>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-success">Upload</button>
+                </div>
+            </form>
+        </modal>
     </div>
 </template>
 
@@ -104,7 +118,12 @@ export default {
             pos: [],
             posModal: false,
             barcodeLinkModal: false,
-            selectedProduct: null
+            selectedProduct: null,
+            photoModal: false,
+            productForm: {
+                rmPhotos: [],
+                upPhotos: [],
+            }
         }
     },
 
@@ -174,6 +193,33 @@ export default {
             this.filter.description = ''
             this.filter.identifier = ''
             this.filter.page = 1
+        },
+
+        showUploadPhotoModal(product) {
+            this.selectedProduct = product
+            this.photoModal = true
+        },
+
+        handleProductPhotos(e) {
+            for (let i = 0; i < e.target.files.length; i++) {
+                this.productForm.upPhotos.put(e.target.files[i]);
+            }
+        },
+
+        uploadPhotos() {
+            let formData = new FormData();
+
+            // this.productForm.upPhotos.map(file => {
+            //     formData.append(`image[${}]`, file);
+            // })
+
+            axios.put('/api/products/' + this.selectedProduct.id, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            }).then(res => {
+
+                })
         }
     }
 }

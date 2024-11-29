@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('project_id');
             $table->unsignedBigInteger('team_id');
-            $table->morphs('author');
+            $table->morphs('customer');
             $table->unsignedBigInteger('prepared_by_id')->unsigned()->nullable();
             $table->foreign('prepared_by_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('accepted_by_member_id')->nullable();

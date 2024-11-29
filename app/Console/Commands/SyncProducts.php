@@ -39,14 +39,18 @@ class SyncProducts extends Command
                     $product->fill([
                         'on_hand' => $onHand,
                         'on_hand_available' => $onHand,
-                        'inactive_flag' => $item->inactiveFlag
+                        'inactive_flag' => $item->inactiveFlag,
+                        'identifier' => $item->identifier,
+                        'description' => $item->description,
                     ])->save();
                 else {
                     $product = Product::create([
                         'id' => $item->id,
                         'on_hand' => $onHand,
                         'on_hand_available' => $onHand,
-                        'inactive_flag' => $item->inactiveFlag
+                        'inactive_flag' => $item->inactiveFlag,
+                        'identifier' => $item->identifier,
+                        'description' => $item->description,
                     ]);
                 }
             }, $items);

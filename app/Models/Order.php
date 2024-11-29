@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ConnectWiseService;
 use App\Traits\ModelCamelCase;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -21,12 +22,31 @@ class Order extends Model
         'signature_id',
         'status',
         'total_cost',
-        'author_type',
-        'author_id'
+        'customer_type',
+        'customer_id'
     ];
 
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function getProjectAttribute()
+    {
+        $connectWiseService = new ConnectWiseService();
+
+        return $connectWiseService->getProject($this->projectId, 'id,name');
+    }
+
+    public function getTeamAttribute()
+    {
+        $connectWiseService = new ConnectWiseService();
+
+        return $connectWiseService->getSystemDepartment($this->teamId, 'id,name');
+    }
+
+    public function customer()
+    {
+        return $this->morphTo('customer');
     }
 }

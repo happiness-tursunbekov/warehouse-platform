@@ -13,7 +13,9 @@ class Product extends Model
         'id',
         'on_hand',
         'inactive_flag',
-        'on_hand_available'
+        'on_hand_available',
+        'identifier',
+        'description'
     ];
 
     public function receive(int $qty): bool

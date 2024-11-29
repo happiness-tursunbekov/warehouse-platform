@@ -225,8 +225,13 @@ class ProductController extends Controller
         ]);
     }
 
-    public function ship(Request $request)
+    public function update(Product $product, Request $request)
     {
+        $request->validate([
+            'upPhotos' => ['required', 'array'],
+            'upPhotos.*' => ['required', 'string']
+        ]);
+
 
     }
 }

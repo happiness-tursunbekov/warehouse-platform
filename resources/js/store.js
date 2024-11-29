@@ -71,6 +71,8 @@ const store = createStore({
                     state.cart.items[itemIndex].qty += val.qty
                 }
             } else {
+                if (val.qty > val.product.wpDetails.onHandAvailable)
+                    val.qty = val.product.wpDetails.onHandAvailable
                 state.cart.items.push(val)
             }
             state.cart.total = recalculateTotal(state.cart)

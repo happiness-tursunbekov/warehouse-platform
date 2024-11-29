@@ -52,8 +52,8 @@ class OrderController extends Controller
             'projectId' => $request->get('projectId'),
             'teamId' => $request->get('teamId'),
             'totalCost' => $request->get('totalCost'),
-            'authorType' => User::class,
-            'authorId' => $request->user()->id,
+            'customerType' => User::class,
+            'customerId' => $request->user()->id,
         ]);
         $order->save();
 

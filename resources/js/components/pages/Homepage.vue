@@ -79,7 +79,7 @@
                             </div>
                         </div>
                         <!-- Product actions-->
-                        <div v-if="product.wpDetails.onHandAvailable > 0" class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                        <div :class="{ 'd-none': product.wpDetails.onHandAvailable < 1 }" class="card-footer p-4 pt-0 border-top-0 bg-transparent">
                             <form @submit.prevent="addToCart(product, key)" class="text-center" :key="key">
                                 <div class="input-group">
                                     <input ref="item" type="number" min="1" class="form-control" required value="1">

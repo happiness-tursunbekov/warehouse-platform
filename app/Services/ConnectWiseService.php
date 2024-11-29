@@ -315,6 +315,21 @@ class ConnectWiseService
         return json_decode($result->getBody()->getContents());
     }
 
+    public function getProject($id, $fields=null)
+    {
+        try {
+            $result = $this->http->get('project/projects/' . $id, [
+                'query' => [
+                    'clientId' => $this->clientId,
+                    'fields' => $fields
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
     public function getSystemDepartments($page=null, $conditions=null)
     {
         try {
@@ -323,6 +338,21 @@ class ConnectWiseService
                     'page' => $page,
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function getSystemDepartment($id, $fields=null)
+    {
+        try {
+            $result = $this->http->get('system/departments/' . $id, [
+                'query' => [
+                    'clientId' => $this->clientId,
+                    'fields' => $fields
                 ],
             ]);
         } catch (GuzzleException $e) {

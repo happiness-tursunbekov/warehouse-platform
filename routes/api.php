@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Store\ProductController as StoreProductController;
 use App\Http\Controllers\Store\OrderController as StoreOrderController;
@@ -26,6 +27,8 @@ Route::group([
             Route::get('find-po-by-product', [ProductController::class, 'findPoByProduct']);
             Route::get('{id}/on-hand', [ProductController::class, 'onHand']);
         });
+
+        Route::resource('orders', OrderController::class);
     });
 
     Route::get('/auth/user', [AuthController::class, 'user']);
