@@ -13,6 +13,7 @@
                         <th scope="col">Description</th>
                         <th scope="col" class="text-nowrap">On Hand</th>
                         <th scope="col">Category</th>
+                        <th scope="col">Photos</th>
                         <th scope="col">Price</th>
                         <th scope="col">Cost</th>
                         <th scope="col">Action</th>
@@ -22,6 +23,7 @@
                         <th scope="col"><input v-model="filter.barcode" type="text" class="form-control"/></th>
                         <th scope="col"><input v-model="filter.description" type="text" class="form-control"/></th>
                         <th scope="col"><button type="submit" class="btn btn-light">🔎</button></th>
+                        <th></th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -41,11 +43,18 @@
                             <span v-else>{{ product.onHand }}</span>
                         </td>
                         <td>{{ product.category.name }}</td>
+                        <td>
+                            <div v-viewer>
+                                <template v-if="product.files.length > 0">
+                                    <img v-for="(file,key) in product.files" :key="key" :class="{ 'd-none': key > 0 }" style="height: 30px" :src="file.path" alt="..." />
+                                </template>
+                            </div>
+                        </td>
                         <td>{{ product.price }}</td>
                         <td>{{ product.cost }}</td>
                         <td>
                             <button @click.prevent="getPos(product)" type="button" class="btn btn-outline-primary btn-sm">Get PO's</button>
-                            <button @click.prevent="showUploadPhotoModal(product)" type="button" class="btn btn-outline-primary btn-sm" title="Manage product photos"><i class="bi-images"></i></button>
+                            <button @click.prevent="showUploadPhotoModal(product)" type="button" class="btn btn-outline-primary btn-sm" title="Upload a photo"><i class="bi-upload"></i></button>
                         </td>
                     </tr>
                     </tbody>
@@ -202,23 +211,26 @@ export default {
 
         handleProductPhotos(e) {
             for (let i = 0; i < e.target.files.length; i++) {
-                this.productForm.upPhotos.put(e.target.files[i]);
+                this.productForm.upPhotos.push(e.target.files[i]);
             }
         },
 
         uploadPhotos() {
             let formData = new FormData();
 
-            // this.productForm.upPhotos.map(file => {
-            //     formData.append(`image[${}]`, file);
-            // })
+            for (let i = 0; i < this.productForm.upPhotos.length; i++) {
+                formData.append(`images[${i}]`, this.productForm.upPhotos[i]);
+            }
 
-            axios.put('/api/products/' + this.selectedProduct.id, formData, {
+            axios.post('/api/products/' + this.selectedProduct.id + '/upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             }).then(res => {
-
+                    this.selectedProduct.files.push(...res.data.files)
+                    this.photoModal = false
+                    this.selectedProduct = null
+                    this.$snotify.success('Photos uploaded successfully!')
                 })
         }
     }

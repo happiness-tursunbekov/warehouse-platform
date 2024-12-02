@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\FileResource;
+use App\Http\Resources\ProductBrowseResource;
+use App\Models\File;
 use App\Models\Product;
 use App\Models\ProductBarcode;
 use App\Services\ConnectWiseService;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Laravel\Facades\Image;
 
 class ProductController extends Controller
 {
@@ -45,11 +50,10 @@ class ProductController extends Controller
         $qty = $connectWiseService->getCatalogItemsQty($conditions)->count ?? 0;
 
         if ($qty > 0) {
-            /** @var Collection $barcodes */
-            $barcodes = ProductBarcode::whereIn('product_id', array_column($products, 'id'))->get();
-
-            $products = array_map(function (\stdClass $product) use ($barcodes) {
-                $product->barcodes = $barcodes->where('product_id', $product->id)->pluck('barcode')->values();
+            $products = array_map(function (\stdClass $product) {
+                $wpDetails = Product::find($product->id);
+                $product->barcodes = $wpDetails->barcodes()->pluck('barcode')->values();
+                $product->files = FileResource::collection($wpDetails->files);
                 return $product;
             }, $products);
         }
@@ -225,13 +229,24 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(Product $product, Request $request)
+    public function upload(Product $product, Request $request)
     {
         $request->validate([
-            'upPhotos' => ['required', 'array'],
-            'upPhotos.*' => ['required', 'string']
+            'images.*' => 'required|image|mimes:jpeg,png,jpg'
         ]);
 
+        foreach ($request->file('images') as $image) {
+            $ext = $image->extension();
+            $img = Image::read($image->path());
+            $file = $img->scale(1024, 768)->encode();
+            $path = 'images/' . md5($file->__toString()) . '.' . $ext;
+            Storage::put($path, $file, 'public');
+            $product->files()->create([
+                'path' => $path,
+                'type' => $file->mediaType()
+            ]);
+        }
 
+        return new ProductBrowseResource($product);
     }
 }

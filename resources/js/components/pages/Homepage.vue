@@ -66,7 +66,12 @@
                 <div v-for="(product, key) in products" :key="key" class="col mb-5">
                     <div class="card h-100">
                         <!-- Product image-->
-                        <img class="card-img-top" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." />
+                        <div v-viewer>
+                            <template v-if="product.wpDetails.files.length > 0">
+                                <img v-for="(file,key) in product.wpDetails.files" :key="key" :class="{ 'd-none': key > 0 }" class="card-img-top" :src="file.path" alt="..." />
+                            </template>
+                            <img v-else class="card-img-top" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." />
+                        </div>
                         <!-- Product details-->
                         <div class="card-body p-4">
                             <div class="text-center">

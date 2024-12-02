@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ProductBrowseResource extends JsonResource
+class FileResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,10 +16,7 @@ class ProductBrowseResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'onHand' => $this->onHand,
-            'onHandAvailable' => $this->onHandAvailable,
-            'inactiveFlag' => $this->inactiveFlag,
-            'files' => FileResource::collection($this->files)
+            'path' => asset('storage/' . $this->path)
         ];
     }
 }

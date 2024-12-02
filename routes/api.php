@@ -26,6 +26,7 @@ Route::group([
             Route::get('pos', [ProductController::class, 'pos']);
             Route::get('find-po-by-product', [ProductController::class, 'findPoByProduct']);
             Route::get('{id}/on-hand', [ProductController::class, 'onHand']);
+            Route::post('{product}/upload', [ProductController::class, 'upload']);
         });
 
         Route::resource('orders', OrderController::class);
