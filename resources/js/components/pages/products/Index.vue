@@ -11,8 +11,8 @@
                         <th scope="col">Product ID</th>
                         <th scope="col">Barcode</th>
                         <th scope="col">Description</th>
-                        <th scope="col" class="text-nowrap">On Hand</th>
                         <th scope="col">Category</th>
+                        <th scope="col" class="text-nowrap">On Hand</th>
                         <th scope="col">Photos</th>
                         <th scope="col">Price</th>
                         <th scope="col">Cost</th>
@@ -23,7 +23,9 @@
                         <th scope="col"><input v-model="filter.barcode" type="text" class="form-control"/></th>
                         <th scope="col"><input v-model="filter.description" type="text" class="form-control"/></th>
                         <th scope="col"><button type="submit" class="btn btn-light">🔎</button></th>
-                        <th></th>
+                        <th>
+                            <input id="loadOnHandAutomatically" type="checkbox" v-model="loadOnHandAutomatically" /><label for="loadOnHandAutomatically">Load Automatically</label>
+                        </th>
                         <th></th>
                         <th></th>
                         <th></th>
@@ -38,11 +40,11 @@
                             <button @click.prevent="showBarcodeLinkModal(product)" type="button" class="btn btn btn-secondary btn-sm">Link a barcode</button>
                         </td>
                         <td>{{ product.description }}</td>
-                        <td>
-                            <button v-if="typeof product.onHand === ('undefined' || null)" class="btn btn-success btn-sm" type="button" @click.prevent="getProductOnHand(product)">Load</button>
-                            <span v-else>{{ product.onHand }}</span>
-                        </td>
                         <td>{{ product.category.name }}</td>
+                        <td>
+                            <button v-if="typeof productOnHand[product.id] === ('undefined' || null)" class="btn btn-success btn-sm" type="button" @click.prevent="getProductOnHand(product)">Load</button>
+                            <span v-else>{{ productOnHand[product.id] }}</span>
+                        </td>
                         <td>
                             <div v-viewer>
                                 <template v-if="product.files.length > 0">
@@ -112,6 +114,7 @@ export default {
     data() {
         return {
             products: [],
+            productOnHand: {},
             meta: {
                 total: 0,
                 currentPage: 1,
@@ -132,7 +135,9 @@ export default {
             productForm: {
                 rmPhotos: [],
                 upPhotos: [],
-            }
+            },
+            loadOnHandAutomatically: false,
+            loadPhotosAutomatically: false
         }
     },
 
@@ -148,6 +153,11 @@ export default {
                 this.clearFilter()
                 this.filter.barcode = val
                 this.getProducts()
+            }
+        },
+        'loadOnHandAutomatically' (val) {
+            if (val) {
+                this.getProductOnHand()
             }
         }
     },
@@ -171,13 +181,43 @@ export default {
             }).then(res => {
                 this.products = res.data.products
                 this.meta = res.data.meta
+            }).then(() => {
+                if (this.loadOnHandAutomatically) {
+                    this.getProductOnHand()
+                }
             })
         },
 
         getProductOnHand(product) {
-            axios.get(`/api/products/${product.id}/on-hand`).then(res => {
-                product.onHand = res.data
-            })
+
+            if (!product) {
+                this.productOnHand = {}
+                this.products.map(product => {
+                    axios.get(`/api/products/${product.id}/on-hand`).then(res => {
+                        this.productOnHand[product.id] =  res.data
+                    })
+                })
+            } else {
+                axios.get(`/api/products/${product.id}/on-hand`).then(res => {
+                    this.productOnHand[product.id] =  res.data
+                })
+            }
+        },
+
+        getProductImages(product) {
+
+            if (!product) {
+                this.productOnHand = {}
+                this.products.map(product => {
+                    axios.get(`/api/products/${product.id}/on-hand`).then(res => {
+                        this.productOnHand[product.id] =  res.data
+                    })
+                })
+            } else {
+                axios.get(`/api/products/${product.id}/on-hand`).then(res => {
+                    this.productOnHand[product.id] =  res.data
+                })
+            }
         },
 
         handlePagination(page) {

@@ -19,7 +19,7 @@ class ProductBrowseResource extends JsonResource
             'onHand' => $this->onHand,
             'onHandAvailable' => $this->onHandAvailable,
             'inactiveFlag' => $this->inactiveFlag,
-            'files' => FileResource::collection($this->files)
+            'files' => []
         ];
     }
 }

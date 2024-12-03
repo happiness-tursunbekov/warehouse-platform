@@ -70,6 +70,16 @@ class ProductController extends Controller
         return response()->json($connectWiseService->getCatalogItemOnHand($id)->count);
     }
 
+    public function images($id, ConnectWiseService $connectWiseService)
+    {
+        return response()->json($connectWiseService->getAttachments('ProductSetup', $id));
+    }
+
+    public function image($attachmentId, ConnectWiseService $connectWiseService)
+    {
+        return response()->file($connectWiseService->downloadAttachment($attachmentId));
+    }
+
     public function receive(Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
@@ -195,17 +205,14 @@ class ProductController extends Controller
 
         $path = md5($file->__toString()) . '.' . $ext;
 
-        try {
-            $result = $connectWiseService->systemDocumentUpload(
-                $file,
-                'PurchaseOrder',
-                $poId,
-                'Packing Slip',
-                $path
-            );
-        } catch (GuzzleException $e) {
-            return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())]);
-        }
+
+        $result = $connectWiseService->systemDocumentUpload(
+            $file,
+            'PurchaseOrder',
+            $poId,
+            'Packing Slip',
+            $path
+        );
 
         return response()->json([
             'code' => 'SUCCESS',

@@ -461,4 +461,38 @@ class ConnectWiseService
 
         return json_decode($barcode->value);
     }
+
+    public function getAttachments($recordType, $recordId, $page=null, $conditions=null, $fields=null, $pageSize=25)
+    {
+        try {
+            $result = $this->http->get('system/documents', [
+                'query' => [
+                    'page' => $page,
+                    'clientId' => $this->clientId,
+                    'conditions' => $conditions,
+                    'fields' => $fields,
+                    'recordType' => $recordType,
+                    'recordId' => $recordId,
+                    'pageSize' => $pageSize
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function downloadAttachment($id)
+    {
+        try {
+            $result = $this->http->get("/system/documents/{$id}/download", [
+                'query' => [
+                    'clientId' => $this->clientId
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
+        return $result->getBody()->getContents();
+    }
 }
