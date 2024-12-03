@@ -2,16 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\FileResource;
-use App\Http\Resources\ProductBrowseResource;
-use App\Models\File;
-use App\Models\Product;
-use App\Models\ProductBarcode;
+
 use App\Services\ConnectWiseService;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Laravel\Facades\Image;
 
 class ProductController extends Controller
@@ -34,26 +29,27 @@ class ProductController extends Controller
 
         $conditions = "inactiveFlag=false";
 
+        $customFieldConditions=null;
+
         if ($identifier)
-            $conditions .= " and identifier like '*{$identifier}*'";
+            $conditions .= " and identifier contains '{$identifier}'";
         if ($description)
-            $conditions .= " and description like '*{$description}*'";
+            $conditions .= " and description contains '{$description}'";
         if ($barcode) {
-            $ids = ProductBarcode::getByBarcode($barcode)->pluck('product_id')->values()->join(',');
-            $conditions .= " and id in ({$ids})";
+            $customFieldConditions = "caption='Barcodes' and value contains '{$barcode}'";
         }
 
         $page = (int)$request->get('page', 1);
 
-        $products = $connectWiseService->getCatalogItems($page, $conditions);
+        $products = $connectWiseService->getCatalogItems($page, $conditions, $customFieldConditions);
 
         $qty = $connectWiseService->getCatalogItemsQty($conditions)->count ?? 0;
 
         if ($qty > 0) {
             $products = array_map(function (\stdClass $product) {
-                $wpDetails = Product::find($product->id);
-                $product->barcodes = $wpDetails->barcodes()->pluck('barcode')->values();
-                $product->files = FileResource::collection($wpDetails->files);
+                $barcode = collect($product->customFields)->where('id', 9)->first();
+                $product->barcodes = isset($barcode->value) ? json_decode($barcode->value) : [];
+                $product->files = [];
                 return $product;
             }, $products);
         }
@@ -98,11 +94,6 @@ class ProductController extends Controller
             return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())->errors[0]->message]);
         }
 
-        /** @var Product $product */
-        $product = Product::find($id);
-
-        $product->receive($quantity);
-
         return response()->json(['code' => 'SUCCESS', 'item' => $item]);
     }
 
@@ -120,15 +111,18 @@ class ProductController extends Controller
 
         $poItems = new Collection();
 
+        $catalogItems = null;
+
         if ($barcode) {
-            $productBarcodes = ProductBarcode::getByBarcode($barcode);
-            if ($productBarcodes->count() == 0) {
+            $catalogItems = $connectWiseService->getCatalogItemsByBarcode($barcode, null, null, 1000);
+            if (count($catalogItems) == 0) {
                 return response()->json([
                     'items' => [],
                     'code' => 'BARCODE_NOT_FOUND'
                 ]);
             }
-            $poItems = $connectWiseService->getOpenPoItems()->whereIn('product.id', $productBarcodes->pluck('product_id')->values());
+            $catalogItems = collect($catalogItems);
+            $poItems = $connectWiseService->getOpenPoItems()->whereIn('product.id', $catalogItems->pluck('id')->values());
         }
 
         if ($identifier) {
@@ -141,11 +135,12 @@ class ProductController extends Controller
             $poItems = collect($connectWiseService->purchaseOrderItems($poId, null, 'canceledFlag=false'));
         }
 
-        $barcodes = ProductBarcode::whereIn('product_id', $poItems->pluck('product.id'))->get();
+        if (!$catalogItems)
+            $catalogItems = collect($connectWiseService->getCatalogItems(null, "id in ({$poItems->pluck('product.id')->values()->join(',')})"));
 
         return response()->json([
-            'items' => $poItems->map(function (\stdClass $product) use ($barcodes) {
-                $product->barcodes = $barcodes->where('product_id', $product->product->id)->pluck('barcode')->values();
+            'items' => $poItems->map(function (\stdClass $product) use ($catalogItems, $connectWiseService) {
+                $product->barcodes = $connectWiseService->extractBarcodesFromCatalogItem($catalogItems->where('id', $product->product->id)->first());
                 return $product;
             }),
             'code' => 'SUCCESS'
@@ -160,21 +155,25 @@ class ProductController extends Controller
 
         $poNumber = $request->get('poNumber');
 
-        $pos = $connectWiseService->purchaseOrders(null, "poNumber like '*{$poNumber}*'");
+        $pos = $connectWiseService->purchaseOrders(null, "poNumber contains '{$poNumber}'");
 
         return response()->json([
             'items' => $pos
         ]);
     }
 
-    public function addBarcode(Request $request)
+    public function addBarcode(Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
             'productIds.*' => ['required', 'integer', 'min:1'],
             'barcode' => ['required', 'string']
         ]);
 
-        $barcode = ProductBarcode::addBarcode($request->get('productIds'), $request->get('barcode'));
+        $barcode = $request->get('barcode');
+
+        foreach ($request->get('productIds') as $productId) {
+            $connectWiseService->addBarcode($productId, [$barcode]);
+        }
 
         return response()->json($barcode);
     }
@@ -182,18 +181,27 @@ class ProductController extends Controller
     public function uploadPoAttachment(Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
-            'file' => ['required', 'string'],
+            'file' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf'],
             'poId' => ['required', 'integer']
         ]);
-        $file = $request->get('file');
+        $file = $request->file('file');
         $poId = $request->get('poId');
+
+        $ext = $file->extension();
+
+        if ($ext !== 'pdf') {
+            $file = Image::read($file->path())->scale(1024, 768)->encode();
+        }
+
+        $path = md5($file->__toString()) . '.' . $ext;
 
         try {
             $result = $connectWiseService->systemDocumentUpload(
                 $file,
                 'PurchaseOrder',
                 $poId,
-                'Packing Slip'
+                'Packing Slip',
+                $path
             );
         } catch (GuzzleException $e) {
             return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())]);
@@ -229,24 +237,29 @@ class ProductController extends Controller
         ]);
     }
 
-    public function upload(Product $product, Request $request)
+    public function upload($productId, Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
             'images.*' => 'required|image|mimes:jpeg,png,jpg'
         ]);
 
+        $files = [];
+
         foreach ($request->file('images') as $image) {
             $ext = $image->extension();
             $img = Image::read($image->path());
             $file = $img->scale(1024, 768)->encode();
-            $path = 'images/' . md5($file->__toString()) . '.' . $ext;
-            Storage::put($path, $file, 'public');
-            $product->files()->create([
-                'path' => $path,
-                'type' => $file->mediaType()
-            ]);
+            $path = md5($file->__toString()) . '.' . $ext;
+
+            $files[] = $connectWiseService->systemDocumentUpload(
+                $file,
+                'ProductSetup',
+                $productId,
+                'Product image',
+                $path
+            );
         }
 
-        return new ProductBrowseResource($product);
+        return response()->json($files);
     }
 }

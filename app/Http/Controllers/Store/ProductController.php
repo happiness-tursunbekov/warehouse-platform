@@ -4,9 +4,6 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductBrowseResource;
-use App\Models\Order;
-use App\Models\Product;
-use App\Models\User;
 use App\Services\ConnectWiseService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -52,17 +49,11 @@ class ProductController extends Controller
                 $conditions .= " and identifier not like '*-used*'";
         }
 
-        $cwProducts = $connectWiseService->getCatalogItems($page, $conditions, 'id,identifier,description,category,subcategory,cost,unitOfMeasure', $perPage);
+        $cwProducts = $connectWiseService->getCatalogItems($page, $conditions, null,'id,identifier,description,category,subcategory,cost,unitOfMeasure', $perPage);
         $qty = $connectWiseService->getCatalogItemsQty($conditions)->count ?? 0;
 
-        /** @var Collection $products */
-        $products = Product::whereIn('id', array_column($cwProducts, 'id'))->get();
-
-        $cwProducts = array_map(function ($item) use ($products) {
-            $product = $products->find($item->id);
-
-            $item->wpDetails = new ProductBrowseResource($product);
-
+        $cwProducts = array_map(function ($item) {
+            $item->wpDetails = new \stdClass();
             return $item;
         }, $cwProducts);
 

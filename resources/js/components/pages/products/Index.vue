@@ -227,7 +227,7 @@ export default {
                     'Content-Type': 'multipart/form-data'
                 }
             }).then(res => {
-                    this.selectedProduct.files.push(...res.data.files)
+                    this.selectedProduct.files.push(...res.data)
                     this.photoModal = false
                     this.selectedProduct = null
                     this.$snotify.success('Photos uploaded successfully!')

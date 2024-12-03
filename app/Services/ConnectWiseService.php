@@ -24,7 +24,7 @@ class ConnectWiseService
         ]);
     }
 
-    public function getCatalogItems($page=null, $conditions=null, $fields=null, $pageSize=25)
+    public function getCatalogItems($page=null, $conditions=null, $customFieldConditions=null, $fields=null, $pageSize=25)
     {
         try {
             $result = $this->http->get('procurement/catalog', [
@@ -33,7 +33,26 @@ class ConnectWiseService
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
                     'fields' => $fields,
-                    'pageSize' => $pageSize
+                    'pageSize' => $pageSize,
+                    'customFieldConditions' => $customFieldConditions
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function getCatalogItemsByBarcode(string $barcode, $fields=null, $page=null, $pageSize=25)
+    {
+        try {
+            $result = $this->http->get('procurement/catalog', [
+                'query' => [
+                    'page' => $page,
+                    'clientId' => $this->clientId,
+                    'fields' => $fields,
+                    'pageSize' => $pageSize,
+                    'customFieldConditions' => "caption='Barcodes' and value contains '{$barcode}'"
                 ],
             ]);
         } catch (GuzzleException $e) {
@@ -235,22 +254,14 @@ class ConnectWiseService
      * @throws GuzzleException
      * @throws \Exception
      */
-    public function systemDocumentUpload($base64, $recordType, $recordId, $title, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
+    public function systemDocumentUpload($file, $recordType, $recordId, $title, $filename, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
     {
-        if (!Str::contains($base64, ',')) {
-            throw new \Exception('Base64 file type is required');
-        }
-
-        @list($type, $base64) = explode(',', $base64);
-
-        $type = explode('/', explode(';', $type)[0])[1];
-
         $request = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
             'multipart' => [
                 [
                     'name'     => 'file',
-                    'contents' => base64_decode($base64),
-                    'filename' => date('d-m-Y-H-i-s').'.'.$type,
+                    'contents' => $file,
+                    'filename' => $filename,
                 ],
                 [
                     'name' => 'recordType',
@@ -393,5 +404,61 @@ class ConnectWiseService
             return [];
         }
         return json_decode($result->getBody()->getContents());
+    }
+
+    public function getCatalogItem($id)
+    {
+        try {
+            $result = $this->http->get('procurement/catalog/' . $id, [
+                'query' => [
+                    'clientId' => $this->clientId
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return new \stdClass();
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function addBarcode(int $catalogItemId, array $barcodes)
+    {
+        $catalogItem = $this->getCatalogItem($catalogItemId);
+
+        $customFields = collect($catalogItem->customFields);
+
+        $barcode = $customFields->where('caption', 'Barcodes')->first();
+
+        $customFields = $customFields->where('caption', '!=', 'Barcodes');
+
+        if (isset($barcode->value))
+            $values = json_decode($barcode->value);
+        else
+            $values = [];
+
+        $values = array_merge($values, $barcodes);
+
+        $barcode->value = json_encode($values);
+
+        $customFields->push($barcode);
+
+        $catalogItem->customFields = $customFields;
+
+        $this->http->put( "procurement/catalog/{$catalogItemId}?clientId=" . $this->clientId, [
+            'json' => $catalogItem
+        ]);
+
+        return $values;
+    }
+
+    public function extractBarcodesFromCatalogItem(\stdClass $catalogItem) : array
+    {
+        $customFields = collect($catalogItem->customFields);
+
+        $barcode = $customFields->where('caption', 'Barcodes')->first();
+
+        if (!isset($barcode->value))
+            return [];
+
+        return json_decode($barcode->value);
     }
 }

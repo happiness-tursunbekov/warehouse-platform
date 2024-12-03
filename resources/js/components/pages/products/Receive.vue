@@ -256,31 +256,23 @@ export default {
         },
 
         packingSlipUpload() {
-
-            const reader = new FileReader();
-            reader.readAsDataURL(this.packingSlip.file);
-            reader.onload = () => {
-                axios.post('/api/products/upload-po-attachment', {
-                    poId: this.packingSlip.po.id,
-                    file: reader.result
-                }).then(res => {
-                    switch (res.data.code) {
-                        case 'SUCCESS':
-                            this.$snotify.success(`File uploaded successfully!`)
-                            this.packingSlipModal = false
-                            this.packingSlip.file = null
-                            this.packingSlip.po = null
-                            this.packingSlipModal = false
-                            break;
-                        case 'ERROR':
-                            this.$snotify.error(`Error: ${res.data.message}`);
-                            break;
-                    }
-                })
-            }
-            reader.onerror = error => {
-                this.$snotify.error(error.message)
-            };
+            const formData = new FormData()
+            formData.append('file', this.packingSlip.file)
+            formData.append('poId', this.packingSlip.po.id)
+            axios.post('/api/products/upload-po-attachment', formData).then(res => {
+                switch (res.data.code) {
+                    case 'SUCCESS':
+                        this.$snotify.success(`File uploaded successfully!`)
+                        this.packingSlipModal = false
+                        this.packingSlip.file = null
+                        this.packingSlip.po = null
+                        this.packingSlipModal = false
+                        break;
+                    case 'ERROR':
+                        this.$snotify.error(`Error: ${res.data.message}`);
+                        break;
+                }
+            })
         },
 
         showBarcodeLinkModal(item) {
