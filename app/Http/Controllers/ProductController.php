@@ -255,7 +255,7 @@ class ProductController extends Controller
         foreach ($request->file('images') as $image) {
             $ext = $image->extension();
             $img = Image::read($image->path());
-            $file = $img->scale(1024, 768)->encode();
+            $file = $img->scale(1920, 1440)->encode();
             $path = md5($file->__toString()) . '.' . $ext;
 
             $files[] = $connectWiseService->systemDocumentUpload(
