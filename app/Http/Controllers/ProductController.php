@@ -200,7 +200,7 @@ class ProductController extends Controller
         $ext = $file->extension();
 
         if ($ext !== 'pdf') {
-            $file = Image::read($file->path())->scale(1024, 768)->encode();
+            $file = Image::read($file->path())->scale(1920, 1440)->encode();
         }
 
         $path = md5($file->__toString()) . '.' . $ext;
