@@ -77,7 +77,7 @@ class ProductController extends Controller
 
     public function image($attachmentId, ConnectWiseService $connectWiseService)
     {
-        return response()->file($connectWiseService->downloadAttachment($attachmentId));
+        return $connectWiseService->downloadAttachment($attachmentId);
     }
 
     public function receive(Request $request, ConnectWiseService $connectWiseService)
@@ -197,21 +197,11 @@ class ProductController extends Controller
         $file = $request->file('file');
         $poId = $request->get('poId');
 
-        $ext = $file->extension();
-
-        if ($ext !== 'pdf') {
-            $file = Image::read($file->path())->scale(1920, 1440)->encode();
-        }
-
-        $path = md5($file->__toString()) . '.' . $ext;
-
-
         $result = $connectWiseService->systemDocumentUpload(
             $file,
             'PurchaseOrder',
             $poId,
-            'Packing Slip',
-            $path
+            'Packing Slip'
         );
 
         return response()->json([
@@ -247,23 +237,17 @@ class ProductController extends Controller
     public function upload($productId, Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
-            'images.*' => 'required|image|mimes:jpeg,png,jpg'
+            'images.*' => 'required|image|mimes:jpeg,png,jpg,avif'
         ]);
 
         $files = [];
 
         foreach ($request->file('images') as $image) {
-            $ext = $image->extension();
-            $img = Image::read($image->path());
-            $file = $img->scale(1920, 1440)->encode();
-            $path = md5($file->__toString()) . '.' . $ext;
-
             $files[] = $connectWiseService->systemDocumentUpload(
-                $file,
+                $image,
                 'ProductSetup',
                 $productId,
-                'Product image',
-                $path
+                'Product image'
             );
         }
 

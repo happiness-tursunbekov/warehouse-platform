@@ -7,8 +7,11 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
+use Illuminate\Http\File;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
 use Psr\Http\Message\RequestInterface;
 
 class ConnectWiseService
@@ -254,8 +257,18 @@ class ConnectWiseService
      * @throws GuzzleException
      * @throws \Exception
      */
-    public function systemDocumentUpload($file, $recordType, $recordId, $title, $filename, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
+    public function systemDocumentUpload(UploadedFile $file, $recordType, $recordId, $title, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
     {
+        $ext = $file->extension();
+        if (in_array($ext, ['jpg', 'jpeg', 'png', 'avif', 'gif', 'webm'])) {
+            $img = Image::read($file->path());
+            if ($img->width() > 1920 || $img->height() > 1440) {
+                $file = $img->scale(1920, 1440)->encode();
+            }
+        }
+
+        $filename = md5($file->__toString()) . '.' . $ext;
+
         $request = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
             'multipart' => [
                 [
@@ -485,7 +498,7 @@ class ConnectWiseService
     public function downloadAttachment($id)
     {
         try {
-            $result = $this->http->get("/system/documents/{$id}/download", [
+            $result = $this->http->get("system/documents/{$id}/download", [
                 'query' => [
                     'clientId' => $this->clientId
                 ],

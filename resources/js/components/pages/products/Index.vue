@@ -24,9 +24,11 @@
                         <th scope="col"><input v-model="filter.description" type="text" class="form-control"/></th>
                         <th scope="col"><button type="submit" class="btn btn-light">🔎</button></th>
                         <th>
-                            <input id="loadOnHandAutomatically" type="checkbox" v-model="loadOnHandAutomatically" /><label for="loadOnHandAutomatically">Load Automatically</label>
+                            <input id="loadOnHandAutomatically" type="checkbox" v-model="loadOnHandAutomatically" /><label for="loadOnHandAutomatically">Auto load</label>
                         </th>
-                        <th></th>
+                        <th>
+                            <input id="loadPhotosAutomatically" type="checkbox" v-model="loadPhotosAutomatically" /><label for="loadPhotosAutomatically">Auto load</label>
+                        </th>
                         <th></th>
                         <th></th>
                         <th scope="col"><pagination :meta="meta" @change="handlePagination"/></th>
@@ -46,10 +48,9 @@
                             <span v-else>{{ productOnHand[product.id] }}</span>
                         </td>
                         <td>
-                            <div v-viewer>
-                                <template v-if="product.files.length > 0">
-                                    <img v-for="(file,key) in product.files" :key="key" :class="{ 'd-none': key > 0 }" style="height: 30px" :src="file.path" alt="..." />
-                                </template>
+                            <button v-if="typeof productImages[product.id] === ('undefined' || null)" class="btn btn-success btn-sm" type="button" @click.prevent="getProductImages(product)">Load</button>
+                            <div v-else v-viewer style="cursor: pointer">
+                                <img v-for="(file,key) in productImages[product.id]" :key="key" :class="{ 'd-none': key > 0 }" style="height: 30px" :src="'/api/products/image/' + file.id" alt="..." />
                             </div>
                         </td>
                         <td>{{ product.price }}</td>
@@ -115,6 +116,7 @@ export default {
         return {
             products: [],
             productOnHand: {},
+            productImages: {},
             meta: {
                 total: 0,
                 currentPage: 1,
@@ -158,6 +160,11 @@ export default {
         'loadOnHandAutomatically' (val) {
             if (val) {
                 this.getProductOnHand()
+            }
+        },
+        'loadPhotosAutomatically' (val) {
+            if (val) {
+                this.getProductImages()
             }
         }
     },
@@ -207,15 +214,15 @@ export default {
         getProductImages(product) {
 
             if (!product) {
-                this.productOnHand = {}
+                this.productImages = {}
                 this.products.map(product => {
-                    axios.get(`/api/products/${product.id}/on-hand`).then(res => {
-                        this.productOnHand[product.id] =  res.data
+                    axios.get(`/api/products/${product.id}/images`).then(res => {
+                        this.productImages[product.id] =  res.data
                     })
                 })
             } else {
-                axios.get(`/api/products/${product.id}/on-hand`).then(res => {
-                    this.productOnHand[product.id] =  res.data
+                axios.get(`/api/products/${product.id}/images`).then(res => {
+                    this.productImages[product.id] =  res.data
                 })
             }
         },
@@ -267,10 +274,14 @@ export default {
                     'Content-Type': 'multipart/form-data'
                 }
             }).then(res => {
-                    this.selectedProduct.files.push(...res.data)
-                    this.photoModal = false
-                    this.selectedProduct = null
-                    this.$snotify.success('Photos uploaded successfully!')
+                if (typeof this.productImages[this.selectedProduct.id] !== "undefined") {
+                    this.productImages[this.selectedProduct.id].push(...res.data)
+                } else {
+                    this.productImages[this.selectedProduct.id] = res.data
+                }
+                this.photoModal = false
+                this.selectedProduct = null
+                this.$snotify.success('Photos uploaded successfully!')
                 })
         }
     }

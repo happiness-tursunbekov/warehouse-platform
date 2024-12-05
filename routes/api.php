@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 
+Route::get('/products/image/{attachmentId}', [ProductController::class, 'image']);
+
 Route::group([
     'middleware' => 'auth:sanctum'
 ], function () {
@@ -27,7 +29,6 @@ Route::group([
             Route::get('find-po-by-product', [ProductController::class, 'findPoByProduct']);
             Route::get('{id}/on-hand', [ProductController::class, 'onHand']);
             Route::get('{id}/images', [ProductController::class, 'images']);
-            Route::get('image/{attachmentId}', [ProductController::class, 'image']);
             Route::post('{product}/upload', [ProductController::class, 'upload']);
         });
 
