@@ -20,7 +20,6 @@ return new class extends Migration
             $table->foreign('prepared_by_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('accepted_by_member_id')->nullable();
             $table->unsignedBigInteger('signature_id')->nullable();
-            $table->foreign('signature_id')->references('id')->on('files')->onDelete('cascade');
             $table->enum('status', ['NEW', 'READY', 'SENT'])->default('NEW')->comment('Order status');
             $table->float('total_cost');
             $table->timestamps();
