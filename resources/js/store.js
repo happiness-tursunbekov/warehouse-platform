@@ -65,14 +65,14 @@ const store = createStore({
         ADD_ITEM_TO_CART (state, val) {
             const itemIndex = state.cart.items.findIndex(item => item.product.id === val.product.id)
             if (itemIndex > -1) {
-                if (state.cart.items[itemIndex].qty + val.qty > state.cart.items[itemIndex].product.wpDetails.onHandAvailable) {
-                    state.cart.items[itemIndex].qty = state.cart.items[itemIndex].product.wpDetails.onHandAvailable
+                if (state.cart.items[itemIndex].qty + val.qty > state.cart.items[itemIndex].product.onHand) {
+                    state.cart.items[itemIndex].qty = state.cart.items[itemIndex].product.onHand
                 } else {
                     state.cart.items[itemIndex].qty += val.qty
                 }
             } else {
-                if (val.qty > val.product.wpDetails.onHandAvailable)
-                    val.qty = val.product.wpDetails.onHandAvailable
+                if (val.qty > val.product.onHand)
+                    val.qty = val.product.onHand
                 state.cart.items.push(val)
             }
             state.cart.total = recalculateTotal(state.cart)

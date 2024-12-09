@@ -50,7 +50,7 @@
                         <td>
                             <button v-if="typeof productImages[product.id] === ('undefined' || null)" class="btn btn-success btn-sm" type="button" @click.prevent="getProductImages(product)">Load</button>
                             <div v-else v-viewer style="cursor: pointer">
-                                <img v-for="(file,key) in productImages[product.id]" :key="key" :class="{ 'd-none': key > 0 }" style="height: 30px" :src="'/api/products/image/' + file.id" alt="..." />
+                                <img v-for="(file,key) in productImages[product.id]" :key="key" :class="{ 'd-none': key > 0 }" style="height: 30px" :src="`/api/products/image/${file.id}/${file.fileName}`" alt="..." />
                             </div>
                         </td>
                         <td>{{ product.price }}</td>

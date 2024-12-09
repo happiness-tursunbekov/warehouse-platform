@@ -52,7 +52,7 @@
                             <div class="col-md-3 col-lg-3 col-xl-3">
                                 <h6 class="text-muted">{{ item.product.identifier }}</h6>
                                 <h6 class="mb-0">{{ item.product.description }}</h6>
-                                <small>In Stock: {{ item.product.wpDetails.onHandAvailable }}</small>
+                                <small>In Stock: {{ item.product.onHand }}</small>
                             </div>
                             <div class="col-md-3 col-lg-3 col-xl-3 d-flex">
                                 <div class="input-group">
@@ -187,8 +187,8 @@ export default {
                 qty = qty * (-1)
             }
 
-            if (qty > item.product.wpDetails.onHandAvailable) {
-                qty = item.product.wpDetails.onHandAvailable
+            if (qty > item.product.onHand) {
+                qty = item.product.onHand
             }
 
             this.$store.dispatch('addItemToCart', {

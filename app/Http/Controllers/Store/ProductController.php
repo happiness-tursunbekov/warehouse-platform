@@ -52,11 +52,6 @@ class ProductController extends Controller
         $cwProducts = $connectWiseService->getCatalogItems($page, $conditions, null,'id,identifier,description,category,subcategory,cost,unitOfMeasure', $perPage);
         $qty = $connectWiseService->getCatalogItemsQty($conditions)->count ?? 0;
 
-        $cwProducts = array_map(function ($item) {
-            $item->wpDetails = new \stdClass();
-            return $item;
-        }, $cwProducts);
-
         return response()->json([
             'products' => $cwProducts,
             'meta' => [
@@ -81,5 +76,15 @@ class ProductController extends Controller
         return response()->json([
             'categories' => $cats
         ]);
+    }
+
+    public function images($id, ConnectWiseService $connectWiseService)
+    {
+        return response()->json($connectWiseService->getAttachments('ProductSetup', $id));
+    }
+
+    public function onHand($id, ConnectWiseService $connectWiseService)
+    {
+        return response()->json($connectWiseService->getCatalogItemOnHand($id)->count);
     }
 }

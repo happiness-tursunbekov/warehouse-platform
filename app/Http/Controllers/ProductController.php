@@ -77,7 +77,9 @@ class ProductController extends Controller
 
     public function image($attachmentId, ConnectWiseService $connectWiseService)
     {
-        return $connectWiseService->downloadAttachment($attachmentId);
+        $temp = tempnam(sys_get_temp_dir(), 'TMP_');
+        file_put_contents($temp, $connectWiseService->downloadAttachment($attachmentId));
+        return response()->file($temp)->deleteFileAfterSend();
     }
 
     public function receive(Request $request, ConnectWiseService $connectWiseService)

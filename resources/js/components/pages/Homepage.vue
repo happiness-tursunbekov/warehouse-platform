@@ -66,8 +66,8 @@
                 <div v-for="(product, key) in products" :key="key" class="col mb-5">
                     <div class="card h-100">
                         <!-- Product image-->
-                        <div v-if="product.wpDetails.files.length > 0" v-viewer>
-                            <img v-for="(file,key) in product.wpDetails.files" :key="key" :class="{ 'd-none': key > 0 }" class="card-img-top" :src="file.path" alt="..." />
+                        <div v-if="typeof productImages[product.id] !== 'undefined' && productImages[product.id].length > 0" v-viewer style="height: 150px" class="d-inline-block align-content-center text-center p-2">
+                            <img v-for="(file,key) in productImages[product.id]" :key="key" :class="{ 'd-none': key > 0 }" class="card-img-top align-middle" style="max-height: 150px; width: auto !important; max-width: 100%" :src="`/api/products/image/${file.id}/${file.fileName}`" alt="..." />
                         </div>
                         <img v-else class="card-img-top" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." />
                         <!-- Product details-->
@@ -78,11 +78,11 @@
                                 <small class="text-muted w-100 d-inline-block">{{ product.description }}</small>
                                 <!-- Product price-->
                                 <div class="text-success">${{ product.cost }}</div>
-                                <div class="text-primary">In Stock: <strong>{{ product.wpDetails.onHandAvailable }}</strong>{{ product.unitOfMeasure.name }}</div>
+                                <div v-if="typeof productOnHand[product.id] !== 'undefined'" class="text-primary">In Stock: <strong>{{ productOnHand[product.id] }}</strong>{{ product.unitOfMeasure.name }}</div>
                             </div>
                         </div>
                         <!-- Product actions-->
-                        <div :class="{ 'd-none': product.wpDetails.onHandAvailable < 1 }" class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                        <div :class="{ 'd-none': typeof productOnHand[product.id] === 'undefined' || productOnHand[product.id] === 0 }" class="card-footer p-4 pt-0 border-top-0 bg-transparent">
                             <form @submit.prevent="addToCart(product, key)" class="text-center" :key="key">
                                 <div class="input-group">
                                     <input ref="item" type="number" min="1" class="form-control" required value="1">
@@ -123,7 +123,9 @@ export default {
                 currentPage: 1,
                 perPage: 25,
                 totalPages: 0
-            }
+            },
+            productImages: {},
+            productOnHand: {}
         }
     },
 
@@ -135,10 +137,31 @@ export default {
     },
 
     methods: {
+        getProductOnHand() {
+            this.productOnHand = {}
+            this.products.map(product => {
+                axios.get(`/api/store/products/${product.id}/on-hand`).then(res => {
+                    this.productOnHand[product.id] =  res.data
+                })
+            })
+        },
+
+        getProductImages() {
+            this.productImages = {}
+            this.products.map(product => {
+                axios.get(`/api/store/products/${product.id}/images`).then(res => {
+                    this.productImages[product.id] =  res.data
+                })
+            })
+        },
+
         addToCart(product, key) {
             const qty = parseInt(this.$refs.item[key].value)
 
-            if (product.onHandAvailable < qty) {
+            product.onHand = this.productOnHand[product.id]
+            product.images = this.productImages[product.id]
+
+            if (product.onHand < qty) {
                 this.$snotify.error('Quantity cannot exceed stock quantity!')
             } else {
                 this.$store.dispatch('addItemToCart', {
@@ -169,6 +192,9 @@ export default {
             }).then(res => {
                 this.products = res.data.products
                 this.meta = res.data.meta
+            }).then(() => {
+                this.getProductImages()
+                this.getProductOnHand()
             })
         },
 

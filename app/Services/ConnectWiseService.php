@@ -504,8 +504,47 @@ class ConnectWiseService
                 ],
             ]);
         } catch (GuzzleException $e) {
-            return [];
+            return '';
         }
         return $result->getBody()->getContents();
+    }
+
+    public function systemDocumentUploadProduct($file, $recordId, $filename, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
+    {
+        $request = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
+            'multipart' => [
+                [
+                    'name'     => 'file',
+                    'contents' => $file,
+                    'filename' => $filename,
+                ],
+                [
+                    'name' => 'recordType',
+                    'contents' => 'ProductSetup'
+                ],
+                [
+                    'name' => 'recordId',
+                    'contents' => $recordId
+                ],
+                [
+                    'name' => 'title',
+                    'contents' => 'Product Image'
+                ],
+                [
+                    'name' => 'privateFlag',
+                    'contents' => $privateFlag ? 1 : 0
+                ],
+                [
+                    'name' => 'readonlyFlag',
+                    'contents' => $readonlyFlag ? 1 : 0
+                ],
+                [
+                    'name' => 'isAvatar',
+                    'contents' => $isAvatar ? 1 : 0
+                ]
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents());
     }
 }

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 
-Route::get('/products/image/{attachmentId}', [ProductController::class, 'image']);
+Route::get('/products/image/{attachmentId}/{fileName}', [ProductController::class, 'image']);
 
 Route::group([
     'middleware' => 'auth:sanctum'
@@ -40,6 +40,8 @@ Route::group([
     Route::prefix('/store')->group(function () {
         Route::options('products', [StoreProductController::class, 'options']);
         Route::get('products', [StoreProductController::class, 'index']);
+        Route::get('products/{id}/on-hand', [StoreProductController::class, 'onHand']);
+        Route::get('products/{id}/images', [StoreProductController::class, 'images']);
         Route::get('orders/create', [StoreOrderController::class, 'create']);
         Route::post('orders', [StoreOrderController::class, 'store']);
     })->middleware('auth:sanctum');
