@@ -218,8 +218,11 @@ class ProductController extends Controller
             'productIdentifier' => ['required', 'string']
         ]);
 
+        $productIdentifier = $request->get('productIdentifier');
+
         return response()->json([
-            'items' => $connectWiseService->findItemFromPos($request->get('productIdentifier'))
+            'items' => $connectWiseService->findItemFromPos($productIdentifier),
+            'projects' => $connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/identifier={$productIdentifier}")
         ]);
     }
 

@@ -244,7 +244,7 @@ class ConnectWiseService
                     'page' => $page,
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
-                    'fields' => 'id,catalogItem,project'
+                    'fields' => 'id,catalogItem,project,phase,quantity,description,company,poApprovedFlag'
                 ],
             ]);
         } catch (GuzzleException $e) {

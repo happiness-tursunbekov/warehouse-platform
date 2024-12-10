@@ -69,17 +69,15 @@
                 <table class="table table-striped">
                     <thead class="sticky-top">
                     <tr>
-                        <th scope="col">Product ID</th>
                         <th>PO Number</th>
                         <th>PO Status</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr v-for="(po, key) in pos" :key="key">
-                        <td>{{ po.productIdentifier }}</td>
                         <td>{{ po.poNumber }}</td>
                         <td>
-                            <span v-if="po.closedFlag">Closed</span>
+                            <span v-if="po.closedFlag && !po.canceledFlag">Received</span>
                             <span v-else-if="po.canceledFlag">Cancelled</span>
                             <span v-else>Open</span>
                         </td>
@@ -87,6 +85,27 @@
                     </tbody>
                 </table>
             </div>
+            <h6 class="h6">Projects</h6>
+            <table class="table table-striped">
+                <thead class="sticky-top">
+                <tr>
+                    <th>Project</th>
+                    <th>Company</th>
+                    <th>Phase</th>
+                    <th>Quantity</th>
+                    <th>PO Approved</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(project, key) in projects" :key="key">
+                    <td>{{ project.project.name }}</td>
+                    <td>{{ project.company.name }}</td>
+                    <td>{{ project.phase.name }}</td>
+                    <td>{{ project.quantity }}</td>
+                    <td>{{ project.poApprovedFlag }}</td>
+                </tr>
+                </tbody>
+            </table>
         </modal>
         <barcode-link-modal @handled="getProducts()" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedProduct"/>
         <modal v-model:show="photoModal" modal-title="Manage product photos">
@@ -130,6 +149,7 @@ export default {
                 barcode: this.$route.query.barcode || ''
             },
             pos: [],
+            projects: [],
             posModal: false,
             barcodeLinkModal: false,
             selectedProduct: null,
@@ -235,6 +255,7 @@ export default {
         getPos(item) {
             axios.get(`/api/products/find-po-by-product?productIdentifier=${item.identifier}`).then(res => {
                 this.pos = res.data.items
+                this.products = res.data.projects
                 this.posModal = true
             })
         },
