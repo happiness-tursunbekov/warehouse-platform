@@ -152,14 +152,14 @@ class ConnectWiseService
         }
         $items = $items->unique('id');
 
-        cache()->put('openPoItems', $items, now()->addHours(3));
+        cache()->forever('openPoItems', $items);
 
         return $items;
     }
 
     private function setOpenPoItems($items) : bool
     {
-        return cache()->put('openPoItems', $items, now()->addHours(3));
+        return cache()->forever('openPoItems', $items);
     }
 
     /**
@@ -230,7 +230,7 @@ class ConnectWiseService
                 }, $this->purchaseOrderItems($po->id)));
             }
 
-            cache()->put('poItems', $poItems);
+            cache()->forever('poItems', $poItems);
         }
 
         return $poItems->where('productIdentifier', $itemIdentifier)->values();

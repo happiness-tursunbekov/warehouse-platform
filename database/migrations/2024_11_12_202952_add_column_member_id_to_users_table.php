@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->unsignedBigInteger('member_id')->comment('Member id on ConnectWise Manage');
+            $table->unsignedBigInteger('member_id')->nullable()->comment('Member id on ConnectWise Manage');
         });
     }
 
-    /**
+    /**z
      * Reverse the migrations.
      */
     public function down(): void
