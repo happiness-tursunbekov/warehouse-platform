@@ -64,7 +64,7 @@
                 </table>
             </div>
         </form>
-        <modal v-model:show="posModal" modal-title="Po's">
+        <modal v-model:show="posModal" :modal-title="'Po\'s - ' + (selectedProduct ? selectedProduct.identifier : '')">
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead class="sticky-top">
@@ -98,9 +98,9 @@
                 </thead>
                 <tbody>
                 <tr v-for="(project, key) in projects" :key="key">
-                    <td>{{ project.project.name }}</td>
+                    <td><span v-if="project.project">#{{ project.project.id }} - {{ project.project.name }}</span></td>
                     <td>{{ project.company.name }}</td>
-                    <td>{{ project.phase.name }}</td>
+                    <td>{{ project.phase ? project.phase.name : '' }}</td>
                     <td>{{ project.quantity }}</td>
                     <td>{{ project.poApprovedFlag }}</td>
                 </tr>
@@ -253,6 +253,7 @@ export default {
         },
 
         getPos(item) {
+            this.selectedProduct = item
             axios.get(`/api/products/find-po-by-product?productIdentifier=${item.identifier}`).then(res => {
                 this.pos = res.data.items
                 this.projects = res.data.projects

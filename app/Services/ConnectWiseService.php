@@ -220,6 +220,8 @@ class ConnectWiseService
                 $poItems->push(...array_map(function ($poItem) use ($po) {
                     $item = new \stdClass();
                     $item->id = $poItem->id;
+                    $item->dateReceived = $poItem->receivedStatus;
+                    $item->receivedStatus = $poItem->receivedStatus;
                     $item->canceledFlag = $poItem->canceledFlag;
                     $item->closedFlag = $poItem->closedFlag;
                     $item->productId = $poItem->product->id;
