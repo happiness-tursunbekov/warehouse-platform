@@ -222,7 +222,7 @@ class ProductController extends Controller
 
         return response()->json([
             'items' => $connectWiseService->findItemFromPos($productIdentifier),
-            'projects' => $connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/identifier={$productIdentifier}")
+            'projects' => $connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/identifier='{$productIdentifier}'")
         ]);
     }
 

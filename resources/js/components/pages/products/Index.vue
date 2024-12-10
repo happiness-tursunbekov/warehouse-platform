@@ -255,7 +255,7 @@ export default {
         getPos(item) {
             axios.get(`/api/products/find-po-by-product?productIdentifier=${item.identifier}`).then(res => {
                 this.pos = res.data.items
-                this.products = res.data.projects
+                this.projects = res.data.projects
                 this.posModal = true
             })
         },
