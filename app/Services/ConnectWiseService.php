@@ -209,33 +209,41 @@ class ConnectWiseService
 
     public function findItemFromPos($itemIdentifier)
     {
-        $poItems = new Collection();
-
         if (cache()->has('poItems')) {
             $poItems =  cache()->get('poItems');
         } else {
-            $pos = $this->purchaseOrders(null, null, 'id,poNumber', 'id desc');
-
-            foreach ($pos as $po) {
-                $poItems->push(...array_map(function ($poItem) use ($po) {
-                    $item = new \stdClass();
-                    $item->id = $poItem->id;
-                    $item->dateReceived = $poItem->receivedStatus;
-                    $item->receivedStatus = $poItem->receivedStatus;
-                    $item->canceledFlag = $poItem->canceledFlag;
-                    $item->closedFlag = $poItem->closedFlag;
-                    $item->productId = $poItem->product->id;
-                    $item->productIdentifier = $poItem->product->identifier;
-                    $item->poId = $po->id;
-                    $item->poNumber = $po->poNumber;
-                    return $item;
-                }, $this->purchaseOrderItems($po->id)));
-            }
-
-            cache()->forever('poItems', $poItems);
+            $poItems = $this->cachePos();
         }
 
         return $poItems->where('productIdentifier', $itemIdentifier)->values();
+    }
+
+    public function cachePos()
+    {
+        $poItems = new Collection();
+        $pos = $this->purchaseOrders(null, null, 'id,poNumber', 'id desc');
+
+        foreach ($pos as $po) {
+            $poItems->push(...array_map(function ($poItem) use ($po) {
+                $item = new \stdClass();
+                $item->id = $poItem->id;
+                $item->description = $poItem->description;
+                $item->quantity = $poItem->quantity;
+                $item->dateReceived = $poItem->receivedStatus;
+                $item->receivedStatus = $poItem->receivedStatus;
+                $item->canceledFlag = $poItem->canceledFlag;
+                $item->closedFlag = $poItem->closedFlag;
+                $item->productId = $poItem->product->id;
+                $item->productIdentifier = $poItem->product->identifier;
+                $item->poId = $po->id;
+                $item->poNumber = $po->poNumber;
+                return $item;
+            }, $this->purchaseOrderItems($po->id)));
+        }
+
+        cache()->forever('poItems', $poItems);
+
+        return $poItems;
     }
 
     public function getProducts($page=null, $conditions=null)

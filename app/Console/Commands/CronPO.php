@@ -26,7 +26,7 @@ class CronPO extends Command
      */
     public function handle(ConnectWiseService $connectWiseService)
     {
-        $connectWiseService->findItemFromPos('cron');
+        $connectWiseService->cachePos();
         $connectWiseService->getOpenPoItems();
     }
 }
