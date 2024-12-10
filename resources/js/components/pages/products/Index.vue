@@ -70,17 +70,20 @@
                     <thead class="sticky-top">
                     <tr>
                         <th>PO Number</th>
-                        <th>PO Status</th>
+                        <th>Product Status</th>
+                        <th>Quantity</th>
+                        <th>Received Date</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr v-for="(po, key) in pos" :key="key">
                         <td>{{ po.poNumber }}</td>
                         <td>
-                            <span v-if="po.closedFlag && !po.canceledFlag">Received</span>
-                            <span v-else-if="po.canceledFlag">Cancelled</span>
-                            <span v-else>Open</span>
+                            <span v-if="po.canceledFlag">Cancelled</span>
+                            <span v-else>{{ po.receivedStatus }}</span>
                         </td>
+                        <td>{{ po.quantity }}</td>
+                        <td>{{ po.dateReceived }}</td>
                     </tr>
                     </tbody>
                 </table>
