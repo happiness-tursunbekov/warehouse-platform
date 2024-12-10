@@ -229,7 +229,7 @@ class ConnectWiseService
                 $item->id = $poItem->id;
                 $item->description = $poItem->description;
                 $item->quantity = $poItem->quantity;
-                $item->dateReceived = $poItem->dateReceived;
+                $item->dateReceived = @$poItem->dateReceived;
                 $item->receivedStatus = $poItem->receivedStatus;
                 $item->canceledFlag = $poItem->canceledFlag;
                 $item->closedFlag = $poItem->closedFlag;
