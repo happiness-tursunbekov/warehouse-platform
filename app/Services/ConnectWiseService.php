@@ -246,7 +246,7 @@ class ConnectWiseService
         return $poItems;
     }
 
-    public function getProducts($page=null, $conditions=null)
+    public function getProducts($page=null, $conditions=null, $pageSize=null)
     {
         try {
             $result = $this->http->get('procurement/products', [
@@ -254,7 +254,24 @@ class ConnectWiseService
                     'page' => $page,
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
-                    'fields' => 'id,catalogItem,project,phase,quantity,description,company,poApprovedFlag'
+                    'fields' => 'id,catalogItem,project,phase,quantity,description,company,poApprovedFlag',
+                    'pageSize' => $pageSize
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function getProductPickingShippingDetails($id, $page=null, $conditions=null)
+    {
+        try {
+            $result = $this->http->get("procurement/products/{$id}/pickingShippingDetails", [
+                'query' => [
+                    'page' => $page,
+                    'clientId' => $this->clientId,
+                    'conditions' => $conditions
                 ],
             ]);
         } catch (GuzzleException $e) {

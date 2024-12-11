@@ -35,7 +35,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr v-for="(product, key) in products" :key="key">
+                    <tr v-for="(product, key) in catalogItems" :key="key">
                         <th scope="row">{{ product.identifier }}</th>
                         <td>
                             <div>{{ product.barcodes.join("\n") }}</div>
@@ -89,26 +89,28 @@
                 </table>
             </div>
             <h6 class="h6">Projects</h6>
-            <table class="table table-striped">
-                <thead class="sticky-top">
-                <tr>
-                    <th>Project</th>
-                    <th>Company</th>
-                    <th>Phase</th>
-                    <th>Quantity</th>
-                    <th>PO Approved</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="(project, key) in projects" :key="key">
-                    <td><span v-if="project.project">#{{ project.project.id }} - {{ project.project.name }}</span></td>
-                    <td>{{ project.company.name }}</td>
-                    <td>{{ project.phase ? project.phase.name : '' }}</td>
-                    <td>{{ project.quantity }}</td>
-                    <td>{{ project.poApprovedFlag }}</td>
-                </tr>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="sticky-top">
+                    <tr>
+                        <th>Project</th>
+                        <th>Company</th>
+                        <th>Phase</th>
+                        <th>Quantity</th>
+                        <th>Shipped Quantity</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(product, key) in products" :key="key">
+                        <td><span v-if="product.project">#{{ product.project.id }} - {{ product.project.name }}</span></td>
+                        <td>{{ product.company.name }}</td>
+                        <td>{{ product.phase ? product.phase.name : '' }}</td>
+                        <td>{{ product.quantity }}</td>
+                        <td>{{ product.shippedQuantity }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </modal>
         <barcode-link-modal @handled="getProducts()" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedProduct"/>
         <modal v-model:show="photoModal" modal-title="Manage product photos">
@@ -136,7 +138,7 @@ export default {
 
     data() {
         return {
-            products: [],
+            catalogItems: [],
             productOnHand: {},
             productImages: {},
             meta: {
@@ -152,7 +154,7 @@ export default {
                 barcode: this.$route.query.barcode || ''
             },
             pos: [],
-            projects: [],
+            products: [],
             posModal: false,
             barcodeLinkModal: false,
             selectedProduct: null,
@@ -209,7 +211,7 @@ export default {
             axios.get('/api/products', {
                 params: this.filter
             }).then(res => {
-                this.products = res.data.products
+                this.catalogItems = res.data.products
                 this.meta = res.data.meta
             }).then(() => {
                 if (this.loadOnHandAutomatically) {
@@ -222,7 +224,7 @@ export default {
 
             if (!product) {
                 this.productOnHand = {}
-                this.products.map(product => {
+                this.catalogItems.map(product => {
                     axios.get(`/api/products/${product.id}/on-hand`).then(res => {
                         this.productOnHand[product.id] =  res.data
                     })
@@ -238,7 +240,7 @@ export default {
 
             if (!product) {
                 this.productImages = {}
-                this.products.map(product => {
+                this.catalogItems.map(product => {
                     axios.get(`/api/products/${product.id}/images`).then(res => {
                         this.productImages[product.id] =  res.data
                     })
@@ -259,7 +261,7 @@ export default {
             this.selectedProduct = item
             axios.get(`/api/products/find-po-by-product?productIdentifier=${item.identifier}`).then(res => {
                 this.pos = res.data.items
-                this.projects = res.data.projects
+                this.products = res.data.products
                 this.posModal = true
             })
         },
