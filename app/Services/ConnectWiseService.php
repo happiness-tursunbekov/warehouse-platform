@@ -301,16 +301,6 @@ class ConnectWiseService
             'json' => $pickShip,
         ]);
 
-        if ($quantity == $pickShip->quantity) {
-            try {
-                $result = $this->http->delete("procurement/products/{$id}/pickingShippingDetails{$pickShip->id}", [
-                    'json' => $pickShip,
-                ]);
-            } catch (GuzzleException $e) {
-                return new \stdClass();
-            }
-        }
-
         return json_decode($result->getBody()->getContents());
     }
 
