@@ -297,7 +297,7 @@ class ConnectWiseService
 
         $pickShip->pickedQuantity = $pickShip->shippedQuantity = $quantity;
 
-        $result = $this->http->post("procurement/products/{$id}/pickingShippingDetails?clientId=" . $this->clientId, [
+        $result = $this->http->put("procurement/products/{$id}/pickingShippingDetails/{$pickShip->id}?clientId=" . $this->clientId, [
             'json' => $pickShip,
         ]);
 
