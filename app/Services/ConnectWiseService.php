@@ -660,4 +660,97 @@ class ConnectWiseService
 
         return $project;
     }
+
+    public function catalogItemAdjust(\stdClass $catalogItem, $qty)
+    {
+        $adjustmentID = date('m/d/Y') . ' - ' . time();
+
+        $adjustment = json_decode("
+        {
+            \"id\": 0,
+            \"identifier\": \"{$adjustmentID}\",
+            \"type\": {
+                \"id\": 1,
+                \"identifier\": \"Initial Count\",
+                \"_info\": {
+                    \"type_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/adjustments/types/1\"
+                }
+            },
+            \"reason\": \"Quantity update\",
+            \"closedFlag\": true,
+            \"adjustmentDetails\": [
+                {
+                    \"id\": 0,
+                    \"catalogItem\": {
+                        \"id\": {$catalogItem->id},
+                        \"identifier\": \"{$catalogItem->identifier}\",
+                        \"_info\": {
+                            \"catalog_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/catalog/{$catalogItem->id}\"
+                        }
+                    },
+                    \"description\": \"Superior essex - 4x23 6A CMP Yellow\",
+                    \"quantityOnHand\": 0.00,
+                    \"unitCost\": 0.140000,
+                    \"warehouse\": {
+                        \"id\": 1,
+                        \"name\": \"Warehouse\",
+                        \"lockedFlag\": false,
+                        \"_info\": {
+                            \"warehouse_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/warehouses/1\"
+                        }
+                    },
+                    \"warehouseBin\": {
+                        \"id\": 1,
+                        \"name\": \"Default Bin\",
+                        \"_info\": {
+                            \"warehouseBin_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/warehouseBins/1\"
+                        }
+                    },
+                    \"quantityAdjusted\": {$qty},
+                    \"adjustment\": {
+                        \"id\": 0,
+                        \"name\": \"{$adjustmentID}\",
+                        \"_info\": {
+                            \"adjustment_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/adjustments/0\"
+                        }
+                    },
+                    \"_info\": {
+                        \"lastUpdated\": \"2024-12-16T20:41:09Z\",
+                        \"updatedBy\": \"Integrator\"
+                    }
+                }
+            ],
+            \"_info\": {
+                \"lastUpdated\": \"2024-12-16T20:40:19Z\",
+                \"updatedBy\": \"Integrator\"
+            }
+        }
+        ");
+
+        $request = $this->http->post('procurement/adjustments?clientId=' . $this->clientId, [
+            'json' => $adjustment
+        ]);
+
+        return json_decode($request->getBody()->getContents());
+    }
+
+    public function createUsedCatalogItem(int $catalogItemId, int $qty)
+    {
+        $catalogItem = $this->getCatalogItem($catalogItemId);
+
+        $catalogItem->identifier = $catalogItem->identifier . Str::lower("({$qty}{$catalogItem->unitOfMeasure->name}-used)");
+
+        $catalogItem->id = 0;
+
+        $request = $this->http->post('procurement/catalog?clientId=' . $this->clientId, [
+            'json' => $catalogItem
+        ]);
+
+        $newCatalogItem = json_decode($request->getBody()->getContents());
+
+        $this->catalogItemAdjust($newCatalogItem, $qty);
+
+
+        return $newCatalogItem;
+    }
 }

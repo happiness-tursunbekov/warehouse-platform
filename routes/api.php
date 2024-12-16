@@ -28,6 +28,8 @@ Route::group([
             Route::get('po-items', [ProductController::class, 'poItems']);
             Route::get('pos', [ProductController::class, 'pos']);
             Route::get('find-po-by-product', [ProductController::class, 'findPoByProduct']);
+            Route::post('{id}/create-used-item', [ProductController::class, 'createUsedItem']);
+            Route::post('{id}/adjust', [ProductController::class, 'adjust']);
             Route::get('{id}/on-hand', [ProductController::class, 'onHand']);
             Route::get('{id}/images', [ProductController::class, 'images']);
             Route::post('{product}/upload', [ProductController::class, 'upload']);

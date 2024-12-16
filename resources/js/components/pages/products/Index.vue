@@ -57,7 +57,9 @@
                         <td>{{ product.cost }}</td>
                         <td>
                             <button @click.prevent="getPos(product)" type="button" class="btn btn-outline-primary btn-sm">Get PO's</button>
+                            <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="btn btn-outline-primary btn-sm" title="Adjust">Adjust</button>
                             <button @click.prevent="showUploadPhotoModal(product)" type="button" class="btn btn-outline-primary btn-sm" title="Upload a photo"><i class="bi-upload"></i></button>
+                            <button v-if="!product.identifier.includes('-used')" @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="btn btn-outline-primary btn-sm" title="Add used product"><i class="bi-plus-square"></i> Used</button>
                         </td>
                     </tr>
                     </tbody>
@@ -123,14 +125,40 @@
             </div>
         </modal>
         <barcode-link-modal @handled="getProducts()" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedProduct"/>
-        <modal v-model:show="photoModal" modal-title="Manage product photos">
-            <form @submit.prevent="uploadPhotos">
+        <modal v-model:show="usedItemModal" modal-title="Adding used catalog item">
+            <form @submit.prevent="createUsedItem($refs.usedItemQty.value)">
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
+                    <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
+                </ul>
                 <div class="mb-3">
-                    <label for="upload-photos" class="form-label">File</label>
-                    <input v-on:change="handleProductPhotos" multiple type="file" class="form-control" id="upload-photos" required>
+                    <label class="form-label">Quantity</label>
+                    <div class="input-group">
+                        <input ref="usedItemQty" type="number" min="1" class="form-control" required>
+                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
                 </div>
                 <div class="mb-3">
-                    <button type="submit" class="btn btn-success">Upload</button>
+                    <button type="submit" class="btn btn-success">Save</button>
+                </div>
+            </form>
+        </modal>
+        <modal v-model:show="adjustItemModal" modal-title="Adjusting catalog item">
+            <form @submit.prevent="adjustItem($refs.adjustItemQty.value)">
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
+                    <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
+                    <li class="list-group-item"><strong>On hand:</strong> {{ productOnHand[selectedProduct.id] }}</li>
+                </ul>
+                <div class="mb-3">
+                    <label class="form-label">Quantity</label>
+                    <div class="input-group">
+                        <input ref="adjustItemQty" type="number" class="form-control" required>
+                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-success">Save</button>
                 </div>
             </form>
         </modal>
@@ -174,7 +202,9 @@ export default {
                 upPhotos: [],
             },
             loadOnHandAutomatically: false,
-            loadPhotosAutomatically: false
+            loadPhotosAutomatically: false,
+            usedItemModal: false,
+            adjustItemModal: false,
         }
     },
 
@@ -214,7 +244,7 @@ export default {
                 productId: product.id,
                 quantity: qty
             }).then(() => {
-                this.getPos(product.catalogItem)
+                setTimeout(() => this.getPos(product.catalogItem), 500)
                 this.$snotify.success(`${product.catalogItem.identifier} shipped successfully!`)
             })
         },
@@ -331,6 +361,30 @@ export default {
                 this.selectedProduct = null
                 this.$snotify.success('Photos uploaded successfully!')
                 })
+        },
+
+        createUsedItem(qty) {
+            axios.post(`/api/products/${this.selectedProduct.id}/create-used-item`, {
+                quantity: qty
+            }).then(res => {
+                this.$snotify.success('New used product added successfully!')
+                this.clearFilter()
+                this.filter.identifier = res.data.identifier
+                this.getProducts()
+                this.usedItemModal = false
+            })
+        },
+
+        adjustItem(qty) {
+            axios.post(`/api/products/${this.selectedProduct.id}/adjust`, {
+                quantity: qty
+            }).then(res => {
+                this.$snotify.success('Product adjusted successfully!')
+                this.clearFilter()
+                this.filter.identifier = res.data.identifier
+                this.getProducts()
+                this.adjustItemModal = false
+            })
         }
     }
 }

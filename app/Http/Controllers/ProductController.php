@@ -281,4 +281,26 @@ class ProductController extends Controller
 
         return response()->json($files);
     }
+
+    public function createUsedItem($id, Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'quantity' => ['required', 'integer', 'min:1']
+        ]);
+
+        return $connectWiseService->createUsedCatalogItem($id, $request->get('quantity'));
+    }
+
+    public function adjust($id, Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'quantity' => ['required', 'integer']
+        ]);
+
+        $catalogItem = $connectWiseService->getCatalogItem($id);
+
+        $connectWiseService->catalogItemAdjust($catalogItem, $request->get('quantity'));
+
+        return $catalogItem;
+    }
 }
