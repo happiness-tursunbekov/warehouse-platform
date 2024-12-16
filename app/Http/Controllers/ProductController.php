@@ -236,6 +236,19 @@ class ProductController extends Controller
         ]);
     }
 
+    public function ship(Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'productId' => ['required', 'integer'],
+            'quantity' => ['required', 'integer', 'min:1']
+        ]);
+
+        $productId = $request->get('productId');
+        $quantity = $request->get('quantity');
+
+        return $connectWiseService->productPickShip($productId, $quantity);
+    }
+
     public function shipOptions(ConnectWiseService $connectWiseService)
     {
         $members = $connectWiseService->getSystemMembers(null, 'inactiveFlag=false and hideMemberInDispatchPortalFlag=false and lastName!=null');

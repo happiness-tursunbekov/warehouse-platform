@@ -65,6 +65,8 @@
             </div>
         </form>
         <modal v-model:show="posModal" :modal-title="'Po\'s - ' + (selectedProduct ? selectedProduct.identifier : '')">
+            <strong>On hand:</strong> {{ typeof productOnHand[selectedProduct.id] !== 'undefined' ? productOnHand[selectedProduct.id] : '' }}
+            <hr/>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead class="sticky-top">
@@ -88,6 +90,7 @@
                     </tbody>
                 </table>
             </div>
+            <hr/>
             <h6 class="h6">Projects</h6>
             <div class="table-responsive">
                 <table class="table table-striped">
@@ -98,6 +101,7 @@
                         <th>Phase</th>
                         <th>Quantity</th>
                         <th>Shipped Quantity</th>
+                        <th>Action</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -107,6 +111,12 @@
                         <td>{{ product.phase ? product.phase.name : '' }}</td>
                         <td>{{ product.quantity }}</td>
                         <td>{{ product.shippedQuantity }}</td>
+                        <td>
+                            <div class="input-group" :class="{ 'd-none': product.quantity === product.shippedQuantity }">
+                                <input :value="product.quantity - product.shippedQuantity" type="number" min="1" ref="shipQty" class="form-control"/>
+                                <button @click.prevent="ship(product, $refs.shipQty[key].value)" type="button" class="btn btn-success">Ship</button>
+                            </div>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
@@ -199,6 +209,16 @@ export default {
     },
 
     methods: {
+        ship(product, qty) {
+            axios.post(`/api/products/ship`, {
+                productId: product.id,
+                quantity: qty
+            }).then(() => {
+                this.getPos(product.catalogItem)
+                this.$snotify.success(`${product.catalogItem.identifier} shipped successfully!`)
+            })
+        },
+
         getProducts(isSearch) {
             if (isSearch) {
                 this.filter.page = 1
@@ -258,6 +278,7 @@ export default {
         },
 
         getPos(item) {
+            this.getProductOnHand(item)
             this.selectedProduct = item
             axios.get(`/api/products/find-po-by-product?productIdentifier=${item.identifier}`).then(res => {
                 this.pos = res.data.items

@@ -20,6 +20,7 @@ Route::group([
         Route::prefix('/products')->group(function () {
             Route::get('/', [ProductController::class, 'index']);
             Route::post('receive', [ProductController::class, 'receive']);
+            Route::post('ship', [ProductController::class, 'ship']);
             Route::post('add-barcode', [ProductController::class, 'addBarcode']);
             Route::options('ship', [ProductController::class, 'shipOptions']);
             Route::post('ship', [ProductController::class, 'ship']);

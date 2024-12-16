@@ -97,6 +97,7 @@ export default {
                         }
                         barcode += e.key;
                     } else if (e.key === 'Enter' && barcode.length > 2) {
+                        e.preventDefault()
                         this.$store.dispatch('setBarcode', barcode)
                         if (!this.$route.meta.handlesBarcode) {
                             this.modal = true
