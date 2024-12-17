@@ -540,13 +540,14 @@ class ConnectWiseService
         else
             $values = [];
 
-        $values = array_merge($values, $barcodes);
+        $values = array_unique(array_merge($values, $barcodes));
 
         $barcode->value = json_encode($values);
 
         $customFields->push($barcode);
 
-        $catalogItem->customFields = $customFields;
+        $catalogItem->customFields = $customFields->sortBy('id')->values()->toArray();
+
 
         $this->http->put( "procurement/catalog/{$catalogItemId}?clientId=" . $this->clientId, [
             'json' => $catalogItem
@@ -652,7 +653,7 @@ class ConnectWiseService
 
         $customFields->push($group);
 
-        $project->customFields = $customFields->toJson();
+        $project->customFields = $customFields->toArray();
 
         $this->http->put( "project/projects/{$project->id}?clientId=" . $this->clientId, [
             'json' => $project
