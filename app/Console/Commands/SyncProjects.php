@@ -42,14 +42,13 @@ class SyncProjects extends Command
 //            return $project;
 //        });
 //        while (true) {
-//            $groups = collect($bigCommerceService->getCustomerGroups()->data)->map(function ($group) use ($projects, $connectWiseService) {
+//            $groups = collect($bigCommerceService->getCustomerGroups())->map(function ($group) use ($projects, $connectWiseService) {
+//                if ($group->id == 1) return false;
 //                return $connectWiseService->setProjectBigcommerceGroupId($projects->where('id', Str::numbers(explode(' - ', $group->name)[0]))->first(), $group->id);
 //            });
 //
 //            if ($groups->count() < 250)
 //                break;
 //        }
-
-        print_r($bigCommerceService->getCustomerGroups());
     }
 }

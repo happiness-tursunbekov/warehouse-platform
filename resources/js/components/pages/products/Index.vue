@@ -4,7 +4,7 @@
     </div>
     <div class="position-relative">
         <form @submit.prevent="getProducts(true)">
-            <div class="table-responsive">
+            <div class="table-responsive min-vh-100">
                 <table class="table table-striped">
                     <thead>
                     <tr>
@@ -56,10 +56,19 @@
                         <td>{{ product.price }}</td>
                         <td>{{ product.cost }}</td>
                         <td>
-                            <button @click.prevent="getPos(product)" type="button" class="btn btn-outline-primary btn-sm">Get PO's</button>
-                            <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="btn btn-outline-primary btn-sm" title="Adjust">Adjust</button>
-                            <button @click.prevent="showUploadPhotoModal(product)" type="button" class="btn btn-outline-primary btn-sm" title="Upload a photo"><i class="bi-upload"></i></button>
-                            <button v-if="!product.identifier.includes('-used')" @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="btn btn-outline-primary btn-sm" title="Add used product"><i class="bi-plus-square"></i> Used</button>
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi-three-dots-vertical"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                <div class="list-group">
+                                    <button @click.prevent="getPos(product)" type="button" class="list-group-item">Get PO's/Ship</button>
+                                    <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="list-group-item" title="Adjust">Adjust quantity</button>
+                                    <button @click.prevent="showUploadPhotoModal(product)" type="button" class="list-group-item" title="Upload a photo">Upload a photo</button>
+                                    <button v-if="!product.identifier.includes('-used')" @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="list-group-item" title="Add used product">Add used product</button>
+                                </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     </tbody>

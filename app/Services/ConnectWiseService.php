@@ -297,9 +297,14 @@ class ConnectWiseService
 
         $pickShip->pickedQuantity = $pickShip->shippedQuantity = $quantity;
 
-        $result = $this->http->put("procurement/products/{$id}/pickingShippingDetails/{$pickShip->id}?clientId=" . $this->clientId, [
-            'json' => $pickShip,
-        ]);
+        try {
+
+            $result = $this->http->put("procurement/products/{$id}/pickingShippingDetails/{$pickShip->id}?clientId=" . $this->clientId, [
+                'json' => $pickShip,
+            ]);
+        } catch (GuzzleException $e) {
+            return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())->errors[0]->message], 500);
+        }
 
         return json_decode($result->getBody()->getContents());
     }
@@ -501,13 +506,13 @@ class ConnectWiseService
 
     public function updateSubcategory(\stdClass $category)
     {
-//        try {
+        try {
             $result = $this->http->put("procurement/subcategories/{$category->id}?clientId={$this->clientId}", [
                 'json' => $category,
             ]);
-//        } catch (GuzzleException $e) {
-//            return [];
-//        }
+        } catch (GuzzleException $e) {
+            return [];
+        }
         return json_decode($result->getBody()->getContents());
     }
 
@@ -554,6 +559,38 @@ class ConnectWiseService
         ]);
 
         return $values;
+    }
+
+    public function setCatalogItemBigCommerceProductId(\stdClass $catalogItem, $bcProductId)
+    {
+        try {
+            $customFields = collect($catalogItem->customFields);
+
+            $bcProduct = $customFields->where('caption', 'BigCommerce Product ID')->first();
+
+            $customFields = $customFields->where('caption', '!=', 'BigCommerce Product ID');
+
+            $bcProduct->value = $bcProductId;
+
+            $customFields->push($bcProduct);
+
+            $catalogItem->customFields = $customFields->sortBy('id')->values()->toArray();
+
+            $this->updateCatalogItem($catalogItem);
+        } catch (GuzzleException $e) {
+            print_r($e->getResponse()->getBody()->getContents());
+            die();
+        }
+
+        return $catalogItem;
+    }
+
+    public function getBigCommerceProductId(\stdClass $catalogItem)
+    {
+        $bcProduct = collect($catalogItem->customFields)->where('caption', 'BigCommerce Product ID')->first();
+
+        return $bcProduct->value ?? null;
+
     }
 
     public function extractBarcodesFromCatalogItem(\stdClass $catalogItem) : array
@@ -753,5 +790,14 @@ class ConnectWiseService
 
 
         return $newCatalogItem;
+    }
+
+    public function updateCatalogItem(\stdClass $item)
+    {
+        $request = $this->http->put( "procurement/catalog/{$item->id}?clientId=" . $this->clientId, [
+            'json' => $item
+        ]);
+
+        return json_decode($request->getBody()->getContents());
     }
 }

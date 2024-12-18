@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Services\BigCommerceService;
 use App\Services\ConnectWiseService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 
 class SyncProducts extends Command
 {
@@ -24,18 +26,49 @@ class SyncProducts extends Command
     /**
      * Execute the console command.
      */
-    public function handle(ConnectWiseService $connectWiseService)
+    public function handle(ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
         $page = 1;
         while (true) {
-            $items = collect($connectWiseService->getCatalogItems($page, 'inactiveFlag=false'));
+//            $items = $connectWiseService->getCatalogItems($page, "inactiveFlag=false", null, null, 1000);
+//
+//            $items->map(function ($item) use ($connectWiseService, $bigCommerceService) {
+//                if (!$item) return false;
+//                $category = $connectWiseService->getCategory($item->category->id);
+//                $subcategory = $connectWiseService->getSubcategory($item->subcategory->id);
+//
+//                $categories = [$category->integrationXref];
+//
+//                if ($subcategory && @$subcategory->integrationXref) {
+//                    $categories[] = $subcategory->integrationXref;
+//                }
+//
+//                if ($subcategory && $subcategory->inactiveFlag) {
+//                    return false;
+//                }
+//
+//                $barcodes = $connectWiseService->extractBarcodesFromCatalogItem($item);
+//
+//                $product = $bigCommerceService->createProduct($item->sku ?? $item->identifier, $item->description, $item->description, $categories, $item->price, $item->cost, $barcodes[0] ?? '');
+//
+//                if (!$product) return false;
+//
+//                $connectWiseService->setCatalogItemBigCommerceProductId($item, $product->data->id);
+//            });
+//
+//            if ($items->count() < 1000)
+//                break;
+            $products = collect($bigCommerceService->getProducts($page, 250)->data);
 
-            $items->map(function ($item) use ($connectWiseService) {
-                $qty = $connectWiseService->getCatalogItemOnHand($item->id)->count;
+            $products->map(function ($product) use ($bigCommerceService) {
+                if ($product->id < 2298) return false;
+
+                $bigCommerceService->updateProduct($product->id, ['inventory_tracking' => "product"]);
+
+                echo $product->sku . "\n";
             });
 
-
-            if ($items->count() < 1000)
+            if ($products->count() < 250)
                 break;
             $page++;
         }
