@@ -55,4 +55,12 @@ class ConnectWiseController extends Controller
             'data' => $request->all()
         ]);
     }
+
+    public function invoice(Request $request)
+    {
+        WebhookLog::create([
+            'type' => 'Invoice',
+            'data' => $request->all()
+        ]);
+    }
 }

@@ -23,7 +23,7 @@ Route::prefix('/integration')->group(function () {
             Route::post('activity', [ConnectWiseController::class, 'activity']);
             Route::post('ticket', [ConnectWiseController::class, 'ticket']);
             Route::post('purchase-order', [ConnectWiseController::class, 'purchaseOrder']);
-            Route::post('agreement', [ConnectWiseController::class, 'agreement']);
+            Route::post('invoice', [ConnectWiseController::class, 'invoice']);
         });
     });
 
