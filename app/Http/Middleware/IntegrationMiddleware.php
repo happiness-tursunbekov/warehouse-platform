@@ -21,7 +21,7 @@ class IntegrationMiddleware
                 return \response()->json(['key' => 'Incorrect Key'], 422);
             }
 
-            $request->offsetUnset('key');
+            $request->replace( $request->except('key') );
 
             $request->merge([
                 'Entity' => json_decode($request->get('Entity'), true),
