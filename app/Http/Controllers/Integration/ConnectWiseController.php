@@ -31,4 +31,20 @@ class ConnectWiseController extends Controller
             'data' => $request->all()
         ]);
     }
+
+    public function ticket(Request $request)
+    {
+        WebhookLog::create([
+            'type' => 'Ticket',
+            'data' => $request->all()
+        ]);
+    }
+
+    public function purchaseOrder(Request $request)
+    {
+        WebhookLog::create([
+            'type' => 'PurchaseOrder',
+            'data' => $request->all()
+        ]);
+    }
 }
