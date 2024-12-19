@@ -15,10 +15,19 @@ class ConnectWiseController extends Controller
             'data' => $request->all()
         ]);
     }
-    public function projects(Request $request)
+
+    public function project(Request $request)
     {
         WebhookLog::create([
-            'type' => 'Projects',
+            'type' => 'Project',
+            'data' => $request->all()
+        ]);
+    }
+
+    public function activity(Request $request)
+    {
+        WebhookLog::create([
+            'type' => 'Activity',
             'data' => $request->all()
         ]);
     }
