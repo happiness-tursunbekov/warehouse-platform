@@ -17,8 +17,7 @@ class IntegrationMiddleware
     {
         if ($type == 'connect-wise') {
             $request->merge([
-                'Entity' => json_decode($request->get('Entity'), true),
-                'Headers' => $request->headers
+                'Entity' => json_decode($request->get('Entity'), true)
             ]);
         }
 
