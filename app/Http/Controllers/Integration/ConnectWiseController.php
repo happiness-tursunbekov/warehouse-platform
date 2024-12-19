@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Integrator;
+namespace App\Http\Controllers\Integration;
 
 use App\Http\Controllers\Controller;
 use App\Models\WebhookLog;
@@ -10,17 +10,13 @@ class ConnectWiseController extends Controller
 {
     public function productCatalog(Request $request)
     {
-        $data = $request->all();
-
         WebhookLog::create([
             'type' => 'ProductCatalog',
-            'data' => $data
+            'data' => $request->all()
         ]);
     }
     public function projects(Request $request)
     {
-
-
         WebhookLog::create([
             'type' => 'Projects',
             'data' => $request->all()

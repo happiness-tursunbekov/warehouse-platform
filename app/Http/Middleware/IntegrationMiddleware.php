@@ -15,9 +15,11 @@ class IntegrationMiddleware
      */
     public function handle(Request $request, Closure $next, string $type): Response
     {
-//        if ($type == 'connect-wise') {
-//
-//        }
+        if ($type == 'connect-wise') {
+            $request->merge([
+                'Entity' => json_decode($request->get('Entity'))
+            ]);
+        }
 
         return $next($request);
     }

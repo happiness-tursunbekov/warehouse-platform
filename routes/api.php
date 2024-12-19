@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Integrator\ConnectWiseController;
+use App\Http\Controllers\Integration\ConnectWiseController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Store\ProductController as StoreProductController;
