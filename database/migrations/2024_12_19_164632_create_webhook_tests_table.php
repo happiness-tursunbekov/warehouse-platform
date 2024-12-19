@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('webhook_tests', function (Blueprint $table) {
+        Schema::create('webhook_logs', function (Blueprint $table) {
             $table->id();
             $table->string('type');
             $table->jsonb('data');
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('webhook_tests');
+        Schema::dropIfExists('webhook_logs');
     }
 };
