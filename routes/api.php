@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Integrator\ConnectWiseController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Store\ProductController as StoreProductController;
@@ -10,6 +11,25 @@ use Illuminate\Support\Facades\Route;
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::get('/products/image/{attachmentId}/{fileName}', [ProductController::class, 'image']);
+
+
+Route::prefix('/integration')->group(function () {
+    Route::group([
+        'middleware' => 'integration:connect-wise'
+    ], function () {
+        Route::prefix('connect-wise')->group(function () {
+            Route::post('product-catalog', [ConnectWiseController::class, 'productCatalog']);
+        });
+    });
+
+    Route::group([
+        'middleware' => 'integration:big-commerce'
+    ], function () {
+        Route::prefix('big-commerce')->group(function () {
+
+        });
+    });
+});
 
 Route::group([
     'middleware' => 'auth:sanctum'

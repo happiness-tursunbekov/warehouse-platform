@@ -192,4 +192,9 @@ class BigCommerceService
             'json' => $attributes
         ]);
     }
+
+    public function deleteProduct($productId)
+    {
+        $this->http->delete("catalog/products/{$productId}");
+    }
 }

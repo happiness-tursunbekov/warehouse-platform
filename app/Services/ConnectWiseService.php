@@ -800,4 +800,53 @@ class ConnectWiseService
 
         return json_decode($request->getBody()->getContents());
     }
+
+    public function systemDocumentUploadTemp($file, $recordType, $recordId, $title, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
+    {
+//        $ext = $file->extension();
+//        if (in_array($ext, ['jpg', 'jpeg', 'png', 'avif', 'gif', 'webm'])) {
+//            $img = Image::read($file->path());
+//            if ($img->width() > 1920 || $img->height() > 1440) {
+//                $file = $img->scale(1920, 1440)->encode();
+//            }
+//        }
+
+//        $filename = md5($title) . '.jpg';
+
+        $request = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
+            'multipart' => [
+                [
+                    'name'     => 'file',
+                    'contents' => $file,
+                    'filename' => $title,
+                ],
+                [
+                    'name' => 'recordType',
+                    'contents' => $recordType
+                ],
+                [
+                    'name' => 'recordId',
+                    'contents' => $recordId
+                ],
+                [
+                    'name' => 'title',
+                    'contents' => $title
+                ],
+                [
+                    'name' => 'privateFlag',
+                    'contents' => $privateFlag ? 1 : 0
+                ],
+                [
+                    'name' => 'readonlyFlag',
+                    'contents' => $readonlyFlag ? 1 : 0
+                ],
+                [
+                    'name' => 'isAvatar',
+                    'contents' => $isAvatar ? 1 : 0
+                ]
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents());
+    }
 }
