@@ -17,14 +17,14 @@ class IntegrationMiddleware
     {
         if ($type == 'connect-wise') {
 
-            $hashedKey = hash('sha256', config('cw.private_key'), true);
+            if (config('cw.access_key') != $request->get('key')) {
+                return \response()->json(['key' => 'Incorrect Key'], 422);
+            }
 
-            // Compute HMAC-SHA256 using the hashed key
-            $hmac = hash_hmac('sha256', $request->get('Entity'), $hashedKey, true);
+            $request->offsetUnset('key');
 
             $request->merge([
                 'Entity' => json_decode($request->get('Entity'), true),
-                'Hash' => base64_encode($hmac)
             ]);
         }
 
