@@ -47,4 +47,12 @@ class ConnectWiseController extends Controller
             'data' => $request->all()
         ]);
     }
+
+    public function agreement(Request $request)
+    {
+        WebhookLog::create([
+            'type' => 'Agreement',
+            'data' => $request->all()
+        ]);
+    }
 }
