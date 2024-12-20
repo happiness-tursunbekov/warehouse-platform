@@ -23,9 +23,7 @@
                         <th scope="col"><input v-model="filter.barcode" type="text" class="form-control"/></th>
                         <th scope="col"><input v-model="filter.description" type="text" class="form-control"/></th>
                         <th scope="col"><button type="submit" class="btn btn-light">🔎</button></th>
-                        <th>
-                            <input id="loadOnHandAutomatically" type="checkbox" v-model="loadOnHandAutomatically" /><label for="loadOnHandAutomatically">Auto load</label>
-                        </th>
+                        <th></th>
                         <th>
                             <input id="loadPhotosAutomatically" type="checkbox" v-model="loadPhotosAutomatically" /><label for="loadPhotosAutomatically">Auto load</label>
                         </th>
@@ -44,8 +42,7 @@
                         <td>{{ product.description }}</td>
                         <td>{{ product.category.name }}</td>
                         <td>
-                            <button v-if="typeof productOnHand[product.id] === ('undefined' || null)" class="btn btn-success btn-sm" type="button" @click.prevent="getProductOnHand(product)">Load</button>
-                            <span v-else>{{ productOnHand[product.id] }}</span>
+                            {{ product.onHand }}
                         </td>
                         <td>
                             <button v-if="typeof productImages[product.id] === ('undefined' || null)" class="btn btn-success btn-sm" type="button" @click.prevent="getProductImages(product)">Load</button>
@@ -75,8 +72,8 @@
                 </table>
             </div>
         </form>
-        <modal v-model:show="posModal" :modal-title="'Po\'s - ' + (selectedProduct ? selectedProduct.identifier : '')">
-            <strong>On hand:</strong> {{ typeof productOnHand[selectedProduct.id] !== 'undefined' ? productOnHand[selectedProduct.id] : '' }}
+        <modal v-model:show="posModal" :modal-title="'Po\'s/Shipment - ' + (selectedProduct ? selectedProduct.identifier : '')">
+            <strong>On hand:</strong> {{ selectedProduct.onHand }}
             <hr/>
             <div class="table-responsive">
                 <table class="table table-striped">
@@ -157,7 +154,7 @@
                 <ul class="list-group">
                     <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
                     <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
-                    <li class="list-group-item"><strong>On hand:</strong> {{ productOnHand[selectedProduct.id] }}</li>
+                    <li class="list-group-item"><strong>On hand:</strong> {{ selectedProduct.onHand }}</li>
                 </ul>
                 <div class="mb-3">
                     <label class="form-label">Quantity</label>
@@ -186,7 +183,6 @@ export default {
     data() {
         return {
             catalogItems: [],
-            productOnHand: {},
             productImages: {},
             meta: {
                 total: 0,
@@ -210,7 +206,6 @@ export default {
                 rmPhotos: [],
                 upPhotos: [],
             },
-            loadOnHandAutomatically: false,
             loadPhotosAutomatically: false,
             usedItemModal: false,
             adjustItemModal: false,
@@ -229,11 +224,6 @@ export default {
                 this.clearFilter()
                 this.filter.barcode = val
                 this.getProducts()
-            }
-        },
-        'loadOnHandAutomatically' (val) {
-            if (val) {
-                this.getProductOnHand()
             }
         },
         'loadPhotosAutomatically' (val) {
@@ -272,25 +262,13 @@ export default {
             }).then(res => {
                 this.catalogItems = res.data.products
                 this.meta = res.data.meta
-            }).then(() => {
-                if (this.loadOnHandAutomatically) {
-                    this.getProductOnHand()
-                }
             })
         },
 
         getProductOnHand(product) {
-
-            if (!product) {
-                this.productOnHand = {}
-                this.catalogItems.map(product => {
-                    axios.get(`/api/products/${product.id}/on-hand`).then(res => {
-                        this.productOnHand[product.id] =  res.data
-                    })
-                })
-            } else {
+            if (product) {
                 axios.get(`/api/products/${product.id}/on-hand`).then(res => {
-                    this.productOnHand[product.id] =  res.data
+                    product.onHand = res.data
                 })
             }
         },

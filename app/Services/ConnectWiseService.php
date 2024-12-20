@@ -849,4 +849,23 @@ class ConnectWiseService
 
         return json_decode($request->getBody()->getContents());
     }
+
+    public function getProductCatalogOnHand($page=null, $conditions=null, $fields=null, $pageSize=25)
+    {
+        try {
+            $result = $this->http->get('procurement/warehouseBins/1/inventoryOnHand', [
+                'query' => [
+                    'page' => $page,
+                    'clientId' => $this->clientId,
+                    'conditions' => $conditions,
+                    'fields' => $fields,
+                    'pageSize' => $pageSize
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
 }

@@ -39,7 +39,7 @@ class BigCommerceService
                 ],
             ]);
         } catch (GuzzleException $e) {
-            return [];
+            return new \stdClass();
         }
         return json_decode($result->getBody()->getContents());
     }

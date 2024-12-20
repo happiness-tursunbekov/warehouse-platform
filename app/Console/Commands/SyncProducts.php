@@ -30,44 +30,42 @@ class SyncProducts extends Command
     {
         $page = 1;
         while (true) {
-            $items = collect($connectWiseService->getCatalogItems($page, "inactiveFlag=false", null, null, 1000));
-
-            $items->map(function ($item) use ($connectWiseService, $bigCommerceService) {
-                if (!$item) return false;
-                $category = $connectWiseService->getCategory($item->category->id);
-                $subcategory = $connectWiseService->getSubcategory($item->subcategory->id);
-
-                $categories = [$category->integrationXref];
-
-                if ($subcategory && @$subcategory->integrationXref) {
-                    $categories[] = $subcategory->integrationXref;
-                }
-
-                if ($subcategory && $subcategory->inactiveFlag) {
-                    return false;
-                }
-
-                $barcodes = $connectWiseService->extractBarcodesFromCatalogItem($item);
-
-                $product = $bigCommerceService->createProduct($item->sku ?? $item->identifier, $item->description, $item->description, $categories, $item->price, $item->cost, $barcodes[0] ?? '');
-
-                if (!$product) return false;
-            });
-
-            if ($items->count() < 1000)
-                break;
-//            $products = collect($bigCommerceService->getProducts($page, 250)->data);
+//            $items = collect($connectWiseService->getCatalogItems($page, "inactiveFlag=false", null, null, 1000));
 //
-//            $products->map(function ($product) use ($bigCommerceService) {
-//                if ($product->id < 2298) return false;
+//            $items->map(function ($item) use ($connectWiseService, $bigCommerceService) {
+//                if (!$item) return false;
+//                $category = $connectWiseService->getCategory($item->category->id);
+//                $subcategory = $connectWiseService->getSubcategory($item->subcategory->id);
 //
-//                $bigCommerceService->updateProduct($product->id, ['inventory_tracking' => "product"]);
+//                $categories = [$category->integrationXref];
 //
-//                echo $product->sku . "\n";
+//                if ($subcategory && @$subcategory->integrationXref) {
+//                    $categories[] = $subcategory->integrationXref;
+//                }
+//
+//                if ($subcategory && $subcategory->inactiveFlag) {
+//                    return false;
+//                }
+//
+//                $barcodes = $connectWiseService->extractBarcodesFromCatalogItem($item);
+//
+//                $product = $bigCommerceService->createProduct($item->sku ?? $item->identifier, $item->description, $item->description, $categories, $item->price, $item->cost, $barcodes[0] ?? '');
+//
+//                if (!$product) return false;
 //            });
 //
-//            if ($products->count() < 250)
+//            if ($items->count() < 1000)
 //                break;
+            $products = collect($bigCommerceService->getProducts($page, 250)->data);
+
+            $products->map(function ($product) use ($bigCommerceService) {
+                $bigCommerceService->updateProduct($product->id, ['inventory_tracking' => "variant"]);
+
+                echo $product->sku . "\n";
+            });
+
+            if ($products->count() < 250)
+                break;
             $page++;
         }
     }

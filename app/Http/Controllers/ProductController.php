@@ -41,17 +41,18 @@ class ProductController extends Controller
 
         $page = (int)$request->get('page', 1);
 
-        $products = $connectWiseService->getCatalogItems($page, $conditions, $customFieldConditions);
+        $products = collect($connectWiseService->getCatalogItems($page, $conditions, $customFieldConditions));
 
         $qty = $connectWiseService->getCatalogItemsQty($conditions)->count ?? 0;
 
         if ($qty > 0) {
-            $products = array_map(function (\stdClass $product) {
-                $barcode = collect($product->customFields)->where('id', 9)->first();
-                $product->barcodes = isset($barcode->value) ? json_decode($barcode->value) : [];
+            $onHands = collect($connectWiseService->getProductCatalogOnHand(null, "catalogItem/id in ({$products->pluck('id')->join(',')})", null, $products->count()));
+            $products->map(function (\stdClass $product) use ($connectWiseService, $onHands) {
+                $product->barcodes = $connectWiseService->extractBarcodesFromCatalogItem($product);
                 $product->files = [];
+                $product->onHand = $onHands->where('catalogItem.id', $product->id)->first()->onHand ?? 0;
                 return $product;
-            }, $products);
+            });
         }
 
         return response()->json([
