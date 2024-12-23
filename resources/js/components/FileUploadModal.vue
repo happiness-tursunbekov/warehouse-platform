@@ -1,6 +1,7 @@
 <template>
     <modal v-model:show="modal" :modal-title="modalTitle">
         <form @submit.prevent="$emit('upload', files);files=[]">
+            <slot/>
             <div class="mb-3">
                 <label for="upload-file-modal" class="form-label">File</label>
                 <input :accept="accept.join(',')" v-on:change="handleFiles" :multiple="multiple" type="file" class="form-control" id="upload-file-modal" :required="!files.length">

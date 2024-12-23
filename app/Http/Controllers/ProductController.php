@@ -187,22 +187,25 @@ class ProductController extends Controller
     public function uploadPoAttachment(Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf'],
+            'files.*' => ['required', 'file'],
             'poId' => ['required', 'integer']
         ]);
-        $file = $request->file('file');
+        $files = $request->file('files');
         $poId = $request->get('poId');
 
-        $result = $connectWiseService->systemDocumentUpload(
-            $file,
-            'PurchaseOrder',
-            $poId,
-            'Packing Slip'
-        );
+        $result = [];
+        foreach ($files as $file) {
+            $result[] = $connectWiseService->systemDocumentUpload(
+                $file,
+                'PurchaseOrder',
+                $poId,
+                'Packing Slip'
+            );
+        }
 
         return response()->json([
             'code' => 'SUCCESS',
-            'item' => $result
+            'items' => $result
         ]);
     }
 

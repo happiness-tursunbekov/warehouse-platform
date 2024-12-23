@@ -168,7 +168,7 @@
                 </div>
             </form>
         </modal>
-        <file-upload-modal @upload="uploadPhotos" v-model:show="photoModal" :accept="['image/*']" modal-title="Manage product photos"/>
+        <file-upload-modal @upload="uploadPhotos" v-model:show="photoModal" :accept="['image/*']" modal-title="Manage product photos" multiple/>
     </div>
 </template>
 

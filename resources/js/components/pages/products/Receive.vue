@@ -113,29 +113,21 @@
         </form>
     </modal>
     <barcode-link-modal @handled="getItems" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedItem ? selectedItem.product : null"/>
-    <modal v-model:show="packingSlipModal" modal-title="Upload an attachment">
-        <form @submit.prevent="packingSlipUpload">
-            <div class="mb-3">
-                <label for="attachment-po-id" class="form-label">Po</label>
-                <input v-if="packingSlip.po" readonly :value="packingSlip.po.poNumber" type="text" class="form-control" id="attachment-po-id" placeholder="Po" required>
-            </div>
-            <div class="mb-3">
-                <label for="attachment-file" class="form-label">File</label>
-                <input v-on:change="e => { packingSlip.file = e.target.files[0] }" type="file" class="form-control" id="attachment-file" required>
-            </div>
-            <div class="mb-3">
-                <button type="submit" class="btn btn-success">Upload</button>
-            </div>
-        </form>
-    </modal>
+    <file-upload-modal v-model:show="packingSlipModal" modal-title="Upload an attachment" @upload="packingSlipUpload" :accept="['image/*', 'application/pdf']" multiple>
+        <div class="mb-3">
+            <label for="attachment-po-id" class="form-label">Po</label>
+            <input v-if="packingSlip.po" readonly :value="packingSlip.po.poNumber" type="text" class="form-control" id="attachment-po-id" placeholder="Po" required>
+        </div>
+    </file-upload-modal>
 </template>
 
 <script>
 import Modal from "../../Modal.vue";
 import BarcodeLinkModal from "../../BarcodeLinkModal.vue";
+import FileUploadModal from "../../FileUploadModal.vue";
 export default {
     name: "Receive",
-    components: {BarcodeLinkModal, Modal},
+    components: {FileUploadModal, BarcodeLinkModal, Modal},
     data() {
         return {
             modal: false,
@@ -150,8 +142,7 @@ export default {
             selectedItem: null,
             barcode: this.$route.query.barcode || '',
             packingSlip: {
-                po: null,
-                file: null
+                po: null
             },
             pos: []
         }
@@ -255,16 +246,17 @@ export default {
             this.packingSlip.po = item
         },
 
-        packingSlipUpload() {
+        packingSlipUpload(files) {
             const formData = new FormData()
-            formData.append('file', this.packingSlip.file)
+            for (let i = 0; i < files.length; i++) {
+                formData.append(`files[${i}]`, files[i]);
+            }
             formData.append('poId', this.packingSlip.po.id)
             axios.post('/api/products/upload-po-attachment', formData).then(res => {
                 switch (res.data.code) {
                     case 'SUCCESS':
                         this.$snotify.success(`File uploaded successfully!`)
                         this.packingSlipModal = false
-                        this.packingSlip.file = null
                         this.packingSlip.po = null
                         this.packingSlipModal = false
                         break;
