@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Products</h1>
+        <h1 class="h2">Product Catalog</h1>
     </div>
     <div class="position-relative">
         <form @submit.prevent="getProducts(true)">
@@ -168,6 +168,7 @@
                 </div>
             </form>
         </modal>
+        <file-upload-modal @upload="uploadPhotos" v-model:show="photoModal" :accept="['image/*']" modal-title="Manage product photos"/>
     </div>
 </template>
 
@@ -175,10 +176,11 @@
 import Pagination from "../../Pagination.vue";
 import Modal from "../../Modal.vue";
 import BarcodeLinkModal from "../../BarcodeLinkModal.vue";
+import FileUploadModal from "../../FileUploadModal.vue";
 
 export default {
     name: "Index",
-    components: {BarcodeLinkModal, Modal, Pagination},
+    components: {FileUploadModal, BarcodeLinkModal, Modal, Pagination},
 
     data() {
         return {
@@ -262,6 +264,10 @@ export default {
             }).then(res => {
                 this.catalogItems = res.data.products
                 this.meta = res.data.meta
+            }).then(() => {
+                if (this.loadPhotosAutomatically) {
+                    this.getProductImages();
+                }
             })
         },
 
@@ -321,17 +327,11 @@ export default {
             this.photoModal = true
         },
 
-        handleProductPhotos(e) {
-            for (let i = 0; i < e.target.files.length; i++) {
-                this.productForm.upPhotos.push(e.target.files[i]);
-            }
-        },
-
-        uploadPhotos() {
+        uploadPhotos(files) {
             let formData = new FormData();
 
-            for (let i = 0; i < this.productForm.upPhotos.length; i++) {
-                formData.append(`images[${i}]`, this.productForm.upPhotos[i]);
+            for (let i = 0; i < files.length; i++) {
+                formData.append(`images[${i}]`, files[i]);
             }
 
             axios.post('/api/products/' + this.selectedProduct.id + '/upload', formData, {
@@ -380,3 +380,4 @@ export default {
 <style scoped>
 
 </style>
+

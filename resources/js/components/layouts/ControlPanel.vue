@@ -78,8 +78,8 @@
                             </li>
                             <li class="nav-item">
                                 <router-link class="nav-link d-flex align-items-center gap-2" :to="{ name: 'control-panel.products.index' }" :class="{ 'active': $route.name === 'products.index' }">
-                                    <i class="bi-cart"></i>
-                                    Products
+                                    <i class="bi-basket2"></i>
+                                    Product Catalog
                                 </router-link>
                             </li>
                             <li class="nav-item">

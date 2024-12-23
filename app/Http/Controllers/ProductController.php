@@ -266,10 +266,8 @@ class ProductController extends Controller
     public function upload($productId, Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
-            'images.*' => 'required|image|mimes:jpeg,png,jpg,avif'
+            'images.*' => 'required|image'
         ]);
-
-        $files = [];
 
         foreach ($request->file('images') as $image) {
             $files[] = $connectWiseService->systemDocumentUpload(
