@@ -113,6 +113,16 @@ class ConnectWiseService
         return json_decode($result->getBody()->getContents());
     }
 
+    public function purchaseOrder(int $id)
+    {
+        try {
+            $result = $this->http->get('procurement/purchaseorders/' . $id);
+        } catch (GuzzleException $e) {
+            return new \stdClass();
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
     public function purchaseOrderItems($id, $page=null, $conditions=null, $fields=null)
     {
         $po = $this->purchaseOrders(null, 'id=' . $id)[0];
@@ -133,33 +143,60 @@ class ConnectWiseService
         return array_map(function (\stdClass $item) use ($po) {
             $item->poId = $po->id;
             $item->poNumber = $po->poNumber;
+            $item->poStatus = $po->status;
+            $item->poClosedFlag = $po->closedFlag;
+            $item->poCanceledFlag = $po->canceledFlag;
             return $item;
         }, json_decode($result->getBody()->getContents()));
     }
 
     public function getOpenPoItems() : Collection
     {
-        if (cache()->has('openPoItems')) {
-            return cache()->get('openPoItems');
+        if (!cache()->has('poItems')) {
+            $poItems = $this->cachePos();
+        } else {
+            $poItems = cache()->get('poItems');
         }
 
-        $pos = $this->purchaseOrders(null, 'status/id in (1,3) and closedFlag = false', 'id,poNumber');
-
-        $items = new Collection();
-
-        foreach ($pos as $po) {
-            $items->push(...$this->getOpenPoItemsByPoId($po->id));
-        }
-        $items = $items->unique('id');
-
-        cache()->forever('openPoItems', $items);
-
-        return $items;
+        return $poItems->whereIn('poStatus.id', [1,3])->where('poClosedFlag', false);
     }
 
-    private function setOpenPoItems($items) : bool
+    private function updatePoItems(int $poId, \stdClass $po=null) : Collection
     {
-        return cache()->forever('openPoItems', $items);
+        if (!$po) {
+            $po = $this->purchaseOrder($poId);
+        }
+
+        if (cache()->has('poItems')) {
+            $poItems = cache()->get('poItems');
+        } else {
+            $poItems = new Collection();
+        }
+
+        $poItems = $poItems->where('poId', '!=', $poId);
+
+        $poItems->push(...array_map(function ($poItem) use ($po) {
+            $item = new \stdClass();
+            $item->id = $poItem->id;
+            $item->description = $poItem->description;
+            $item->quantity = $poItem->quantity;
+            $item->dateReceived = @$poItem->dateReceived;
+            $item->receivedStatus = $poItem->receivedStatus;
+            $item->canceledFlag = $poItem->canceledFlag;
+            $item->closedFlag = $poItem->closedFlag;
+            $item->productId = $poItem->product->id;
+            $item->productIdentifier = $poItem->product->identifier;
+            $item->poId = $po->id;
+            $item->poNumber = $po->poNumber;
+            $item->poStatus = $po->status;
+            $item->poClosedFlag = $po->closedFlag;
+            $item->poCanceledFlag = $po->canceledFlag;
+            return $item;
+        }, $this->purchaseOrderItems($po->id)));
+
+        cache()->forever('poItems', $poItems);
+
+        return $poItems;
     }
 
     /**
@@ -191,8 +228,7 @@ class ConnectWiseService
         $items = $items->where('poId', '!=', $poId);
         $items->push(...$this->getOpenPoItemsByPoId($poId));
 
-
-        $this->setOpenPoItems($items);
+        $this->updatePoItems($poId);
 
         $result = json_decode($result->getBody()->getContents());
 
@@ -232,27 +268,11 @@ class ConnectWiseService
     public function cachePos()
     {
         $poItems = new Collection();
-        $pos = $this->purchaseOrders(null, null, 'id,poNumber', 'id desc');
+        $pos = $this->purchaseOrders(null, null, 'id,poNumber,status,closedFlag,canceledFlag', 'id desc');
 
         foreach ($pos as $po) {
-            $poItems->push(...array_map(function ($poItem) use ($po) {
-                $item = new \stdClass();
-                $item->id = $poItem->id;
-                $item->description = $poItem->description;
-                $item->quantity = $poItem->quantity;
-                $item->dateReceived = @$poItem->dateReceived;
-                $item->receivedStatus = $poItem->receivedStatus;
-                $item->canceledFlag = $poItem->canceledFlag;
-                $item->closedFlag = $poItem->closedFlag;
-                $item->productId = $poItem->product->id;
-                $item->productIdentifier = $poItem->product->identifier;
-                $item->poId = $po->id;
-                $item->poNumber = $po->poNumber;
-                return $item;
-            }, $this->purchaseOrderItems($po->id)));
+            $poItems = $this->updatePoItems($po->id, $po);
         }
-
-        cache()->forever('poItems', $poItems);
 
         return $poItems;
     }
