@@ -193,6 +193,8 @@ class ProductController extends Controller
         $file = $request->file('file');
         $poId = $request->get('poId');
 
+        return $file->getMimeType();
+
         $result = $connectWiseService->systemDocumentUpload(
             $file,
             'PurchaseOrder',

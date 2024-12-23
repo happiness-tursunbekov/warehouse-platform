@@ -342,7 +342,7 @@ class ConnectWiseService
     public function systemDocumentUpload(UploadedFile $file, $recordType, $recordId, $title, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
     {
         $ext = $file->extension();
-        if (Str::contains($file->getType(), 'image')) {
+        if (Str::contains($file->getMimeType(), 'image')) {
             $img = Image::read($file->path());
             if ($img->width() > 1920 || $img->height() > 1440) {
                 $file = $img->scale(1920, 1440)->encode();
