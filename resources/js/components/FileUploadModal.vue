@@ -5,13 +5,14 @@
                 <label for="upload-file-modal" class="form-label">File</label>
                 <input :accept="accept.join(',')" v-on:change="handleFiles" :multiple="multiple" type="file" class="form-control" id="upload-file-modal" :required="!files.length">
                 <div class="position-relative mt-3">
-                    <span ref="pasteDisplay" class="form-control">Paste file here</span>
+                    <span ref="pasteDisplay" class="form-control text-center" style="height: 100px">Paste file here</span>
                     <input ref="pasteInput" class="position-absolute opacity-0" readonly style="left:0;right:0;top:0;bottom:0" type="text" @drop="paste" @dragenter="onDragover" @mouseleave="onDragleave" @dragleave="onDragleave" />
                 </div>
-                <ul class="list-group">
-                    <li v-for="(file, key) in files" :key="key" class="list-group-item">
+                <ul v-if="files.length > 0" class="list-group mt-3">
+                    <li v-for="(file, key) in files" :key="key" class="list-group-item d-flex justify-content-between">
                         <img v-if="file.type.includes('image')" :src="URL.createObjectURL(file)" alt="img" style="max-height: 50px"/>
                         <span v-else>{{ file.type }}</span>
+                        <button @click.prevent="files.splice(key, 1)" type="button" class="btn btn-sm btn-link" title="Remove"><i class="bi-trash"></i></button>
                     </li>
                 </ul>
             </div>
@@ -52,6 +53,9 @@ export default {
 
         'modal' (val) {
             this.$emit('update:show', val)
+            if (!val) {
+                this.files = []
+            }
         }
     },
 
