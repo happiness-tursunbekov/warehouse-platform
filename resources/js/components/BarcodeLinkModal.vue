@@ -80,18 +80,18 @@ export default {
 
         'show' (val) {
             this.modal = val
-            if (this.product) {
-                this.$store.dispatch('setBarcode', '')
-            }
-            if (!this.product && this.barcode && val) {
-                this.searchItem()
-            }
-            if (!val) {
-                this.identifier = ''
+            if (val) {
+                if (this.product) {
+                    this.$store.dispatch('setBarcode', '')
+                }
+                if (!this.product && this.barcode) {
+                    setTimeout(() => {
+                        this.$refs.barcodeLinkIdentifier.focus()
+                    }, 100)
+                    this.searchItem()
+                }
             } else {
-                setTimeout(() => {
-                    this.$refs.barcodeLinkIdentifier.focus()
-                }, 100)
+                this.identifier = ''
             }
         }
     },
