@@ -116,7 +116,7 @@ class ConnectWiseService
     public function purchaseOrder(int $id)
     {
         try {
-            $result = $this->http->get('procurement/purchaseorders/' . $id);
+            $result = $this->http->get("procurement/purchaseorders/{$id}?clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
@@ -149,6 +149,17 @@ class ConnectWiseService
         }, json_decode($result->getBody()->getContents()));
     }
 
+    public function purchaseOrderItem($poId, $itemId)
+    {
+        try {
+            $result = $this->http->get("procurement/purchaseorders/{$poId}/lineitems/{$itemId}?clientId={$this->clientId}");
+        } catch (GuzzleException $e) {
+            return new \stdClass();
+        }
+
+        return json_decode($result->getBody()->getContents());
+    }
+
     public function getOpenPoItems() : Collection
     {
         if (!cache()->has('poItems')) {
@@ -158,6 +169,30 @@ class ConnectWiseService
         }
 
         return $poItems->whereIn('poStatus.id', [1,3])->where('poClosedFlag', false);
+    }
+
+    private function preparePoItem(int $poId, $poItem, \stdClass $po=null)
+    {
+        if (!$po) {
+            $po = $this->purchaseOrder($poId);
+        }
+
+        $item = new \stdClass();
+        $item->id = $poItem->id;
+        $item->description = $poItem->description;
+        $item->quantity = $poItem->quantity;
+        $item->dateReceived = @$poItem->dateReceived;
+        $item->receivedStatus = $poItem->receivedStatus;
+        $item->canceledFlag = $poItem->canceledFlag;
+        $item->closedFlag = $poItem->closedFlag;
+        $item->productId = $poItem->product->id;
+        $item->productIdentifier = $poItem->product->identifier;
+        $item->poId = $po->id;
+        $item->poNumber = $po->poNumber;
+        $item->poStatus = $po->status;
+        $item->poClosedFlag = $po->closedFlag;
+
+        return $item;
     }
 
     private function updatePoItems(int $poId, \stdClass $po=null) : Collection
@@ -175,21 +210,7 @@ class ConnectWiseService
         $poItems = $poItems->where('poId', '!=', $poId);
 
         $poItems->push(...array_map(function ($poItem) use ($po) {
-            $item = new \stdClass();
-            $item->id = $poItem->id;
-            $item->description = $poItem->description;
-            $item->quantity = $poItem->quantity;
-            $item->dateReceived = @$poItem->dateReceived;
-            $item->receivedStatus = $poItem->receivedStatus;
-            $item->canceledFlag = $poItem->canceledFlag;
-            $item->closedFlag = $poItem->closedFlag;
-            $item->productId = $poItem->product->id;
-            $item->productIdentifier = $poItem->product->identifier;
-            $item->poId = $po->id;
-            $item->poNumber = $po->poNumber;
-            $item->poStatus = $po->status;
-            $item->poClosedFlag = $po->closedFlag;
-            return $item;
+            return $this->preparePoItem($po->id, $poItem, $po);
         }, $this->purchaseOrderItems($po->id)));
 
         cache()->forever('poItems', $poItems);
@@ -200,18 +221,18 @@ class ConnectWiseService
     /**
      * @throws GuzzleException
      */
-    public function purchaseOrderItemReceive(\stdClass $item, $quantity)
+    public function purchaseOrderItemReceive(int $itemId, $quantity)
     {
+        $item = $this->getOpenPoItems()->where('id', $itemId)->first();
+
         $poId = $item->poId;
-        $poNumber = $item->poNumber;
+
+        $putItem = $this->purchaseOrderItem($poId, $itemId);
 
         if ($item->quantity != $quantity) {
-            $item->receivedStatus = 'PartiallyReceiveCloneRest';
+            $putItem->receivedStatus = 'PartiallyReceiveCloneRest';
         }
 
-        $putItem = json_decode(json_encode($item));
-        unset($putItem->poId);
-        unset($putItem->poNumber);
         $putItem->receivedQuantity = $quantity;
         $putItem->closedFlag = true;
         $result = $this->http->put("procurement/purchaseorders/{$poId}/lineitems/{$item->id}", [
@@ -225,10 +246,7 @@ class ConnectWiseService
 
         $result = json_decode($result->getBody()->getContents());
 
-        $result->poId = $poId;
-        $result->poNumber = $poNumber;
-
-        return $result;
+        return $this->preparePoItem($poId, $result);
     }
 
     public function findItemFromPos($itemIdentifier)
