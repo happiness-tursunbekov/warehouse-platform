@@ -209,8 +209,6 @@ class ConnectWiseService
             $item->receivedStatus = 'PartiallyReceiveCloneRest';
         }
 
-        $items = $this->getOpenPoItems();
-
         $putItem = json_decode(json_encode($item));
         unset($putItem->poId);
         unset($putItem->poNumber);
@@ -223,9 +221,6 @@ class ConnectWiseService
             'json' => $putItem
         ]);
 
-        $items = $items->where('poId', '!=', $poId);
-        $items->push(...$this->getOpenPoItemsByPoId($poId));
-
         $this->updatePoItems($poId);
 
         $result = json_decode($result->getBody()->getContents());
@@ -234,11 +229,6 @@ class ConnectWiseService
         $result->poNumber = $poNumber;
 
         return $result;
-    }
-
-    public function getOpenPoItemsByPoId($id)
-    {
-        return $this->purchaseOrderItems($id, null, 'closedFlag = false and canceledFlag = false');
     }
 
     public function findItemFromPos($itemIdentifier)
