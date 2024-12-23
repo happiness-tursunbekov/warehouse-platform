@@ -180,7 +180,7 @@ export default {
             }).then(res => {
                 switch (res.data.code) {
                     case 'SUCCESS':
-                        this.$snotify.success(`Product ${res.data.item.product.identifier} received successfully!`)
+                        this.$snotify.success(`Product ${res.data.item.productIdentifier} received successfully!`)
                         this.receiveModal = false
                         this.identifier = ''
                         this.barcode = ''
