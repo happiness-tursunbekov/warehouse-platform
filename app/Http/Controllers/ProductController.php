@@ -99,12 +99,12 @@ class ProductController extends Controller
         $item = $poItems->where('id', $id)->first();
 
         if (!$item)
-            return response()->json(['code' => 'NOT_FOUND', 'message' => 'Try to search by the description on "Products" section!']);
+            return response()->json(['code' => 'NOT_FOUND', 'message' => 'Try to search by the description on "Products" section!'], 422);
 
         try {
             $item = $connectWiseService->purchaseOrderItemReceive($item, $quantity);
         } catch (GuzzleException $e) {
-            return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())->errors[0]->message]);
+            return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())->errors[0]->message], 500);
         }
 
         return response()->json(['code' => 'SUCCESS', 'item' => $item]);
