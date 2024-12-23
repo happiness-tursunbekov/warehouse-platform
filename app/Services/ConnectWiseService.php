@@ -188,7 +188,7 @@ class ConnectWiseService
             $item->poId = $po->id;
             $item->poNumber = $po->poNumber;
             $item->poStatus = $po->status;
-            $item->poCanceledFlag = $po->canceledFlag;
+            $item->poClosedFlag = $po->closedFlag;
             return $item;
         }, $this->purchaseOrderItems($po->id)));
 
