@@ -389,8 +389,7 @@ export default {
             }).then(res => {
                 this.$snotify.success('Product adjusted successfully!')
                 this.clearFilter()
-                this.filter.identifier = res.data.identifier
-                this.getProducts()
+                this.getProductOnHand(this.selectedProduct)
                 this.adjustItemModal = false
             })
         }
