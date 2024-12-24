@@ -381,17 +381,18 @@ export default {
         },
 
         adjustItem(qty) {
-            if (qty !== '0') {
-                axios.post(`/api/products/${this.selectedProduct.id}/adjust`, {
-                    quantity: qty
-                }).then(res => {
-                    this.$snotify.success('Product adjusted successfully!')
-                    this.clearFilter()
-                    this.filter.identifier = res.data.identifier
-                    this.getProducts()
-                    this.adjustItemModal = false
-                })
+            if (qty === '0') {
+                return this.$snotify.error('Quantity must be positive or negative')
             }
+            return axios.post(`/api/products/${this.selectedProduct.id}/adjust`, {
+                quantity: qty
+            }).then(res => {
+                this.$snotify.success('Product adjusted successfully!')
+                this.clearFilter()
+                this.filter.identifier = res.data.identifier
+                this.getProducts()
+                this.adjustItemModal = false
+            })
         }
     }
 }
