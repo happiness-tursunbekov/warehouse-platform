@@ -121,14 +121,14 @@
                         <td>{{ product.shippedQuantity }}</td>
                         <td>
                             <div class="d-flex justify-content-between">
-                                <div class="input-group" :class="{ 'd-none': product.quantity === product.shippedQuantity }">
+                                <form @submit.prevent="ship(product, $refs.shipQty[key].value)" class="input-group" :class="{ 'd-none': product.quantity === product.shippedQuantity }">
                                     <input required :value="product.quantity - product.shippedQuantity" type="number" min="1" :max="product.quantity - product.shippedQuantity" ref="shipQty" class="form-control" style="max-width: 80px"/>
-                                    <button @click.prevent="ship(product, $refs.shipQty[key].value)" type="button" class="btn btn-success">Ship</button>
-                                </div>
-                                <div class="input-group" :class="{ 'd-none': product.shippedQuantity === 0 }">
+                                    <button type="submit" class="btn btn-success">Ship</button>
+                                </form>
+                                <form @submit.prevent="unship(product, $refs.unshipQty[key].value)" class="input-group" :class="{ 'd-none': product.shippedQuantity === 0 }">
                                     <input required :value="0" type="number" min="1" :max="product.shippedQuantity" ref="unshipQty" class="form-control"  style="max-width: 80px"/>
-                                    <button @click.prevent="unship(product, $refs.unshipQty[key].value)" type="button" class="btn btn-danger">Return</button>
-                                </div>
+                                    <button type="submit" class="btn btn-danger">Return</button>
+                                </form>
                             </div>
                         </td>
                     </tr>
@@ -253,6 +253,7 @@ export default {
             }).then(() => {
                 setTimeout(() => this.getPos(product.catalogItem), 500)
                 this.$snotify.success(`${product.catalogItem.identifier} shipped successfully!`)
+                this.getProductOnHand(product)
             })
         },
 
@@ -263,6 +264,7 @@ export default {
             }).then(() => {
                 setTimeout(() => this.getPos(product.catalogItem), 500)
                 this.$snotify.success(`${product.catalogItem.identifier} unshipped successfully!`)
+                this.getProductOnHand(product)
             })
         },
 
