@@ -142,7 +142,7 @@ class ProductController extends Controller
         }
 
         if (!$catalogItems)
-            $catalogItems = collect($connectWiseService->getCatalogItems(null, "id in ({$poItems->pluck('product.id')->values()->join(',')})"));
+            $catalogItems = collect($connectWiseService->getCatalogItems(null, "id in ({$poItems->pluck('productId')->values()->join(',')})"));
 
         return response()->json([
             'items' => $poItems->map(function (\stdClass $product) use ($catalogItems, $connectWiseService) {

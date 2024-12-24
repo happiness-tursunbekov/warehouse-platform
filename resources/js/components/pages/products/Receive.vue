@@ -96,7 +96,7 @@
     <modal v-model:show="receiveModal" modal-title="Receive">
         <form @submit.prevent="receive">
             <ul v-if="selectedItem" class="list-group list-group-flush mb-2">
-                <li class="list-group-item"><strong>Product ID:</strong> {{ selectedItem.product.identifier }}</li>
+                <li class="list-group-item"><strong>Product ID:</strong> {{ selectedItem.productIdentifier }}</li>
                 <li class="list-group-item"><strong>Description:</strong> {{ selectedItem.description }}</li>
                 <li class="list-group-item"><strong>PO Number:</strong> {{ selectedItem.poNumber }}</li>
                 <li class="list-group-item"><strong>Quantity expecting:</strong> {{ selectedItem.quantity }}</li>
@@ -112,7 +112,7 @@
             </template>
         </form>
     </modal>
-    <barcode-link-modal @handled="getItems" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedItem ? selectedItem.product : null"/>
+    <barcode-link-modal @handled="getItems" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedItem ? { id: selectedItem.productId, identifier: selectedItem.productIdentifier } : null"/>
     <file-upload-modal v-model:show="packingSlipModal" modal-title="Upload an attachment" @upload="packingSlipUpload" :accept="['image/*', 'application/pdf']" multiple>
         <div class="mb-3">
             <label for="attachment-po-id" class="form-label">Po</label>
@@ -218,7 +218,7 @@ export default {
         },
 
         selectItem(item) {
-            this.identifier = item.product.identifier
+            this.identifier = item.productIdentifier
             this.selectedItem = item
             this.quantity = item.quantity
             this.modal = false

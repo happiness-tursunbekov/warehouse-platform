@@ -141,11 +141,7 @@ class ConnectWiseService
         }
 
         return array_map(function (\stdClass $item) use ($po) {
-            $item->poId = $po->id;
-            $item->poNumber = $po->poNumber;
-            $item->poStatus = $po->status;
-            $item->poClosedFlag = $po->closedFlag;
-            return $item;
+            return $this->preparePoItem($po->id, $item, $po);
         }, json_decode($result->getBody()->getContents()));
     }
 
@@ -183,6 +179,7 @@ class ConnectWiseService
         $item->quantity = $poItem->quantity;
         $item->dateReceived = @$poItem->dateReceived;
         $item->receivedStatus = $poItem->receivedStatus;
+        $item->receivedQuantity = $poItem->receivedQuantity;
         $item->canceledFlag = $poItem->canceledFlag;
         $item->closedFlag = $poItem->closedFlag;
         $item->productId = $poItem->product->id;
