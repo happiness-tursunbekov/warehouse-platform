@@ -347,11 +347,13 @@ class ConnectWiseService
 
         $filename = md5($file->__toString()) . '.' . $ext;
 
+        $file = method_exists($file, 'getContent') ? $file->getContent() : $file;
+
         $request = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
             'multipart' => [
                 [
                     'name'     => 'file',
-                    'contents' => $file->getContent(),
+                    'contents' => $file,
                     'filename' => $filename,
                 ],
                 [
