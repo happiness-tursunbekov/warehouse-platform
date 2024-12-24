@@ -75,7 +75,7 @@
                 </thead>
                 <tbody>
                 <tr v-for="(item, key) in items" :key="key">
-                    <th v-if="item.product" scope="row">{{ item.product.identifier }}</th>
+                    <th scope="row">{{ item.productIdentifier }}</th>
                     <td>
                         <button v-if="!item.closedFlag && !item.cancelledFlag" @click.prevent="selectItem(item)" class="btn btn-success btn-sm" type="button">Receive</button>
                         <span v-else-if="item.cancelledFlag">Cancelled</span>

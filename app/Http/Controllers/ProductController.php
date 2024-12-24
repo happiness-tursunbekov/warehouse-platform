@@ -120,7 +120,7 @@ class ProductController extends Controller
         $catalogItems = null;
 
         if ($barcode) {
-            $catalogItems = $connectWiseService->getCatalogItemsByBarcode($barcode, null, null, 1000);
+            $catalogItems = $connectWiseService->getCatalogItemsByBarcode($barcode);
             if (count($catalogItems) == 0) {
                 return response()->json([
                     'items' => [],
@@ -128,7 +128,7 @@ class ProductController extends Controller
                 ]);
             }
             $catalogItems = collect($catalogItems);
-            $poItems = $connectWiseService->getOpenPoItems()->whereIn('product.id', $catalogItems->pluck('id')->values());
+            $poItems = $connectWiseService->getOpenPoItems()->whereIn('productId', $catalogItems->pluck('id')->values());
         }
 
         if ($identifier) {
@@ -146,7 +146,7 @@ class ProductController extends Controller
 
         return response()->json([
             'items' => $poItems->map(function (\stdClass $product) use ($catalogItems, $connectWiseService) {
-                $product->barcodes = $connectWiseService->extractBarcodesFromCatalogItem($catalogItems->where('id', $product->product->id)->first());
+                $product->barcodes = $connectWiseService->extractBarcodesFromCatalogItem($catalogItems->where('id', $product->productId)->first());
                 return $product;
             }),
             'code' => 'SUCCESS'
