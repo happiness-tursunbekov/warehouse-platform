@@ -320,7 +320,6 @@ class ConnectWiseService
     public function productPickShip($id, $quantity)
     {
         $pickShip = $this->getProductPickingShippingDetails($id, null, 'lineNumber=0')[0];
-
         $pickShip->pickedQuantity = $pickShip->shippedQuantity = $quantity;
 
         try {
@@ -329,7 +328,7 @@ class ConnectWiseService
                 'json' => $pickShip,
             ]);
         } catch (GuzzleException $e) {
-            return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())->errors[0]->message], 500);
+            return response()->json(['code' => 'ERROR', 'message' => $e->getResponse()->getBody()->getContents()], 500);
         }
 
         return json_decode($result->getBody()->getContents());
@@ -752,9 +751,8 @@ class ConnectWiseService
                             \"catalog_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/catalog/{$catalogItem->id}\"
                         }
                     },
-                    \"description\": \"Superior essex - 4x23 6A CMP Yellow\",
-                    \"quantityOnHand\": 0.00,
-                    \"unitCost\": 0.140000,
+                    \"description\": \"{$catalogItem->description}\",
+                    \"unitCost\": 0.00,
                     \"warehouse\": {
                         \"id\": 1,
                         \"name\": \"Warehouse\",

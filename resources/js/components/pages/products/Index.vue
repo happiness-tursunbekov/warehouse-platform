@@ -120,9 +120,15 @@
                         <td>{{ product.quantity }}</td>
                         <td>{{ product.shippedQuantity }}</td>
                         <td>
-                            <div class="input-group" :class="{ 'd-none': product.quantity === product.shippedQuantity }">
-                                <input :value="product.quantity - product.shippedQuantity" type="number" min="1" ref="shipQty" class="form-control"/>
-                                <button @click.prevent="ship(product, $refs.shipQty[key].value)" type="button" class="btn btn-success">Ship</button>
+                            <div class="d-flex justify-content-between">
+                                <div class="input-group" :class="{ 'd-none': product.quantity === product.shippedQuantity }">
+                                    <input required :value="product.quantity - product.shippedQuantity" type="number" min="1" :max="product.quantity - product.shippedQuantity" ref="shipQty" class="form-control" style="max-width: 80px"/>
+                                    <button @click.prevent="ship(product, $refs.shipQty[key].value)" type="button" class="btn btn-success">Ship</button>
+                                </div>
+                                <div class="input-group" :class="{ 'd-none': product.shippedQuantity === 0 }">
+                                    <input required :value="0" type="number" min="1" :max="product.shippedQuantity" ref="unshipQty" class="form-control"  style="max-width: 80px"/>
+                                    <button @click.prevent="unship(product, $refs.unshipQty[key].value)" type="button" class="btn btn-danger">Return</button>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -247,6 +253,16 @@ export default {
             }).then(() => {
                 setTimeout(() => this.getPos(product.catalogItem), 500)
                 this.$snotify.success(`${product.catalogItem.identifier} shipped successfully!`)
+            })
+        },
+
+        unship(product, qty) {
+            axios.post(`/api/products/unship`, {
+                productId: product.id,
+                quantity: qty
+            }).then(() => {
+                setTimeout(() => this.getPos(product.catalogItem), 500)
+                this.$snotify.success(`${product.catalogItem.identifier} unshipped successfully!`)
             })
         },
 
