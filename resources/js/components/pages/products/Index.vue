@@ -374,7 +374,6 @@ export default {
             }).then(res => {
                 this.$snotify.success('New used product added successfully!')
                 this.clearFilter()
-                this.filter.identifier = res.data.identifier
                 this.getProducts()
                 this.usedItemModal = false
             })

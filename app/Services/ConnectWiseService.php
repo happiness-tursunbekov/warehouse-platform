@@ -665,6 +665,14 @@ class ConnectWiseService
             'json' => $catalogItem
         ]);
 
+        if (!Str::contains($catalogItem->identifier, 'used)')) {
+            $usedItems = $this->getCatalogItems(null, "identifier like '{$catalogItem->identifier}(*' and identifier contains 'used'", null, null, 100);
+
+            foreach ($usedItems as $usedItem) {
+                $this->addBarcode($usedItem->id, $values);
+            }
+        }
+
         return $values;
     }
 
