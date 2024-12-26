@@ -77,25 +77,25 @@
                                 </router-link>
                             </li>
                             <li class="nav-item">
-                                <router-link class="nav-link d-flex align-items-center gap-2" :to="{ name: 'control-panel.products.index' }" :class="{ 'active': $route.name === 'products.index' }">
+                                <router-link class="nav-link d-flex align-items-center gap-2" :to="{ name: 'control-panel.products.index' }" :class="{ 'active': $route.name === 'control-panel.products.index' }">
                                     <i class="bi-basket2"></i>
                                     Product Catalog
                                 </router-link>
                             </li>
                             <li class="nav-item">
-                                <router-link :to="{ name: 'control-panel.products.receive' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'products.receive' }">
+                                <router-link :to="{ name: 'control-panel.products.receive' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.products.receive' }">
                                     <i class="bi-box-arrow-in-down"></i>
                                     Receive
                                 </router-link>
                             </li>
                             <li class="nav-item">
-                                <router-link :to="{ name: 'control-panel.products.link-barcode' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'products.link-barcode' }">
+                                <router-link :to="{ name: 'control-panel.products.link-barcode' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.products.link-barcode' }">
                                     <i class="bi-link"></i>
                                     Link Barcode
                                 </router-link>
                             </li>
                             <li class="nav-item">
-                                <router-link :to="{ name: 'control-panel.products.ship' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'products.ship' }">
+                                <router-link :to="{ name: 'control-panel.products.ship' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.products.ship' }">
                                     <i class="bi-box-arrow-up"></i>
                                     Ship
                                 </router-link>
