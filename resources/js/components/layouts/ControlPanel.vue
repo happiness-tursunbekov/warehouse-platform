@@ -105,7 +105,7 @@
 
                         <hr class="my-3">
 
-                        <ul class="nav flex-column mb-auto">
+                        <ul class="nav flex-column mb-auto" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu">
                             <li class="nav-item">
                                 <router-link :to="{ name: 'control-panel.reports' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.reports' }">
                                     <i class="bi-file-text"></i>
