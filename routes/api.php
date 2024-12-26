@@ -64,6 +64,8 @@ Route::group([
     });
 
     Route::get('/auth/user', [AuthController::class, 'user']);
+    Route::put('/auth/user', [AuthController::class, 'update']);
+    Route::get('/auth/user/reports', [AuthController::class, 'reports']);
 
     Route::prefix('/store')->group(function () {
         Route::options('products', [StoreProductController::class, 'options']);

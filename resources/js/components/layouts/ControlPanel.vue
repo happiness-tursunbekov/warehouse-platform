@@ -107,10 +107,16 @@
 
                         <ul class="nav flex-column mb-auto">
                             <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center gap-2" href="#">
+                                <router-link :to="{ name: 'control-panel.reports' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.reports' }">
+                                    <i class="bi-file-text"></i>
+                                    Reports
+                                </router-link>
+                            </li>
+                            <li class="nav-item">
+                                <router-link :to="{ name: 'control-panel.settings' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.settings' }">
                                     <i class="bi-gear-wide-connected"></i>
                                     Settings
-                                </a>
+                                </router-link>
                             </li>
                             <li class="nav-item">
                                 <a @click.prevent="$emit('signOut')" class="nav-link d-flex align-items-center gap-2" href="#">

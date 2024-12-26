@@ -264,7 +264,7 @@ export default {
             }).then(() => {
                 setTimeout(() => this.getPos(product.catalogItem), 500)
                 this.$snotify.success(`${product.catalogItem.identifier} unshipped successfully!`)
-                this.getProductOnHand(product)
+                this.getProductOnHand(product.catalogItem)
             })
         },
 

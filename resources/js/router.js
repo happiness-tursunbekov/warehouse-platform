@@ -8,6 +8,8 @@ import ProductsLinkBarcode from "./components/pages/products/LinkBarcode.vue";
 import ProductsShip from "./components/pages/products/Ship.vue";
 import Homepage from "./components/pages/Homepage.vue";
 import Login from "./components/pages/Login.vue";
+import Settings from "./components/pages/Settings.vue";
+import Reports from "./components/pages/Reports.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -29,6 +31,16 @@ const router = createRouter({
                     path: '/control-panel',
                     name: 'control-panel.index',
                     component: Scan
+                },
+                {
+                    path: 'settings',
+                    name: 'control-panel.settings',
+                    component: Settings
+                },
+                {
+                    path: 'reports',
+                    name: 'control-panel.reports',
+                    component: Reports
                 },
                 {
                     path: 'products',

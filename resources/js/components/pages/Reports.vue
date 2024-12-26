@@ -1,0 +1,117 @@
+<template>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Reports</h1>
+        <button @click.prevent="export2csv" type="button" class="btn btn-outline-success">Export as CSV</button>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <h5 v-if="!user.reportMode" class="text-danger h5">Report mode is off. Turn it on to use this feature. You can do it on Settings page :)</h5>
+            <div v-else>
+                <h5 class="h5">Product Shipment</h5>
+                <template v-if="reports.ProductShipment">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="sticky-top">
+                            <tr>
+                                <th>Action</th>
+                                <th>Product</th>
+                                <th>Project</th>
+                                <th>Company</th>
+                                <th>Phase</th>
+                                <th>Quantity</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="(shipment, key) in reports.ProductShipment" :key="key">
+                                <td>{{ shipment.action }}</td>
+                                <td>{{ shipment.item.productInfo.catalogItem.identifier }}</td>
+                                <td><span v-if="shipment.item.productInfo.project">#{{ shipment.item.productInfo.project.id }} - {{ shipment.item.productInfo.project.name }}</span></td>
+                                <td>{{ shipment.item.productInfo.company.name }}</td>
+                                <td>{{ shipment.item.productInfo.phase ? shipment.item.productInfo.phase.name : '' }}</td>
+                                <td>{{ shipment.item.shippedQuantity }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+                <template v-if="reports.UsedCatalogItem">
+                    <h5 class="h5">Used Catalog Item</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="sticky-top">
+                            <tr>
+                                <th>Action</th>
+                                <th>Catalog Item</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="(item, key) in reports.UsedCatalogItem" :key="key">
+                                <td>{{ item.action }}</td>
+                                <td>{{ item.identifier }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>
+<script>
+export default {
+    name: "Reports",
+
+    computed: {
+        user() {
+            return this.$store.getters.user
+        }
+    },
+
+    data() {
+        return {
+            reports: {}
+        }
+    },
+
+    mounted() {
+        this.fetchReports()
+    },
+
+    methods: {
+        fetchReports() {
+            axios.get('/api/auth/user/reports').then(res => {
+                this.reports = res.data
+            })
+        },
+
+        export2csv() {
+            let data = "";
+            const tableData = [];
+            const rows = document.querySelectorAll("table tr");
+            for (const row of rows) {
+                const rowData = [];
+                for (const [index, column] of row.querySelectorAll("th, td").entries()) {
+                    // To retain the commas in the "Description" column, we can enclose those fields in quotation marks.
+                    if ((index + 1) % 3 === 0) {
+                        rowData.push('"' + column.innerText + '"');
+                    } else {
+                        rowData.push(column.innerText);
+                    }
+                }
+                tableData.push(rowData.join(","));
+            }
+            data += tableData.join("\n");
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(new Blob([data], { type: "text/csv" }));
+            a.setAttribute("download", "reports.csv");
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    }
+}
+</script>
+
+<style scoped>
+
+</style>

@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
 use Psr\Http\Message\RequestInterface;
+use Psr\SimpleCache\InvalidArgumentException;
 
 class ConnectWiseService
 {
@@ -25,6 +26,75 @@ class ConnectWiseService
             'auth' => [config('cw.company_id') . '+' . config('cw.public_key'), config('cw.private_key')],
             'base_uri' => config('cw.base_uri'),
         ]);
+    }
+
+    public function addToReport($type, \stdClass $item, $action, $additional=null)
+    {
+        $user = \request()->user();
+
+        if ($user && $user->reportMode) {
+            $reportType = "{$user->id}-reports";
+            $reports = cache()->has($reportType) ? cache()->get($reportType) : new \stdClass();
+
+            if ($type == 'ProductShipment') {
+                $item->productInfo = $this->getProduct($item->productItem->id);
+            }
+
+            $newItem = new \stdClass();
+
+            $newItem->item = $item;
+            $newItem->action = $action;
+            $newItem->additional = $additional;
+
+            if (isset($reports->{$type})) {
+                $reports->{$type}->push($newItem);
+            } else {
+                $reports->{$type} = new Collection([$newItem]);
+            }
+
+            cache()->forever($reportType, $reports);
+        }
+    }
+
+    public function clearUserReports()
+    {
+        $user = \request()->user();
+
+        $reportType = "{$user->id}-reports";
+
+        try {
+            cache()->forget($reportType);
+        } catch (InvalidArgumentException $e) {}
+    }
+
+    public function getUserReport($type)
+    {
+        $user = \request()->user();
+
+        $reportType = "{$user->id}-reports";
+
+        $reports = cache()->has($reportType) ? cache()->get($reportType) : null;
+
+        if (!$reports || !isset($reports->{$type})) {
+            return new Collection();
+        }
+
+        return $reports->{$type};
+    }
+
+    public function getAllUserReports()
+    {
+        $user = \request()->user();
+
+        $reportType = "{$user->id}-reports";
+
+        $reports = cache()->has($reportType) ? cache()->get($reportType) : null;
+
+        if (!$reports) {
+            return new \stdClass();
+        }
+
+        return $reports;
     }
 
     public function getCatalogItems($page=null, $conditions=null, $customFieldConditions=null, $fields=null, $pageSize=25)
@@ -298,6 +368,16 @@ class ConnectWiseService
         return json_decode($result->getBody()->getContents());
     }
 
+    public function getProduct($id)
+    {
+        try {
+            $result = $this->http->get("procurement/products/{$id}?clientId={$this->clientId}");
+        } catch (GuzzleException $e) {
+            return new \stdClass();
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
     public function getProductPickingShippingDetails($id, $page=null, $conditions=null)
     {
         try {
@@ -320,15 +400,18 @@ class ConnectWiseService
         $pickShip->pickedQuantity = $pickShip->shippedQuantity = $quantity;
 
         try {
-
-            $result = $this->http->put("procurement/products/{$id}/pickingShippingDetails/{$pickShip->id}?clientId=" . $this->clientId, [
+            $request = $this->http->put("procurement/products/{$id}/pickingShippingDetails/{$pickShip->id}?clientId=" . $this->clientId, [
                 'json' => $pickShip,
             ]);
         } catch (GuzzleException $e) {
             return response()->json(['code' => 'ERROR', 'message' => $e->getResponse()->getBody()->getContents()], 500);
         }
 
-        return json_decode($result->getBody()->getContents());
+        $result = json_decode($request->getBody()->getContents());
+
+        $this->addToReport('ProductShipment', $result, $quantity < 0 ? 'unshipped/returned' : 'shipped');
+
+        return $result;
     }
 
     /**
@@ -811,6 +894,7 @@ class ConnectWiseService
 
         $this->catalogItemAdjust($newCatalogItem, $qty);
 
+        $this->addToReport('UsedCatalogItem', $newCatalogItem, 'added');
 
         return $newCatalogItem;
     }
