@@ -6,7 +6,7 @@
     <div class="row">
         <div class="col-12">
             <h5 v-if="!user.reportMode" class="text-danger h5">Report mode is off. Turn it on to use this feature. You can do it on Settings page :)</h5>
-            <h5 v-else-if="!noRecord" class="h5">No records yet :)</h5>
+            <h5 v-else-if="noRecord" class="h5">No records yet :)</h5>
             <div v-else>
                 <template v-if="reports.ProductShipment">
                     <h5 class="h5">Product Shipment</h5>
