@@ -886,8 +886,8 @@ class ConnectWiseService
 
         $catalogItem->id = 0;
 
-        $catalogItem->price = $catalogItem->price * 0.3;
-        $catalogItem->cost = $catalogItem->cost * 0.3;
+        $catalogItem->price = round($catalogItem->price/3, 2);
+        $catalogItem->cost = round($catalogItem->cost/3, 2);
 
         $request = $this->http->post('procurement/catalog?clientId=' . $this->clientId, [
             'json' => $catalogItem
