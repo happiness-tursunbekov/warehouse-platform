@@ -12,7 +12,7 @@
                 <ul v-if="files.length > 0" class="list-group mt-3">
                     <li v-for="(file, key) in files" :key="key" class="list-group-item d-flex justify-content-between">
                         <img v-if="file.type.includes('image')" :src="URL.createObjectURL(file)" alt="img" style="max-height: 50px"/>
-                        <span v-else>{{ file.type }}</span>
+                        <span v-else>{{ file.name }}</span>
                         <button @click.prevent="files.splice(key, 1)" type="button" class="btn btn-sm btn-link" title="Remove"><i class="bi-trash"></i></button>
                     </li>
                 </ul>
@@ -111,6 +111,16 @@ export default {
                 files = e.dataTransfer.files
             } else if (e.clipboardData) {
                 files = e.clipboardData.files
+                const url = e.clipboardData.getData('text/plain')
+                if (url.startsWith('https://')) {
+                    fetch(url).then(res => {
+                        res.blob().then(blob => {
+                            const file = new File([blob], 'file.' + blob.type.split('/')[1].replace('jpeg', 'jpg'), { type: blob.type })
+                            this.files.push(file)
+                        })
+                    })
+                    return false
+                }
             } else {
                 files = []
             }
