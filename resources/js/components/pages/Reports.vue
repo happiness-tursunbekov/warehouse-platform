@@ -20,6 +20,7 @@
                                 <th>Company</th>
                                 <th>Phase</th>
                                 <th>Quantity</th>
+                                <th>Record Date</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -30,6 +31,7 @@
                                 <td>{{ shipment.item.productInfo.company.name }}</td>
                                 <td>{{ shipment.item.productInfo.phase ? shipment.item.productInfo.phase.name : '' }}</td>
                                 <td>{{ shipment.item.shippedQuantity }}</td>
+                                <td>{{ shipment.item._info.lastUpdated }}</td>
                             </tr>
                             </tbody>
                         </table>
@@ -43,12 +45,14 @@
                             <tr>
                                 <th>Action</th>
                                 <th>Catalog Item</th>
+                                <th>Record Date</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr v-for="(item, key) in reports.UsedCatalogItem" :key="key">
                                 <td>{{ item.action }}</td>
                                 <td>{{ item.item.identifier }}</td>
+                                <td>{{ item.item._info.dateEntered }}</td>
                             </tr>
                             </tbody>
                         </table>
