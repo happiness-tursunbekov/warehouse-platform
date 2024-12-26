@@ -113,12 +113,16 @@ export default {
                 files = e.clipboardData.files
                 const url = e.clipboardData.getData('text/plain')
                 if (url.startsWith('https://')) {
-                    fetch(url).then(res => {
-                        res.blob().then(blob => {
-                            const file = new File([blob], 'file.' + blob.type.split('/')[1].replace('jpeg', 'jpg'), { type: blob.type })
-                            this.files.push(file)
+                    try {
+                        fetch(url).then(res => {
+                            res.blob().then(blob => {
+                                const file = new File([blob], 'file.' + blob.type.split('/')[1].replace('jpeg', 'jpg'), { type: blob.type })
+                                this.files.push(file)
+                            })
                         })
-                    })
+                    } catch (e) {
+                        this.$snotify.error("Can't access the file!")
+                    }
                     return false
                 }
             } else {
