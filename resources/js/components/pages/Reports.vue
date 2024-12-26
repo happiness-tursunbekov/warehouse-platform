@@ -6,9 +6,10 @@
     <div class="row">
         <div class="col-12">
             <h5 v-if="!user.reportMode" class="text-danger h5">Report mode is off. Turn it on to use this feature. You can do it on Settings page :)</h5>
+            <h5 v-else-if="!noRecord" class="h5">No records yet :)</h5>
             <div v-else>
-                <h5 class="h5">Product Shipment</h5>
                 <template v-if="reports.ProductShipment">
+                    <h5 class="h5">Product Shipment</h5>
                     <div class="table-responsive">
                         <table class="table table-striped">
                             <thead class="sticky-top">
@@ -64,6 +65,9 @@ export default {
     computed: {
         user() {
             return this.$store.getters.user
+        },
+        noRecord() {
+            return Object.keys(this.reports).length === 0
         }
     },
 
