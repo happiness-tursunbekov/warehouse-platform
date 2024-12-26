@@ -7,7 +7,7 @@
                 <input :accept="accept.join(',')" v-on:change="handleFiles" :multiple="multiple" type="file" class="form-control" id="upload-file-modal" :required="!files.length">
                 <div class="position-relative mt-3">
                     <span ref="pasteDisplay" class="form-control text-center" style="height: 100px">Paste file here</span>
-                    <input ref="pasteInput" class="position-absolute opacity-0" readonly style="left:0;right:0;top:0;bottom:0" type="text" @drop="paste" @dragenter="onDragover" @mouseleave="onDragleave" @dragleave="onDragleave" />
+                    <input ref="pasteInput" @input="$event.target.value = ''" class="position-absolute opacity-25" style="left:0;right:0;top:0;bottom:0" type="text" @drop="paste" @dragenter="onDragover" @mouseleave="onDragleave" @dragleave="onDragleave" />
                 </div>
                 <ul v-if="files.length > 0" class="list-group mt-3">
                     <li v-for="(file, key) in files" :key="key" class="list-group-item d-flex justify-content-between">
