@@ -685,8 +685,7 @@ class ConnectWiseService
 
             $this->updateCatalogItem($catalogItem);
         } catch (GuzzleException $e) {
-            print_r($e->getResponse()->getBody()->getContents());
-            die();
+            return ($e->getResponse()->getBody()->getContents());
         }
 
         return $catalogItem;
@@ -833,8 +832,8 @@ class ConnectWiseService
                             \"catalog_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/catalog/{$catalogItem->id}\"
                         }
                     },
-                    \"description\": \"{$catalogItem->description}\",
-                    \"unitCost\": 0.00,
+                    \"description\": \"Updating quantity\",
+                    \"unitCost\": {$catalogItem->cost},
                     \"warehouse\": {
                         \"id\": 1,
                         \"name\": \"Warehouse\",
@@ -870,10 +869,13 @@ class ConnectWiseService
             }
         }
         ");
-
-        $request = $this->http->post('procurement/adjustments?clientId=' . $this->clientId, [
-            'json' => $adjustment
-        ]);
+        try {
+            $request = $this->http->post('procurement/adjustments?clientId=' . $this->clientId, [
+                'json' => $adjustment
+            ]);
+        } catch (GuzzleException $e) {
+            abort(500, $e->getResponse()->getBody()->getContents());
+        }
 
         return json_decode($request->getBody()->getContents());
     }
