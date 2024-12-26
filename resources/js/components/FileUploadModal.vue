@@ -115,8 +115,12 @@ export default {
                 if (url.startsWith('https://')) {
                     fetch(url).then(res => {
                         res.blob().then(blob => {
-                            const file = new File([blob], 'file.' + blob.type.split('/')[1].replace('jpeg', 'jpg'), { type: blob.type })
-                            this.files.push(file)
+                            if (this.checkFileType(blob.type)) {
+                                const file = new File([blob], 'file.' + blob.type.split('/')[1].replace('jpeg', 'jpg'), { type: blob.type })
+                                this.files.push(file)
+                            } else {
+                                this.$snotify.error('Can\'t accept this type of file')
+                            }
                         })
                     }).catch(e => {
                         this.$snotify.error("Can't access the file!")
