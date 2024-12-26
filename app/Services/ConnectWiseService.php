@@ -116,6 +116,21 @@ class ConnectWiseService
         return json_decode($result->getBody()->getContents());
     }
 
+    public function getCatalogItemByIdentifier($identifier)
+    {
+        try {
+            $result = $this->http->get('procurement/catalog', [
+                'query' => [
+                    'clientId' => $this->clientId,
+                    'conditions' => "identifier='{$identifier}'"
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return new \stdClass();
+        }
+        return @json_decode($result->getBody()->getContents())[0];
+    }
+
     public function getCatalogItemsByBarcode(string $barcode, $fields=null, $page=null, $pageSize=25)
     {
         try {
@@ -394,8 +409,16 @@ class ConnectWiseService
         return json_decode($result->getBody()->getContents());
     }
 
-    public function productPickShip($id, $quantity)
+    public function productPickShip($id, $quantity, $used=false)
     {
+        if ($used) {
+            $product = $this->getProduct($id);
+            $product->catalogItem = $this->createUsedCatalogItem($product->catalogItem->id, $quantity);
+
+            $this->addToReport('CatalogProductUsed', $product, 'unshipped/returned as used');
+            return $product;
+        }
+
         $pickShip = $this->getProductPickingShippingDetails($id, null, 'lineNumber=0')[0];
         $pickShip->pickedQuantity = $pickShip->shippedQuantity = $quantity;
 
@@ -892,12 +915,16 @@ class ConnectWiseService
     {
         $catalogItem = $this->getCatalogItem($catalogItemId);
 
+        if (Str::contains($catalogItem->identifier, '-used)')) {
+            $catalogItem->identifier = explode('(', $catalogItem->identifier)[0];
+        } else {
+            $catalogItem->price = round($catalogItem->price/3, 2);
+            $catalogItem->cost = round($catalogItem->cost/3, 2);
+        }
+
         $catalogItem->identifier = $catalogItem->identifier . Str::lower("({$qty}{$catalogItem->unitOfMeasure->name}-used)");
 
         $catalogItem->id = 0;
-
-        $catalogItem->price = round($catalogItem->price/3, 2);
-        $catalogItem->cost = round($catalogItem->cost/3, 2);
 
         $request = $this->http->post('procurement/catalog?clientId=' . $this->clientId, [
             'json' => $catalogItem
@@ -906,8 +933,6 @@ class ConnectWiseService
         $newCatalogItem = json_decode($request->getBody()->getContents());
 
         $this->catalogItemAdjust($newCatalogItem, $qty);
-
-        $this->addToReport('UsedCatalogItem', $newCatalogItem, 'added');
 
         return $newCatalogItem;
     }

@@ -37,6 +37,35 @@
                         </table>
                     </div>
                 </template>
+                <template v-if="reports.CatalogProductUsed">
+                    <h5 class="h5">Added Used Catalog Items</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="sticky-top">
+                            <tr>
+                                <th>Action</th>
+                                <th>Product</th>
+                                <th>Project</th>
+                                <th>Company</th>
+                                <th>Phase</th>
+                                <th></th>
+                                <th>Record Date</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="(used, key) in reports.ProductUsed" :key="key">
+                                <td>{{ used.action }}</td>
+                                <td>{{ used.item.catalogItem.identifier }}</td>
+                                <td><span v-if="used.item.productInfo.project">#{{ used.item.project.id }} - {{ used.item.project.name }}</span></td>
+                                <td>{{ used.item.company.name }}</td>
+                                <td>{{ used.item.phase ? shipment.item.phase.name : '' }}</td>
+                                <td></td>
+                                <td>{{ used.item.catalogItem._info.lastUpdated }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
                 <template v-if="reports.UsedCatalogItem">
                     <h5 class="h5">Used Catalog Item</h5>
                     <div class="table-responsive">

@@ -58,12 +58,9 @@
                                     <i class="bi-three-dots-vertical"></i>
                                 </button>
                                 <div class="dropdown-menu">
-                                <div class="list-group">
-                                    <button @click.prevent="getPos(product)" type="button" class="list-group-item">Get PO's/Ship</button>
-                                    <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="list-group-item" title="Adjust">Adjust quantity</button>
-                                    <button @click.prevent="showUploadPhotoModal(product)" type="button" class="list-group-item" title="Upload a photo">Upload a photo</button>
-                                    <button v-if="!product.identifier.includes('-used')" @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="list-group-item" title="Add used product">Add used product</button>
-                                </div>
+                                    <button @click.prevent="getPos(product)" type="button" class="dropdown-item">Get PO's/Ship</button>
+                                    <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="dropdown-item" title="Adjust">Adjust quantity</button>
+                                    <button @click.prevent="showUploadPhotoModal(product)" type="button" class="dropdown-item" title="Upload a photo">Upload a photo</button>
                                 </div>
                             </div>
                         </td>
@@ -100,7 +97,7 @@
             </div>
             <hr/>
             <h6 class="h6">Projects</h6>
-            <div class="table-responsive">
+            <div class="table-responsive" style="min-height: 250px">
                 <table class="table table-striped">
                     <thead class="sticky-top">
                     <tr>
@@ -120,15 +117,14 @@
                         <td>{{ product.quantity }}</td>
                         <td>{{ product.shippedQuantity }}</td>
                         <td>
-                            <div class="d-flex justify-content-between">
-                                <form @submit.prevent="ship(product, $refs.shipQty[key].value)" class="input-group" :class="{ 'd-none': product.quantity === product.shippedQuantity }">
-                                    <input required :value="product.quantity - product.shippedQuantity" type="number" min="1" :max="product.quantity - product.shippedQuantity" ref="shipQty" class="form-control" style="max-width: 80px"/>
-                                    <button type="submit" class="btn btn-success">Ship</button>
-                                </form>
-                                <form @submit.prevent="unship(product, $refs.unshipQty[key].value)" class="input-group" :class="{ 'd-none': product.shippedQuantity === 0 }">
-                                    <input required :value="0" type="number" min="1" :max="product.shippedQuantity" ref="unshipQty" class="form-control"  style="max-width: 80px"/>
-                                    <button type="submit" class="btn btn-danger">Return</button>
-                                </form>
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi-three-dots-vertical"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <button v-if="product.quantity !== product.shippedQuantity" @click.prevent="selectedProjectProduct=product;shipmentModal=true" type="button" class="dropdown-item">Ship</button>
+                                    <button v-if="product.shippedQuantity !== 0" @click.prevent="selectedProjectProduct=product;shipmentModal=true" type="button" class="dropdown-item">Return/Unship</button>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -137,24 +133,6 @@
             </div>
         </modal>
         <barcode-link-modal @handled="getProducts()" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedProduct"/>
-        <modal v-model:show="usedItemModal" modal-title="Adding used catalog item">
-            <form @submit.prevent="createUsedItem($refs.usedItemQty.value)">
-                <ul class="list-group">
-                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
-                    <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
-                </ul>
-                <div class="mb-3">
-                    <label class="form-label">Quantity</label>
-                    <div class="input-group">
-                        <input ref="usedItemQty" type="number" min="1" class="form-control" required>
-                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <button type="submit" class="btn btn-success">Save</button>
-                </div>
-            </form>
-        </modal>
         <modal v-model:show="adjustItemModal" modal-title="Adjusting catalog item">
             <form @submit.prevent="adjustItem($refs.adjustItemQty.value)">
                 <ul class="list-group">
@@ -175,6 +153,39 @@
             </form>
         </modal>
         <file-upload-modal @upload="uploadPhotos" v-model:show="photoModal" :accept="['image/*']" modal-title="Manage product photos" multiple/>
+        <modal v-model:show="shipmentModal" modal-title="Shipment">
+            <div v-if="selectedProjectProduct" style="min-width: 300px;">
+                <form @submit.prevent="ship(selectedProjectProduct, $refs.shipQty.value)" :class="{ 'd-none': selectedProjectProduct.quantity === selectedProjectProduct.shippedQuantity }" class="mb-3">
+                    <hr class="mt-0 mb-1"/>
+                    <label class="form-label">Ship</label>
+                    <div class="input-group">
+                        <input required :value="selectedProjectProduct.quantity - selectedProjectProduct.shippedQuantity" type="number" min="1" :max="selectedProjectProduct.quantity - selectedProjectProduct.shippedQuantity" ref="shipQty" class="form-control"/>
+                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
+                    <button type="submit" class="btn btn-success mt-2 btn-sm">Ship</button>
+                </form>
+
+                <form @submit.prevent="unship(selectedProjectProduct, $refs.unshipQty.value)" :class="{ 'd-none': selectedProjectProduct.shippedQuantity === 0 }" class="mb-3">
+                    <hr class="mt-0 mb-1"/>
+                    <label class="form-label">Return/Unship</label>
+                    <div class="input-group">
+                        <input required :value="0" type="number" min="1" :max="selectedProjectProduct.shippedQuantity" ref="unshipQty" class="form-control"/>
+                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
+                    <button type="submit" class="btn btn-danger mt-2 btn-sm">Return/Unship</button>
+                </form>
+
+                <form @submit.prevent="unshipAsUsed(selectedProjectProduct, $refs.unshipUsedQty.value)" :class="{ 'd-none': selectedProjectProduct.shippedQuantity === 0 }" class="mb-3">
+                    <hr class="mt-0 mb-1"/>
+                    <label class="form-label">Return/Unship as Used</label>
+                    <div class="input-group">
+                        <input required :value="0" type="number" min="1" :max="selectedProjectProduct.shippedQuantity" ref="unshipUsedQty" class="form-control"/>
+                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
+                    <button type="submit" class="btn btn-danger mt-2 btn-sm">Return/Unship as Used</button>
+                </form>
+            </div>
+        </modal>
     </div>
 </template>
 
@@ -209,14 +220,15 @@ export default {
             posModal: false,
             barcodeLinkModal: false,
             selectedProduct: null,
+            selectedProjectProduct: null,
             photoModal: false,
             productForm: {
                 rmPhotos: [],
                 upPhotos: [],
             },
             loadPhotosAutomatically: false,
-            usedItemModal: false,
             adjustItemModal: false,
+            shipmentModal: false
         }
     },
 
@@ -254,6 +266,7 @@ export default {
                 setTimeout(() => this.getPos(product.catalogItem), 500)
                 this.$snotify.success(`${product.catalogItem.identifier} shipped successfully!`)
                 this.getProductOnHand(product)
+                this.shipmentModal = false
             })
         },
 
@@ -265,6 +278,19 @@ export default {
                 setTimeout(() => this.getPos(product.catalogItem), 500)
                 this.$snotify.success(`${product.catalogItem.identifier} unshipped successfully!`)
                 this.getProductOnHand(product.catalogItem)
+                this.shipmentModal = false
+            })
+        },
+
+        unshipAsUsed(product, qty) {
+            axios.post(`/api/products/unship-as-used`, {
+                productId: product.id,
+                quantity: qty
+            }).then(() => {
+                setTimeout(() => this.getPos(product.catalogItem), 500)
+                this.$snotify.success(`${product.catalogItem.identifier} unshipped as used successfully!`)
+                this.getProductOnHand(product.catalogItem)
+                this.shipmentModal = false
             })
         },
 
@@ -366,18 +392,6 @@ export default {
                 this.selectedProduct = null
                 this.$snotify.success('Photos uploaded successfully!')
                 })
-        },
-
-        createUsedItem(qty) {
-            axios.post(`/api/products/${this.selectedProduct.id}/create-used-item`, {
-                quantity: qty
-            }).then(res => {
-                this.$snotify.success('New used product added successfully!')
-                this.clearFilter()
-                this.filter.identifier = this.selectedProduct.identifier
-                this.getProducts()
-                this.usedItemModal = false
-            })
         },
 
         adjustItem(qty) {
