@@ -62,7 +62,7 @@
                                 <td>{{ used.item.catalogItem.cost }}</td>
                                 <td><span v-if="used.item.project">#{{ used.item.project.id }} - {{ used.item.project.name }}</span></td>
                                 <td>{{ used.item.company.name }}</td>
-                                <td>{{ used.item.phase ? shipment.item.phase.name : '' }}</td>
+                                <td>{{ used.item.phase ? used.item.phase.name : '' }}</td>
                                 <td></td>
                                 <td>{{ used.item.catalogItem._info.lastUpdated }}</td>
                             </tr>
