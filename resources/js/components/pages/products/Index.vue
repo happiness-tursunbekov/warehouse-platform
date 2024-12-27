@@ -283,7 +283,7 @@ export default {
         },
 
         unshipAsUsed(qty) {
-            if (this.selectedProjectProduct.catalogItem.identifier.contains('-used)') && qty === toString(this.selectedProjectProduct.shippedQuantity)) {
+            if (this.selectedProjectProduct.catalogItem.identifier.includes('-used)') && qty === toString(this.selectedProjectProduct.shippedQuantity)) {
                 return this.unship(qty)
             }
 
