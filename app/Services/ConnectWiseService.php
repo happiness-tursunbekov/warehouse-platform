@@ -418,11 +418,13 @@ class ConnectWiseService
             return $product;
         }
 
-        $pickShip = $this->getProductPickingShippingDetails($id, null, 'lineNumber=0')[0];
+        $pickShip = $this->getProductPickingShippingDetails($id)[0];
         $pickShip->pickedQuantity = $pickShip->shippedQuantity = $quantity;
+        $pickShip->id = 0;
+        $pickShip->quantity = $quantity;
 
         try {
-            $request = $this->http->put("procurement/products/{$id}/pickingShippingDetails/{$pickShip->id}?clientId=" . $this->clientId, [
+            $request = $this->http->post("procurement/products/{$id}/pickingShippingDetails?clientId=" . $this->clientId, [
                 'json' => $pickShip,
             ]);
         } catch (GuzzleException $e) {
