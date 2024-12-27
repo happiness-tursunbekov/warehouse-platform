@@ -16,6 +16,7 @@
                             <tr>
                                 <th>Action</th>
                                 <th>Product</th>
+                                <th>Cost</th>
                                 <th>Project</th>
                                 <th>Company</th>
                                 <th>Phase</th>
@@ -27,6 +28,7 @@
                             <tr v-for="(shipment, key) in reports.ProductShipment" :key="key">
                                 <td>{{ shipment.action }}</td>
                                 <td>{{ shipment.item.productInfo.catalogItem.identifier }}</td>
+                                <td>{{ shipment.item.productInfo.cost }}</td>
                                 <td><span v-if="shipment.item.productInfo.project">#{{ shipment.item.productInfo.project.id }} - {{ shipment.item.productInfo.project.name }}</span></td>
                                 <td>{{ shipment.item.productInfo.company.name }}</td>
                                 <td>{{ shipment.item.productInfo.phase ? shipment.item.productInfo.phase.name : '' }}</td>
@@ -45,6 +47,7 @@
                             <tr>
                                 <th>Action</th>
                                 <th>Product</th>
+                                <th>Cost</th>
                                 <th>Project</th>
                                 <th>Company</th>
                                 <th>Phase</th>
@@ -56,6 +59,7 @@
                             <tr v-for="(used, key) in reports.ProductUsed" :key="key">
                                 <td>{{ used.action }}</td>
                                 <td>{{ used.item.catalogItem.identifier }}</td>
+                                <td>{{ used.item.catalogItem.cost }}</td>
                                 <td><span v-if="used.item.productInfo.project">#{{ used.item.project.id }} - {{ used.item.project.name }}</span></td>
                                 <td>{{ used.item.company.name }}</td>
                                 <td>{{ used.item.phase ? shipment.item.phase.name : '' }}</td>
@@ -74,6 +78,7 @@
                             <tr>
                                 <th>Action</th>
                                 <th>Catalog Item</th>
+                                <th>Cost</th>
                                 <th>Record Date</th>
                             </tr>
                             </thead>
@@ -81,6 +86,7 @@
                             <tr v-for="(item, key) in reports.UsedCatalogItem" :key="key">
                                 <td>{{ item.action }}</td>
                                 <td>{{ item.item.identifier }}</td>
+                                <td>{{ item.item.cost }}</td>
                                 <td>{{ item.item._info.dateEntered }}</td>
                             </tr>
                             </tbody>
