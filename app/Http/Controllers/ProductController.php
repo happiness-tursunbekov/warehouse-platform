@@ -78,9 +78,7 @@ class ProductController extends Controller
 
     public function image($attachmentId, ConnectWiseService $connectWiseService)
     {
-        $temp = tempnam(sys_get_temp_dir(), 'TMP_');
-        file_put_contents($temp, $connectWiseService->downloadAttachment($attachmentId));
-        return response()->file($temp)->deleteFileAfterSend();
+        return $connectWiseService->downloadAttachment($attachmentId);
     }
 
     public function receive(Request $request, ConnectWiseService $connectWiseService)
@@ -323,5 +321,14 @@ class ProductController extends Controller
         $connectWiseService->catalogItemAdjust($catalogItem, $request->get('quantity'));
 
         return $catalogItem;
+    }
+
+    public function poReport(Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'poId' => ['required', 'integer']
+        ]);
+
+        return $connectWiseService->getPoReport($request->get('poId'));
     }
 }

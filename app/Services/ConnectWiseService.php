@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
 use Psr\Http\Message\RequestInterface;
 use Psr\SimpleCache\InvalidArgumentException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ConnectWiseService
 {
@@ -771,7 +772,7 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return '';
         }
-        return $result->getBody()->getContents();
+        return $this->fileResponse($result->getBody()->getContents());
     }
 
     public function systemDocumentUploadProduct($file, $recordId, $filename, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
@@ -1009,6 +1010,24 @@ class ConnectWiseService
             return [];
         }
         return json_decode($result->getBody()->getContents());
+    }
+
+    public function getPoReport($poId)
+    {
+        try {
+            $result = $this->http->get("https://na.myconnectwise.net/v2024_1/services/system_io/reports/reportingservices/ReportPdfView.rails?reportLink=%2fbinyod%2fProcurement%2fPurchaseOrder_Button&reportOnly=true&rp=recordid%3D{$poId}%26Language%3Den-US%26&clientId={$this->clientId}");
+        } catch (GuzzleException $e) {
+            return '';
+        }
+
+        return $this->fileResponse($result->getBody()->getContents());
+    }
+
+    private function fileResponse($body): BinaryFileResponse
+    {
+        $temp = tempnam(sys_get_temp_dir(), 'TMP_');
+        file_put_contents($temp, $body);
+        return response()->file($temp)->deleteFileAfterSend();
     }
 
 }

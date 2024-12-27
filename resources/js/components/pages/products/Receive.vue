@@ -38,7 +38,7 @@
         </div>
     </div>
     <modal v-model:show="posModal" modal-title="Found PO's">
-        <div class="table-responsive">
+        <div class="table-responsive" style="min-height: 250px">
             <table class="table table-striped">
                 <thead>
                 <tr>
@@ -52,8 +52,16 @@
                     <th scope="row">{{ item.poNumber }}</th>
                     <th scope="row">{{ [1,3].includes(item.status.id) && item.closedFlag === false ? 'Open' : 'Closed' }}</th>
                     <td>
-                        <button @click.prevent="getPoItems(item)" class="btn btn-outline-primary btn-sm" type="button">Get products</button>
-                        <button @click.prevent="packingSlipHandle(item)" class="btn btn-outline-primary btn-sm" type="button">Upload an attachment</button>
+                        <div class="dropdown">
+                            <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi-three-dots-vertical"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <button @click.prevent="getPoItems(item)" class="dropdown-item" type="button">Get products</button>
+                                <button @click.prevent="packingSlipHandle(item)" class="dropdown-item" type="button">Upload an attachment</button>
+                                <button @click.prevent="poReport(item)" class="dropdown-item" type="button">View report</button>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
@@ -115,10 +123,13 @@
     <barcode-link-modal @handled="getItems" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedItem ? { id: selectedItem.productId, identifier: selectedItem.productIdentifier } : null"/>
     <file-upload-modal v-model:show="packingSlipModal" modal-title="Upload an attachment" @upload="packingSlipUpload" :accept="['image/*', 'application/pdf']" multiple>
         <div class="mb-3">
-            <label for="attachment-po-id" class="form-label">Po</label>
+            <label for="attachment-po-id" class="form-label">PO</label>
             <input v-if="packingSlip.po" readonly :value="packingSlip.po.poNumber" type="text" class="form-control" id="attachment-po-id" placeholder="Po" required>
         </div>
     </file-upload-modal>
+    <modal v-model:show="poReportModal" modal-title="Report">
+        <embed v-if="poReportLink" :src="poReportLink" style="min-width: 400px;min-height: 400px"/>
+    </modal>
 </template>
 
 <script>
@@ -144,7 +155,9 @@ export default {
             packingSlip: {
                 po: null
             },
-            pos: []
+            pos: [],
+            poReportModal: false,
+            poReportLink: ''
         }
     },
 
@@ -270,6 +283,13 @@ export default {
         showBarcodeLinkModal(item) {
             this.selectedItem = item
             this.barcodeLinkModal = true
+        },
+
+        poReport(item) {
+            axios.get(`/api/products/po-report?poId=${item.id}`, { responseType: 'blob' }).then(res => {
+                this.poReportLink = URL.createObjectURL(res.data)
+                this.poReportModal = true
+            })
         }
     }
 }

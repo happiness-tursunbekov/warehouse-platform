@@ -52,6 +52,7 @@ Route::group([
             Route::post('ship', [ProductController::class, 'ship']);
             Route::post('upload-po-attachment', [ProductController::class, 'uploadPoAttachment']);
             Route::get('po-items', [ProductController::class, 'poItems']);
+            Route::get('po-report', [ProductController::class, 'poReport']);
             Route::get('pos', [ProductController::class, 'pos']);
             Route::get('find-po-by-product', [ProductController::class, 'findPoByProduct']);
             Route::post('{id}/create-used-item', [ProductController::class, 'createUsedItem']);
