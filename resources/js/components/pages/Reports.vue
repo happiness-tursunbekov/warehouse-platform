@@ -56,7 +56,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <tr v-for="(used, key) in reports.ProductUsed" :key="key">
+                            <tr v-for="(used, key) in reports.CatalogProductUsed" :key="key">
                                 <td>{{ used.action }}</td>
                                 <td>{{ used.item.catalogItem.identifier }}</td>
                                 <td>{{ used.item.catalogItem.cost }}</td>

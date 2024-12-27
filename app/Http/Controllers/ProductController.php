@@ -265,7 +265,7 @@ class ProductController extends Controller
         ]);
 
         $productId = $request->get('productId');
-        $quantity = $request->get('quantity') * -1;
+        $quantity = $request->get('quantity');
 
         return $connectWiseService->productPickShip($productId, $quantity, true);
     }
