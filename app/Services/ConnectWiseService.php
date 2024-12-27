@@ -291,9 +291,7 @@ class ConnectWiseService
 
         $poItems = $poItems->where('poId', '!=', $poId);
 
-        $poItems->push(...array_map(function ($poItem) use ($po) {
-            return $this->preparePoItem($po->id, $poItem, $po);
-        }, $this->purchaseOrderItems($po->id)));
+        $poItems->push(...$this->purchaseOrderItems($po->id));
 
         cache()->forever('poItems', $poItems);
 
