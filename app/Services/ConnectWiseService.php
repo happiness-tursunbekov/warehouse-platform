@@ -20,6 +20,7 @@ class ConnectWiseService
 {
     private Client $http;
     private string $clientId;
+    private string $systemIO = 'https://na.myconnectwise.net/v2024_1/services/system_io';
     public function __construct()
     {
         $this->clientId = config('cw.client_id');
@@ -27,6 +28,24 @@ class ConnectWiseService
             'auth' => [config('cw.company_id') . '+' . config('cw.public_key'), config('cw.private_key')],
             'base_uri' => config('cw.base_uri'),
         ]);
+    }
+
+    private function payloadHandler(array $payload, string $payloadClassName, string $payloadProject)
+    {
+        $actionMessage = [
+            "payload" => json_encode($payload),
+            "payloadClassName" => $payloadClassName,
+            "project" => $payloadProject
+        ];
+
+        $query = [
+            "actionMessage" => json_encode($actionMessage),
+            "clientTimezoneOffset" => "-360",
+            "clientTimezoneName" => "Central+Standard+Time",
+            "clientId" => $this->clientId
+        ];
+
+        return http_build_query($query);
     }
 
     public function addToReport($type, \stdClass $item, $action, $additional=null)
@@ -418,7 +437,8 @@ class ConnectWiseService
             return $product;
         }
 
-        $pickShip = $this->getProductPickingShippingDetails($id)[0];
+        $origPickShip = $this->getProductPickingShippingDetails($id)[0];
+        $pickShip = clone $origPickShip;
         $pickShip->pickedQuantity = $pickShip->shippedQuantity = $quantity;
         $pickShip->id = 0;
         $pickShip->quantity = $quantity;
@@ -431,7 +451,59 @@ class ConnectWiseService
                 'json' => $pickShip,
             ]);
         } catch (GuzzleException $e) {
-            return response()->json(['code' => 'ERROR', 'message' => $e->getResponse()->getBody()->getContents()], 500);
+            $errBody = $e->getResponse()->getBody()->getContents();
+
+            if (Str::contains($errBody, 'only on an opportunity')) {
+                $request1 = $this->http->post(
+                    "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
+                        "productDetail" => [
+                            "IV_Product_RecID" => $id,
+                            "quantity_Picked" => $pickShip->pickedQuantity,
+                            "quantity_Shipped" => $pickShip->shippedQuantity,
+                            "warehouse_Bin_RecID" => 1
+                        ]
+                    ],
+                        "SavePickingAndShippingAction",
+                        "ProcurementCommon"
+                    ));
+
+                $result1 = json_decode($request1->getBody()->getContents());
+
+                if ($result1->data->isSuccess) {
+                    $this->addToReport('ProductShipment', $pickShip, $quantity < 0 ? 'unshipped/returned' : 'shipped');
+
+                    return $result1;
+                }
+
+                if ($quantity < 0 && ($quantity * -1) == $origPickShip->shippedQuantity && ($quantity * -1) == $origPickShip->pickedQuantity) {
+
+                    // Force upship
+                    $request2 = $this->http->post(
+                        "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
+                            "productDetail" => [
+                                "IV_Product_Detail_RecID" => $origPickShip->id,
+                                "IV_Product_RecID" => $id,
+                                "line_Number" => 1,
+                                "warehouse_Bin_RecID" => 1
+                            ]
+                        ],
+                            "SavePickingAndShippingAction",
+                            "ProcurementCommon"
+                        ));
+
+                    $result2 = json_decode($request2->getBody()->getContents());
+
+                    if ($result2->data->isSuccess) {
+
+                        $this->addToReport('ProductShipment', $pickShip, 'unshipped/returned');
+
+                        return $pickShip;
+                    }
+                }
+
+            }
+
+            return response()->json(['code' => 'ERROR', 'message' => $errBody], 500);
         }
 
         $result = json_decode($request->getBody()->getContents());
@@ -1012,7 +1084,7 @@ class ConnectWiseService
                 ],
             ]);
         } catch (GuzzleException $e) {
-            return [];
+            return stdClass();
         }
         return json_decode($result->getBody()->getContents());
     }
@@ -1020,7 +1092,7 @@ class ConnectWiseService
     public function getPoReport($poId)
     {
         try {
-            $result = $this->http->get("https://na.myconnectwise.net/v2024_1/services/system_io/reports/reportingservices/ReportPdfView.rails?reportLink=%2fbinyod%2fProcurement%2fPurchaseOrder_Button&reportOnly=true&rp=recordid%3D{$poId}%26Language%3Den-US%26&clientId={$this->clientId}");
+            $result = $this->http->get("{$this->systemIO}/reports/reportingservices/ReportPdfView.rails?reportLink=%2fbinyod%2fProcurement%2fPurchaseOrder_Button&reportOnly=true&rp=recordid%3D{$poId}%26Language%3Den-US%26&clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return '';
         }
@@ -1073,20 +1145,7 @@ class ConnectWiseService
             "fromProjectRecID" => $fromProjectRecID, // Project ID
         ];
 
-        $actionMessage = [
-            "payload" => json_encode($payload),
-            "payloadClassName" => "CreatePurchaseOrderWithProductsAction",
-            "project" => "ProcurementCommon"
-        ];
-
-        $query = [
-            "actionMessage" => json_encode($actionMessage),
-            "clientTimezoneOffset" => "-360",
-            "clientTimezoneName" => "Central+Standard+Time",
-            "clientId" => $this->clientId
-        ];
-
-        $result = $this->http->post("https://na.myconnectwise.net/v2024_1/services/system_io/actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . http_build_query($query));
+        $result = $this->http->post("{$this->systemIO}/actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
 
         return $result->getBody()->getContents();
     }

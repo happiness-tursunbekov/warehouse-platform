@@ -283,9 +283,8 @@ export default {
                 productId: this.selectedProjectProduct.id,
                 quantity: qty
             }).then(() => {
-                setTimeout(() => this.getPos(this.selectedProjectProduct.catalogItem), 500)
+                setTimeout(() => this.getPos(this.selectedProduct), 500)
                 this.$snotify.success(`${this.selectedProjectProduct.catalogItem.identifier} shipped successfully!`)
-                this.getProductOnHand(this.selectedProjectProduct)
                 this.shipmentModal = false
             })
         },
@@ -295,9 +294,8 @@ export default {
                 productId: this.selectedProjectProduct.id,
                 quantity: qty
             }).then(() => {
-                setTimeout(() => this.getPos(this.selectedProjectProduct.catalogItem), 500)
+                setTimeout(() => this.getPos(this.selectedProduct), 500)
                 this.$snotify.success(`${this.selectedProjectProduct.catalogItem.identifier} unshipped successfully!`)
-                this.getProductOnHand(this.selectedProjectProduct.catalogItem)
                 this.shipmentModal = false
             })
         },
@@ -311,9 +309,8 @@ export default {
                 productId: this.selectedProjectProduct.id,
                 quantity: qty
             }).then(() => {
-                setTimeout(() => this.getPos(this.selectedProjectProduct.catalogItem), 500)
+                setTimeout(() => this.getPos(this.selectedProduct), 500)
                 this.$snotify.success(`${this.selectedProjectProduct.catalogItem.identifier} unshipped as used successfully!`)
-                this.getProductOnHand(this.selectedProjectProduct.catalogItem)
                 this.shipmentModal = false
             })
         },
