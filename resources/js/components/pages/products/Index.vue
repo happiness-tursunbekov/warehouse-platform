@@ -61,6 +61,7 @@
                                     <button @click.prevent="getPos(product)" type="button" class="dropdown-item">Get PO's/Ship</button>
                                     <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="dropdown-item" title="Adjust">Adjust quantity</button>
                                     <button @click.prevent="showUploadPhotoModal(product)" type="button" class="dropdown-item" title="Upload a photo">Upload a photo</button>
+                                    <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="list-group-item" title="Add used product">Add used product</button>
                                 </div>
                             </div>
                         </td>
@@ -186,6 +187,24 @@
                 </form>
             </div>
         </modal>
+        <modal v-model:show="usedItemModal" modal-title="Adding used catalog item">
+            <form @submit.prevent="createUsedItem($refs.usedItemQty.value)">
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
+                    <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
+                </ul>
+                <div class="mb-3">
+                    <label class="form-label">Quantity</label>
+                    <div class="input-group">
+                        <input ref="usedItemQty" type="number" min="1" class="form-control" required>
+                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-success">Save</button>
+                </div>
+            </form>
+        </modal>
     </div>
 </template>
 
@@ -228,7 +247,8 @@ export default {
             },
             loadPhotosAutomatically: false,
             adjustItemModal: false,
-            shipmentModal: false
+            shipmentModal: false,
+            usedItemModal: false
         }
     },
 
@@ -410,7 +430,19 @@ export default {
                 this.getProductOnHand(this.selectedProduct)
                 this.adjustItemModal = false
             })
-        }
+        },
+
+        createUsedItem(qty) {
+            axios.post(`/api/products/${this.selectedProduct.id}/create-used-item`, {
+                quantity: qty
+            }).then(res => {
+                this.$snotify.success('New used product added successfully!')
+                this.clearFilter()
+                this.filter.identifier = res.data.identifier
+                this.getProducts()
+                this.usedItemModal = false
+            })
+        },
     }
 }
 </script>

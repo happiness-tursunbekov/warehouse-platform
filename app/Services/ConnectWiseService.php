@@ -1032,4 +1032,60 @@ class ConnectWiseService
         return response()->file($temp)->deleteFileAfterSend();
     }
 
+    public function createAzadMayPO($projectId, array $bcOrderItems)
+    {
+        // TODO: handle BigCommerce order items
+        $fromProjectRecID = $projectId;
+
+        $productIdsStr = implode(',', $bcOrderItems);
+
+        $products = collect($this->getProducts(null, "id in ({$productIdsStr})", 1000));
+
+        $payload = [
+            "purchasingData" => [
+                "vendorRecID" => 19945,
+                "warehouseRecID" => 1,
+                "demandProductList" => [
+                    $products->map(function (\stdClass $product) {
+                        return [
+                            "warehouseBinRecID" => 1,
+                            "warehouseRecID" => 1,
+                            "dropShipFlag" => false,
+                            "specialOrderFlag" => false,
+                            "currentCost" => $product->cost,
+                            "ivItemRecID" => $product->catalogItem->id,
+                            "ivProductRecID" => $product->id,
+                            "ivUomRecID" => 1,
+                            "purchasingQuantity" => $product->quantity,
+                            "toOrderQuantity" => $product->quantity,
+                            "description" => $product->description,
+                            "internalNotes" => "",
+                            "itemDescription" => $product->description,
+                            "vendorSku" => "",
+                        ];
+                    }),
+                ],
+            ],
+            "fromSrServiceRecID" => 899, // Ticket ID
+            "fromProjectRecID" => $fromProjectRecID, // Project ID
+        ];
+
+        $actionMessage = [
+            "payload" => json_encode($payload),
+            "payloadClassName" => "CreatePurchaseOrderWithProductsAction",
+            "project" => "ProcurementCommon"
+        ];
+
+        $query = [
+            "actionMessage" => json_encode($actionMessage),
+            "clientTimezoneOffset" => "-360",
+            "clientTimezoneName" => "Central+Standard+Time",
+            "clientId" => $this->clientId
+        ];
+
+        $result = $this->http->post("https://na.myconnectwise.net/v2024_1/services/system_io/actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . http_build_query($query));
+
+        return $result->getBody()->getContents();
+    }
+
 }
