@@ -61,7 +61,7 @@
                                     <button @click.prevent="getPos(product)" type="button" class="dropdown-item">Get PO's/Ship</button>
                                     <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="dropdown-item" title="Adjust">Adjust quantity</button>
                                     <button @click.prevent="showUploadPhotoModal(product)" type="button" class="dropdown-item" title="Upload a photo">Upload a photo</button>
-                                    <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="list-group-item" title="Add used product">Add used product</button>
+                                    <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="dropdown-item" title="Add used product">Add used product</button>
                                 </div>
                             </div>
                         </td>

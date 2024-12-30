@@ -422,6 +422,9 @@ class ConnectWiseService
         $pickShip->pickedQuantity = $pickShip->shippedQuantity = $quantity;
         $pickShip->id = 0;
         $pickShip->quantity = $quantity;
+        $pickShip->warehouseBin->id = 1;
+        $pickShip->warehouseBin->name = 'Default Bin';
+        $pickShip->warehouseBin->_info->warehouseBin_href = 'https:\/\/api-na.myconnectwise.net\/v4_6_release\/apis\/3.0\/\/procurement\/warehouseBins\/1';
 
         try {
             $request = $this->http->post("procurement/products/{$id}/pickingShippingDetails?clientId=" . $this->clientId, [
