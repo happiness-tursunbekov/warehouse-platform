@@ -1,9 +1,9 @@
 <template>
-    <div id="camera-container">
+    <div @click.prevent="snapshot()" id="camera-container">
         <video autoplay ref="video" id="video"></video>
 
         <div id="slot-container">
-            <button @click.prevent="snapshot()" type="button" class="btn btn-sm btn-primary float-end">Capture</button>
+            <span class="text-light w-100 text-center d-inline-block" style="text-shadow: 1px 1px black">Tap to capture</span>
             <slot></slot>
         </div>
     </div>
