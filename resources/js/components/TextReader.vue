@@ -4,7 +4,7 @@
             <div class="position-relative" id="txtScanner">
                 <camera
                     @snapshot="snapshop"
-                    :resolution="{ width: 1000, height: 2000 }"
+                    :resolution="{ width: 800, height: 2000 }"
                 />
             </div>
         </div>
@@ -64,7 +64,7 @@ export default {
 <style scoped>
 .scale-handle {
     width: 288px;
-    height: 70px;
+    height: 100px;
     position: relative;
 }
 </style>
