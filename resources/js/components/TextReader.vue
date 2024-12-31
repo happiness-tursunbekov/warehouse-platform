@@ -1,10 +1,10 @@
 <template>
-    <modal v-model:show="modal">
+    <modal v-model:show="modal" modal-title="Camera Text Reader">
         <div class="scale-handle">
             <div class="position-relative" id="txtScanner">
                 <camera
                     @snapshot="snapshop"
-                    :resolution="{ width: 1500, height: 1500 }"
+                    :resolution="{ width: 1000, height: 1000 }"
                 />
             </div>
         </div>
@@ -47,8 +47,7 @@ export default {
         snapshop(blob) {
             Tesseract.recognize(
                 blob,
-                'eng', // Language code
-                { logger: (m) => console.log(m) } // Optional logger
+                'eng'
             )
                 .then(({ data: { text } }) => {
                     this.text = text

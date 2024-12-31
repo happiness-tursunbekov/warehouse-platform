@@ -50,8 +50,8 @@ export default {
             modal: false,
             camModal: false,
             constraints: {
-                width: 200,
-                height: 960
+                width: 400,
+                height: 1920
             },
             camBarcode: ''
         }
@@ -127,13 +127,12 @@ export default {
 
 <style scoped>
 #camScanner {
-    transform: scale(0.3);
+    transform: scale(0.15);
     transform-origin: 0 0 0;
 }
 
 .scale-handle {
     width: 288px;
-    height: 60px;
     display:inline-block;
 }
 </style>
