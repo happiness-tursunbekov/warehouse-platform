@@ -16,7 +16,7 @@
             </li>
             <li class="nav-item text-nowrap">
                 <button @click.prevent="$store.dispatch('textReaderModal', true)" class="nav-link px-3 text-white" type="button">
-                    <i class="bi-text-paragraph"></i>
+                    <i class="bi-card-text"></i>
                 </button>
             </li>
             <li class="nav-item text-nowrap d-md-none">
