@@ -64,7 +64,6 @@ export default {
 <style scoped>
 .scale-handle {
     width: 288px;
-    height: 100px;
     position: relative;
 }
 </style>
