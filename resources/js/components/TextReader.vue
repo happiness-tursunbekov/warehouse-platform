@@ -1,5 +1,5 @@
 <template>
-    <modal v-model:show="modal" modal-title="Camera Text Reader">
+    <modal v-model:show="modal" modal-title="Camera Text Reader" z-index="999999">
         <div class="scale-handle">
             <div class="position-relative" id="txtScanner">
                 <camera

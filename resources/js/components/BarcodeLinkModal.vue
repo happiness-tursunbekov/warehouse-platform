@@ -16,7 +16,12 @@
         <form @submit.prevent="searchItem">
             <div class="mb-3">
                 <label for="barcodeLinkItem" class="form-label">Product ID</label>
-                <input ref="barcodeLinkIdentifier" v-model="identifier" type="text" class="form-control" id="barcodeLinkItem" placeholder="Product ID">
+                <div class="input-group">
+                    <input ref="barcodeLinkIdentifier" v-model="identifier" type="text" class="form-control" id="barcodeLinkItem" placeholder="Product ID">
+                    <button @click.prevent="$store.dispatch('textReaderModal', true)" class="btn btn-light" type="button">
+                        <i class="bi-card-text"></i>
+                    </button>
+                </div>
             </div>
             <div class="mb-3">
                 <button type="submit" class="btn btn-primary">Search</button>
