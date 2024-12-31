@@ -62,12 +62,6 @@ export default {
 </script>
 
 <style scoped>
-#txtScanner {
-    transform: scale(0.3);
-    transform-origin: 0 0 0;
-    position: absolute;
-}
-
 .scale-handle {
     width: 288px;
     height: 70px;
