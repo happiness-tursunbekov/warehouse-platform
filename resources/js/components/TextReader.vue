@@ -4,6 +4,11 @@
             <div id="textScanner">
                 <camera
                     @snapshot="snapshop"
+
+                    :resolution="{
+                width: 200,
+                height: 960
+            }"
                 />
             </div>
         </div>
