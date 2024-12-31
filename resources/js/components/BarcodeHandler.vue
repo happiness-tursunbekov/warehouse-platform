@@ -133,6 +133,7 @@ export default {
 
 .scale-handle {
     width: 288px;
+    height: 80px;
     display:inline-block;
 }
 </style>
