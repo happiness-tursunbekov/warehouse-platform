@@ -4,8 +4,8 @@
             @snapshot="snapshop"
 
             :resolution="{
-                width: 288,
-                height: 200
+                width: 800,
+                height: 600
             }"
         />
         {{ text }}
