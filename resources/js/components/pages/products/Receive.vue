@@ -164,16 +164,31 @@ export default {
     computed: {
         scannedBarcode() {
             return this.$store.getters.barcode
+        },
+
+        textReaderValue() {
+            return this.$store.getters.textReaderValue
         }
     },
 
     watch: {
         'scannedBarcode' (val) {
             this.barcode = val
+            this.identifier = ''
             if (!this.barcodeLinkModal) {
                 this.getItems()
             }
-        }
+        },
+
+        'textReaderValue' (val) {
+            if (val) {
+                this.barcode = ''
+                this.identifier = val
+                if (!this.barcodeLinkModal) {
+                    this.getItems()
+                }
+            }
+        },
     },
 
     methods: {

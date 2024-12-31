@@ -255,7 +255,11 @@ export default {
     computed: {
         barcode() {
             return this.$store.getters.barcode
-        }
+        },
+
+        textReaderValue() {
+            return this.$store.getters.textReaderValue
+        },
     },
 
     watch: {
@@ -263,6 +267,13 @@ export default {
             if (val && !this.barcodeLinkModal) {
                 this.clearFilter()
                 this.filter.barcode = val
+                this.getProducts()
+            }
+        },
+        'textReaderValue' (val) {
+            if (val) {
+                this.clearFilter()
+                this.filter.identifier = val
                 this.getProducts()
             }
         },

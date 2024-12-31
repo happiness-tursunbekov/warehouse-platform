@@ -73,9 +73,22 @@ export default {
         }
     },
 
+    computed: {
+        textReaderValue() {
+            return this.$store.getters.textReaderValue
+        }
+    },
+
     watch: {
         'modal' (val) {
             this.$emit('update:show', val)
+        },
+
+        'textReaderValue' (val) {
+            if (val) {
+                this.identifier = val
+                this.searchItem()
+            }
         },
 
         'show' (val) {

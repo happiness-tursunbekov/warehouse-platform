@@ -47,7 +47,8 @@ const store = createStore({
                     qty: 0
                 }
             },
-            user: null
+            user: null,
+            textReaderValue: ''
         }
     },
     mutations: {
@@ -57,6 +58,10 @@ const store = createStore({
 
         SET_BARCODE (state, val) {
             state.barcode = val
+        },
+
+        SET_TEXT (state, val) {
+            state.textReaderValue = val
         },
 
         SET_BARCODE_MODAL (state, val) {
@@ -120,6 +125,15 @@ const store = createStore({
             } else commit('SET_BARCODE', val)
         },
 
+        setReaderText({ commit, state }, val) {
+            if (state.textReaderValue === val) {
+                commit('SET_TEXT', '')
+                setTimeout(() => {
+                    commit('SET_TEXT', val)
+                })
+            } else commit('SET_TEXT', val)
+        },
+
         addItemToCart({ commit }, val) {
             commit('ADD_ITEM_TO_CART', val)
         },
@@ -144,6 +158,10 @@ const store = createStore({
 
         barcode(state) {
             return state.barcode
+        },
+
+        textReaderValue(state) {
+            return state.textReaderValue
         },
 
         cameraBarcodeReaderModal(state) {

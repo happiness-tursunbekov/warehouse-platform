@@ -1,8 +1,9 @@
 <template>
-    <div @click.prevent="snapshot()" id="camera-container">
+    <div id="camera-container">
         <video autoplay ref="video" id="video"></video>
 
         <div id="slot-container">
+            <button @click.prevent="snapshot()" type="button" class="btn btn-sm btn-primary float-end">Capture</button>
             <slot></slot>
         </div>
     </div>
