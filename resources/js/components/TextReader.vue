@@ -2,7 +2,7 @@
     <modal v-model:show="modal">
         <camera
             @snapshot="snapshop"
-            :resolution="{ width: 200, height: 920 }"
+            :resolution="{ width: 400, height: 1920 }"
         />
         {{ text }}
     </modal>
