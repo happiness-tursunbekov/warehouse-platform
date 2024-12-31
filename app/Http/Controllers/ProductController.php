@@ -131,7 +131,7 @@ class ProductController extends Controller
 
         if ($identifier) {
             $poItems = $connectWiseService->getOpenPoItems()->filter(function (\stdClass $item) use ($identifier) {
-                return false !== stripos($item->product->identifier, $identifier);
+                return false !== stripos($item->productIdentifier, $identifier);
             });
         }
 
