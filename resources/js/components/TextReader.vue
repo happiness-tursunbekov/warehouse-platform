@@ -4,7 +4,7 @@
             <div class="position-relative" id="txtScanner">
                 <camera
                     @snapshot="snapshop"
-                    :resolution="{ width: 1000, height: 1000 }"
+                    :resolution="{ width: 1250, height: 1250 }"
                 />
             </div>
         </div>
