@@ -1,5 +1,6 @@
 <template>
     <barcode-handler v-model:camera-modal="cameraBarcodeReaderModal"/>
+    <text-reader v-model:camera-modal="textReaderModal"/>
     <header class="navbar sticky-top bg-dark flex-md-nowrap p-0 shadow" data-bs-theme="dark">
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white" href="#">
             <span class="h4">Binyod</span>
@@ -11,6 +12,11 @@
             <li class="nav-item text-nowrap">
                 <button @click.prevent="$store.dispatch('cameraBarcodeReaderModal', true)" class="nav-link px-3 text-white" type="button">
                     <i class="bi-camera"></i>
+                </button>
+            </li>
+            <li class="nav-item text-nowrap">
+                <button @click.prevent="$store.dispatch('textReaderModal', true)" class="nav-link px-3 text-white" type="button">
+                    <i class="bi-text-paragraph"></i>
                 </button>
             </li>
             <li class="nav-item text-nowrap d-md-none">
@@ -103,22 +109,28 @@
 
 <script>
 import BarcodeHandler from "../../components/BarcodeHandler.vue";
+import TextReader from "../TextReader.vue";
 
 export default {
     name: 'ControlPanel',
-    components: {BarcodeHandler},
+    components: {TextReader, BarcodeHandler},
 
     emits: ['signOut'],
 
     data() {
         return {
-            cameraBarcodeReaderModal: false
+            cameraBarcodeReaderModal: false,
+            textReaderModal: false
         }
     },
 
     computed: {
         readerModal() {
             return this.$store.getters.cameraBarcodeReaderModal
+        },
+
+        tReaderModal() {
+            return this.$store.getters.textReaderModal
         },
 
         user() {
@@ -133,6 +145,14 @@ export default {
 
         'cameraBarcodeReaderModal' (val) {
             this.$store.dispatch('cameraBarcodeReaderModal', val)
+        },
+
+        'textReaderModal' (val) {
+            this.$store.dispatch('textReaderModal', val)
+        },
+
+        'tReaderModal' (val) {
+            this.textReaderModal = val
         }
     },
 

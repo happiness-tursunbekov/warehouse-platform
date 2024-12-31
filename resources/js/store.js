@@ -39,6 +39,7 @@ const store = createStore({
             loading: false,
             barcode: '',
             cameraBarcodeReaderModal: false,
+            textReaderModal: false,
             cart: cart || {
                 items: [],
                 total: {
@@ -60,6 +61,10 @@ const store = createStore({
 
         SET_BARCODE_MODAL (state, val) {
             state.cameraBarcodeReaderModal = val
+        },
+
+        SET_TEXT_MODAL (state, val) {
+            state.textReaderModal = val
         },
 
         ADD_ITEM_TO_CART (state, val) {
@@ -102,6 +107,10 @@ const store = createStore({
             commit('SET_BARCODE_MODAL', val)
         },
 
+        textReaderModal({ commit }, val) {
+            commit('SET_TEXT_MODAL', val)
+        },
+
         setBarcode({ commit, state }, val) {
             if (state.barcode === val) {
                 commit('SET_BARCODE', '')
@@ -139,6 +148,10 @@ const store = createStore({
 
         cameraBarcodeReaderModal(state) {
             return state.cameraBarcodeReaderModal
+        },
+
+        textReaderModal(state) {
+            return state.textReaderModal
         },
 
         cart(state) {

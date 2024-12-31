@@ -1,5 +1,5 @@
 <template>
-    <div id="camera-container">
+    <div @click.prevent="snapshot()" id="camera-container">
         <video autoplay ref="video" id="video"></video>
 
         <div id="slot-container">
