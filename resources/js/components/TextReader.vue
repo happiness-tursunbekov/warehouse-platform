@@ -1,12 +1,8 @@
 <template>
     <modal v-model:show="modal">
-        <div class="scale-handle">
-            <div id="textScanner">
-                <camera
-                    @snapshot="snapshop"
-                />
-            </div>
-        </div>
+        <camera
+            @snapshot="snapshop"
+        />
         {{ text }}
     </modal>
 </template>
@@ -61,15 +57,5 @@ export default {
 </script>
 
 <style scoped>
-#textScanner {
-    transform: scale(0.3);
-    transform-origin: 0 0 0;
-}
 
-.scale-handle {
-    width: 288px;
-    height: 400px;
-    display:inline-block;
-    text-align: center;
-}
 </style>
