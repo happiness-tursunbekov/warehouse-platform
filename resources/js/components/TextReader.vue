@@ -9,7 +9,7 @@
 
 <script>
 import Camera from "./camera/Camera.vue";
-import OCRAD from 'ocrad.js';
+import OCRAD from 'ocradjs-browser.js';
 import Modal from "./Modal.vue";
 
 export default {
