@@ -63,7 +63,7 @@ export default {
                 'eng'
             )
                 .then(({ data: { text } }) => {
-                    this.words = text.replace(/\n/g, " ").replace(/[&\/\\#,+()$~%'":*?<>{}]/g,'').split(' ')
+                    this.words = text.replace(/\n/g, " ").replace(/[&\/\\#,+()$~%'":*?<>{}]/g,'').trim().split(' ')
                 })
                 .catch((error) => {
                     console.error(error);
