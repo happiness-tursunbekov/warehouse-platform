@@ -1,9 +1,13 @@
 <template>
     <modal v-model:show="modal">
-        <camera
-            @snapshot="snapshop"
-            :resolution="{ width: 1000, height: 2000 }"
-        />
+        <div class="scale-handle">
+            <div class="position-relative" id="txtScanner">
+                <camera
+                    @snapshot="snapshop"
+                    :resolution="{ width: 500, height: 2000 }"
+                />
+            </div>
+        </div>
         {{ text }}
     </modal>
 </template>
@@ -58,5 +62,15 @@ export default {
 </script>
 
 <style scoped>
+#txtScanner {
+    transform: scale(0.3);
+    transform-origin: 0 0 0;
+    position: absolute;
+}
 
+.scale-handle {
+    width: 288px;
+    height: 70px;
+    position: relative;
+}
 </style>
