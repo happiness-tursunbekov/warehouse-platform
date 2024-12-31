@@ -9,7 +9,7 @@
 
 <script>
 import Camera from "./camera/Camera.vue";
-import OCRAD from 'ocradjs-browser.js';
+import Tesseract from 'tesseract.js';
 import Modal from "./Modal.vue";
 
 export default {
@@ -40,7 +40,17 @@ export default {
 
     methods: {
         snapshop(blob) {
-            this.text = OCRAD(blob)
+            Tesseract.recognize(
+                blob,
+                'eng', // Language code
+                { logger: (m) => console.log(m) } // Optional logger
+            )
+                .then(({ data: { text } }) => {
+                    this.text = text
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
         }
     }
 }
