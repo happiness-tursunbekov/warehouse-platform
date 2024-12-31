@@ -9,7 +9,7 @@
             </div>
         </div>
         <div>
-            <div v-for="(word, key) in words" :key="key" @click.prevent="selected.push(word)" class="card p-1 m-1 d-inline-block border-bottom" style="cursor: pointer" title="select">{{ word }}</div>
+            <div v-for="(word, key) in words" :key="key" @click.prevent="!selected.find(w => w === word) ? selected.push(word) : null" :class="{ 'bg-success text-light': selected.find(w => w === word) }" class="card p-1 m-1 d-inline-block border-bottom" style="cursor: pointer" title="select">{{ word }}</div>
             <div v-if="selected.length > 0" class="card mt-2">
                 <div class="card-body">
                     <strong>Selected: </strong>
@@ -63,7 +63,7 @@ export default {
                 'eng'
             )
                 .then(({ data: { text } }) => {
-                    this.words = text.split(' ')
+                    this.words = text.replace(/\n/g, " ").split(' ')
                 })
                 .catch((error) => {
                     console.error(error);
