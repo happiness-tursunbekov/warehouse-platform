@@ -7,16 +7,17 @@
                 <camera
                     @snapshot="snapshop"
                     :resolution="{ width: range, height: range }"
-                />
-                <div v-if="selected.length > 0" class="card my-1">
-                    <div class="card-body">
-                        <strong>Selected: </strong>
-                        <span v-for="(word, key) in selected" :key="key" class="ms-1 border-bottom">{{ word }} <i @click.prevent="selected.splice(key, 1)" class="bi-x-circle" style="cursor: pointer"></i></span>
+                >
+                    <div v-if="selected.length > 0" class="card position-absolute w-100" style="bottom: 0">
+                        <div class="card-body">
+                            <strong>Selected: </strong>
+                            <span v-for="(word, key) in selected" :key="key" class="ms-1 border-bottom">{{ word }} <i @click.prevent="selected.splice(key, 1)" class="bi-x-circle" style="cursor: pointer"></i></span>
+                        </div>
+                        <div class="card-footer">
+                            <button @click="processText" type="button" class="btn btn-sm btn-success">Go!</button>
+                        </div>
                     </div>
-                    <div class="card-footer">
-                        <button @click="processText" type="button" class="btn btn-sm btn-success">Go!</button>
-                    </div>
-                </div>
+                </camera>
             </div>
         </div>
         <div style="max-width: 288px">
