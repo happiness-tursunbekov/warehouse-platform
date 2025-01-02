@@ -39,7 +39,6 @@ const store = createStore({
             loading: false,
             barcode: '',
             cameraBarcodeReaderModal: false,
-            textReaderModal: false,
             cart: cart || {
                 items: [],
                 total: {
@@ -48,7 +47,15 @@ const store = createStore({
                 }
             },
             user: null,
-            textReaderValue: ''
+            textReader: {
+                modal: false,
+                value: '',
+                field: 'identifier',
+                fields: [
+                    'identifier',
+                    'description'
+                ]
+            }
         }
     },
     mutations: {
@@ -61,7 +68,7 @@ const store = createStore({
         },
 
         SET_TEXT (state, val) {
-            state.textReaderValue = val
+            state.textReader.value = val
         },
 
         SET_BARCODE_MODAL (state, val) {
@@ -69,7 +76,11 @@ const store = createStore({
         },
 
         SET_TEXT_MODAL (state, val) {
-            state.textReaderModal = val
+            state.textReader.modal = val
+        },
+
+        SET_TEXT_FIELD (state, val) {
+            state.textReader.field = val
         },
 
         ADD_ITEM_TO_CART (state, val) {
@@ -116,6 +127,10 @@ const store = createStore({
             commit('SET_TEXT_MODAL', val)
         },
 
+        textReaderField({ commit }, val) {
+            commit('SET_TEXT_FIELD', val)
+        },
+
         setBarcode({ commit, state }, val) {
             if (state.barcode === val) {
                 commit('SET_BARCODE', '')
@@ -126,7 +141,7 @@ const store = createStore({
         },
 
         setReaderText({ commit, state }, val) {
-            if (state.textReaderValue === val) {
+            if (state.textReader.value === val) {
                 commit('SET_TEXT', '')
                 setTimeout(() => {
                     commit('SET_TEXT', val)
@@ -160,16 +175,12 @@ const store = createStore({
             return state.barcode
         },
 
-        textReaderValue(state) {
-            return state.textReaderValue
-        },
-
         cameraBarcodeReaderModal(state) {
             return state.cameraBarcodeReaderModal
         },
 
-        textReaderModal(state) {
-            return state.textReaderModal
+        textReader(state) {
+            return state.textReader
         },
 
         cart(state) {

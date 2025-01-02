@@ -13,8 +13,16 @@
                             <strong>Selected: </strong>
                             <span v-for="(word, key) in selected" :key="key" class="ms-1 border-bottom">{{ word }} <i @click.prevent="selected.splice(key, 1)" class="bi-x-circle" style="cursor: pointer"></i></span>
                         </div>
-                        <div class="card-footer">
+                        <div class="card-footer d-flex justify-content-between">
                             <button @click="processText" type="button" class="btn btn-sm btn-success">Go!</button>
+                            <div>
+                                <div v-for="(option, key) in textReader.fields" :key="key" class="form-check">
+                                    <input v-model="field" class="form-check-input" :value="option" type="radio" name="flexRadioDefault" :id="'flexRadioDefault-' + key">
+                                    <label class="form-check-label" :for="'flexRadioDefault-' + key">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </camera>
@@ -47,8 +55,20 @@ export default {
 
             modal: false,
 
-            range: 500
+            range: 500,
+
+            field: ''
         }
+    },
+
+    computed: {
+        textReader() {
+            return this.$store.getters.textReader
+        }
+    },
+
+    mounted() {
+        this.field = this.textReader.field
     },
 
     watch: {
@@ -58,6 +78,10 @@ export default {
 
         'cameraModal' (val) {
             this.modal = val
+        },
+
+        'field' (val) {
+            this.$store.dispatch('textReaderField', val)
         }
     },
 
@@ -90,6 +114,10 @@ export default {
             this.modal = false
             this.selected = []
             this.words = []
+        },
+
+        handleField(e) {
+            console.log(e)
         }
     }
 }

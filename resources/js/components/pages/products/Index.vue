@@ -265,8 +265,8 @@ export default {
             return this.$store.getters.barcode
         },
 
-        textReaderValue() {
-            return this.$store.getters.textReaderValue
+        textReader() {
+            return this.$store.getters.textReader
         },
 
         user() {
@@ -282,10 +282,10 @@ export default {
                 this.getProducts()
             }
         },
-        'textReaderValue' (val) {
+        'textReader.value' (val) {
             if (val) {
                 this.clearFilter()
-                this.filter.identifier = val
+                this.filter[this.textReader.field] = val
                 this.getProducts()
             }
         },

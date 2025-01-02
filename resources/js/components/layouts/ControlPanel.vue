@@ -146,7 +146,7 @@ export default {
         },
 
         tReaderModal() {
-            return this.$store.getters.textReaderModal
+            return this.$store.getters.textReader.modal
         },
 
         user() {
