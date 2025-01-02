@@ -5,20 +5,21 @@
                 <camera
                     @snapshot="snapshop"
                     :resolution="{ width: 1000, height: 1000 }"
-                />
+                >
+                    <div v-if="selected.length > 0" class="card mt-2">
+                        <div class="card-body">
+                            <strong>Selected: </strong>
+                            <span v-for="(word, key) in selected" :key="key" class="ms-1 border-bottom">{{ word }} <i @click.prevent="selected.splice(key, 1)" class="bi-x-circle" style="cursor: pointer"></i></span>
+                        </div>
+                        <div class="card-footer">
+                            <button @click="processText" type="button" class="btn btn-sm btn-success">Go!</button>
+                        </div>
+                    </div>
+                </camera>
             </div>
         </div>
         <div>
             <div v-for="(word, key) in words" :key="key" @click.prevent="!selected.find(w => w === word) ? selected.push(word) : null" :class="{ 'bg-success text-light': selected.find(w => w === word) }" class="card p-1 m-1 d-inline-block border-bottom" style="cursor: pointer" title="select">{{ word }}</div>
-            <div v-if="selected.length > 0" class="card mt-2">
-                <div class="card-body">
-                    <strong>Selected: </strong>
-                    <span v-for="(word, key) in selected" :key="key" class="ms-1 border-bottom">{{ word }} <i @click.prevent="selected.splice(key, 1)" class="bi-x-circle" style="cursor: pointer"></i></span>
-                </div>
-                <div class="card-footer">
-                    <button @click="processText" type="button" class="btn btn-sm btn-success">Go!</button>
-                </div>
-            </div>
         </div>
     </modal>
 </template>
