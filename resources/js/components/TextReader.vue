@@ -2,7 +2,7 @@
     <modal v-model:show="modal" modal-title="Camera Text Reader" z-index="999999">
         <div class="scale-handle">
             <div class="position-relative" id="txtScanner">
-                <label for="customRange2" class="form-label">Resolution: {{ range }}</label> <button @click="range=1000" class="btn btn-light btn-sm">Set Default</button>
+                <label for="customRange2" class="form-label">Resolution: {{ range }}</label> <button @click="range=500" class="btn btn-light btn-sm">Set Default</button>
                 <input v-model="range" type="range" class="form-range" step="100" min="500" max="3000" id="customRange2">
                 <camera
                     @snapshot="snapshop"
@@ -47,7 +47,7 @@ export default {
 
             modal: false,
 
-            range: 1000
+            range: 500
         }
     },
 
