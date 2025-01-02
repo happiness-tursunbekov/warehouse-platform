@@ -167,7 +167,7 @@ export default {
         },
 
         textReaderValue() {
-            return this.$store.getters.textReaderValue
+            return this.$store.getters.textReader.value
         }
     },
 
