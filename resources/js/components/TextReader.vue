@@ -2,9 +2,11 @@
     <modal v-model:show="modal" modal-title="Camera Text Reader" z-index="999999">
         <div class="scale-handle">
             <div class="position-relative" id="txtScanner">
+                <label for="customRange2" class="form-label">Resolution: {{ range }}</label> <button @click="range=1000" class="btn btn-light btn-sm">Set Default</button>
+                <input v-model="range" type="range" class="form-range" step="100" min="500" max="3000" id="customRange2">
                 <camera
                     @snapshot="snapshop"
-                    :resolution="{ width: 1000, height: 1000 }"
+                    :resolution="{ width: range, height: range }"
                 />
                 <div v-if="selected.length > 0" class="card my-1">
                     <div class="card-body">
@@ -17,7 +19,7 @@
                 </div>
             </div>
         </div>
-        <div>
+        <div style="max-width: 288px">
             <div v-for="(word, key) in words" :key="key" @click.prevent="!selected.find(w => w === word) ? selected.push(word) : null" :class="{ 'bg-success text-light': selected.find(w => w === word) }" class="card p-1 m-1 d-inline-block border-bottom" style="cursor: pointer" title="select">{{ word }}</div>
         </div>
     </modal>
@@ -42,7 +44,9 @@ export default {
 
             selected: [],
 
-            modal: false
+            modal: false,
+
+            range: 1000
         }
     },
 
@@ -58,15 +62,18 @@ export default {
 
     methods: {
         snapshop(blob) {
+            this.$store.dispatch('setLoading', true)
             Tesseract.recognize(
                 blob,
                 'eng'
             )
                 .then(({ data: { text } }) => {
                     this.words = text.replace(/[&#,+()$~%'":*?<>{}]/g, '').replace(/\n/g, ' ').trim().split(' ')
+                    this.$store.dispatch('setLoading', false)
                 })
                 .catch((error) => {
                     console.error(error);
+                    this.$store.dispatch('setLoading', false)
                 });
         },
 
