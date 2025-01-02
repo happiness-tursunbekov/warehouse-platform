@@ -35,60 +35,30 @@
                                 <td>{{ shipment.item.shippedQuantity }}</td>
                                 <td>{{ shipment.item._info.lastUpdated }}</td>
                             </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </template>
-                <template v-if="reports.CatalogProductUsed">
-                    <h5 class="h5">Added Used Catalog Items</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead class="sticky-top">
-                            <tr>
-                                <th>Action</th>
-                                <th>Product</th>
-                                <th>Cost</th>
-                                <th>Project</th>
-                                <th>Company</th>
-                                <th>Phase</th>
-                                <th></th>
-                                <th>Record Date</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr v-for="(used, key) in reports.CatalogProductUsed" :key="key">
-                                <td>{{ used.action }}</td>
-                                <td>{{ used.item.catalogItem.identifier }}</td>
-                                <td>{{ used.item.catalogItem.cost }}</td>
-                                <td><span v-if="used.item.project">#{{ used.item.project.id }} - {{ used.item.project.name }}</span></td>
-                                <td>{{ used.item.company.name }}</td>
-                                <td>{{ used.item.phase ? used.item.phase.name : '' }}</td>
-                                <td></td>
-                                <td>{{ used.item.catalogItem._info.lastUpdated }}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </template>
-                <template v-if="reports.UsedCatalogItem">
-                    <h5 class="h5">Used Catalog Item</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead class="sticky-top">
-                            <tr>
-                                <th>Action</th>
-                                <th>Catalog Item</th>
-                                <th>Cost</th>
-                                <th>Record Date</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr v-for="(item, key) in reports.UsedCatalogItem" :key="key">
-                                <td>{{ item.action }}</td>
-                                <td>{{ item.item.identifier }}</td>
-                                <td>{{ item.item.cost }}</td>
-                                <td>{{ item.item._info.dateEntered }}</td>
-                            </tr>
+                            <template v-if="reports.CatalogProductUsed">
+                                <tr v-for="(used, key) in reports.CatalogProductUsed" :key="key + (reports.ProductShipment ? reports.ProductShipment.length : 0)">
+                                    <td>{{ used.action }}</td>
+                                    <td>{{ used.item.catalogItem.identifier }}</td>
+                                    <td>{{ used.item.catalogItem.cost }}</td>
+                                    <td><span v-if="used.item.project">#{{ used.item.project.id }} - {{ used.item.project.name }}</span></td>
+                                    <td>{{ used.item.company.name }}</td>
+                                    <td>{{ used.item.phase ? used.item.phase.name : '' }}</td>
+                                    <td></td>
+                                    <td>{{ used.item.catalogItem._info.lastUpdated }}</td>
+                                </tr>
+                            </template>
+                            <template v-if="reports.UsedCatalogItem">
+                                <tr v-for="(item, key) in reports.UsedCatalogItem" :key="key + (reports.ProductShipment ? reports.ProductShipment.length : 0) + (reports.CatalogProductUsed ? reports.CatalogProductUsed.length : 0)">
+                                    <td>{{ item.action }}</td>
+                                    <td>{{ item.item.identifier }}</td>
+                                    <td>{{ item.item.cost }}</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>{{ item.item._info.dateEntered }}</td>
+                                </tr>
+                            </template>
                             </tbody>
                         </table>
                     </div>
