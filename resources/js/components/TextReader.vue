@@ -69,7 +69,7 @@ export default {
                 'eng'
             )
                 .then(({ data: { text } }) => {
-                    this.words = text.replace(/[&#,+()$~%'":*?<>{}]/g, '').replace(/\n/g, ' ').trim().split(' ')
+                    this.words = text.replace(/[&#,+()$~%'":*?<>{}|]/g, ' ').replace(/\n/g, ' ').trim().split(' ')
                     this.$store.dispatch('setLoading', false)
                 })
                 .catch((error) => {
