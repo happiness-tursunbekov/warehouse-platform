@@ -8,6 +8,7 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
+                        <th v-if="user.reportMode" scope="col">Checked</th>
                         <th scope="col">Product ID</th>
                         <th scope="col">Barcode</th>
                         <th scope="col">Description</th>
@@ -19,6 +20,7 @@
                         <th scope="col">Action</th>
                     </tr>
                     <tr>
+                        <th></th>
                         <th scope="col"><input v-model="filter.identifier" type="text" class="form-control"/></th>
                         <th scope="col"><input v-model="filter.barcode" type="text" class="form-control"/></th>
                         <th scope="col"><input v-model="filter.description" type="text" class="form-control"/></th>
@@ -34,6 +36,12 @@
                     </thead>
                     <tbody>
                     <tr v-for="(product, key) in catalogItems" :key="key">
+                        <th v-if="user.reportMode">
+                            <div class="form-check form-switch">
+                                <input v-model="product.checked" @change="handleCheck(product)" class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked">
+                                <label class="form-check-label" for="flexSwitchCheckChecked"></label>
+                            </div>
+                        </th>
                         <th scope="row">{{ product.identifier }}</th>
                         <td>
                             <div>{{ product.barcodes.join("\n") }}</div>
@@ -260,6 +268,10 @@ export default {
         textReaderValue() {
             return this.$store.getters.textReaderValue
         },
+
+        user() {
+            return this.$store.getters.user
+        }
     },
 
     watch: {
@@ -289,6 +301,11 @@ export default {
     },
 
     methods: {
+        handleCheck(product) {
+            axios.post(`/api/products/${product.id}/check`, {
+                checked: product.checked
+            })
+        },
         ship(qty) {
             axios.post(`/api/products/ship`, {
                 productId: this.selectedProjectProduct.id,

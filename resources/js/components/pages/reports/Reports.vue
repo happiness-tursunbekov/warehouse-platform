@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Reports</h1>
+        <h1 class="h2">Shipment/Returns</h1>
         <button @click.prevent="export2csv" type="button" class="btn btn-outline-success">Export as CSV</button>
     </div>
     <div class="row">
@@ -8,23 +8,23 @@
             <h5 v-if="!user.reportMode" class="text-danger h5">Report mode is off. Turn it on to use this feature. You can do it on Settings page :)</h5>
             <h5 v-else-if="noRecord" class="h5">No records yet :)</h5>
             <div v-else>
-                <template v-if="reports.ProductShipment">
-                    <h5 class="h5">Product Shipment</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead class="sticky-top">
-                            <tr>
-                                <th>Action</th>
-                                <th>Product</th>
-                                <th>Cost</th>
-                                <th>Project</th>
-                                <th>Company</th>
-                                <th>Phase</th>
-                                <th>Quantity</th>
-                                <th>Record Date</th>
-                            </tr>
-                            </thead>
-                            <tbody>
+                <h5 class="h5">Product Shipment/Returns</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="sticky-top">
+                        <tr>
+                            <th>Action</th>
+                            <th>Product</th>
+                            <th>Cost</th>
+                            <th>Project</th>
+                            <th>Company</th>
+                            <th>Phase</th>
+                            <th>Quantity</th>
+                            <th>Record Date</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <template v-if="reports.ProductShipment">
                             <tr v-for="(shipment, key) in reports.ProductShipment" :key="key">
                                 <td>{{ shipment.action }}</td>
                                 <td>{{ shipment.item.productInfo.catalogItem.identifier }}</td>
@@ -35,34 +35,34 @@
                                 <td>{{ shipment.item.shippedQuantity }}</td>
                                 <td>{{ shipment.item._info.lastUpdated }}</td>
                             </tr>
-                            <template v-if="reports.CatalogProductUsed">
-                                <tr v-for="(used, key) in reports.CatalogProductUsed" :key="key + (reports.ProductShipment ? reports.ProductShipment.length : 0)">
-                                    <td>{{ used.action }}</td>
-                                    <td>{{ used.item.catalogItem.identifier }}</td>
-                                    <td>{{ used.item.catalogItem.cost }}</td>
-                                    <td><span v-if="used.item.project">#{{ used.item.project.id }} - {{ used.item.project.name }}</span></td>
-                                    <td>{{ used.item.company.name }}</td>
-                                    <td>{{ used.item.phase ? used.item.phase.name : '' }}</td>
-                                    <td></td>
-                                    <td>{{ used.item.catalogItem._info.lastUpdated }}</td>
-                                </tr>
-                            </template>
-                            <template v-if="reports.UsedCatalogItem">
-                                <tr v-for="(item, key) in reports.UsedCatalogItem" :key="key + (reports.ProductShipment ? reports.ProductShipment.length : 0) + (reports.CatalogProductUsed ? reports.CatalogProductUsed.length : 0)">
-                                    <td>{{ item.action }}</td>
-                                    <td>{{ item.item.identifier }}</td>
-                                    <td>{{ item.item.cost }}</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                    <td>{{ item.item._info.dateEntered }}</td>
-                                </tr>
-                            </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </template>
+                        </template>
+                        <template v-if="reports.CatalogProductUsed">
+                            <tr v-for="(used, key) in reports.CatalogProductUsed" :key="key + (reports.ProductShipment ? reports.ProductShipment.length : 0)">
+                                <td>{{ used.action }}</td>
+                                <td>{{ used.item.catalogItem.identifier }}</td>
+                                <td>{{ used.item.catalogItem.cost }}</td>
+                                <td><span v-if="used.item.project">#{{ used.item.project.id }} - {{ used.item.project.name }}</span></td>
+                                <td>{{ used.item.company.name }}</td>
+                                <td>{{ used.item.phase ? used.item.phase.name : '' }}</td>
+                                <td></td>
+                                <td>{{ used.item.catalogItem._info.lastUpdated }}</td>
+                            </tr>
+                        </template>
+                        <template v-if="reports.UsedCatalogItem">
+                            <tr v-for="(item, key) in reports.UsedCatalogItem" :key="key + (reports.ProductShipment ? reports.ProductShipment.length : 0) + (reports.CatalogProductUsed ? reports.CatalogProductUsed.length : 0)">
+                                <td>{{ item.action }}</td>
+                                <td>{{ item.item.identifier }}</td>
+                                <td>{{ item.item.cost }}</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>{{ item.item._info.dateEntered }}</td>
+                            </tr>
+                        </template>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

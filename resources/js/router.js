@@ -9,7 +9,8 @@ import ProductsShip from "./components/pages/products/Ship.vue";
 import Homepage from "./components/pages/Homepage.vue";
 import Login from "./components/pages/Login.vue";
 import Settings from "./components/pages/Settings.vue";
-import Reports from "./components/pages/Reports.vue";
+import Reports from "./components/pages/reports/Reports.vue";
+import Recount from "./components/pages/reports/Recount.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -41,6 +42,11 @@ const router = createRouter({
                     path: 'reports',
                     name: 'control-panel.reports',
                     component: Reports
+                },
+                {
+                    path: 'reports/recount',
+                    name: 'control-panel.reports.recount',
+                    component: Recount
                 },
                 {
                     path: 'products',

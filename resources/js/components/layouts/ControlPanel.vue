@@ -74,15 +74,31 @@
 
                         </ul>
 
-                        <hr class="my-3">
+                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+                            <span>Reports</span>
+                            <a class="link-secondary" href="#" aria-label="Add a new report">
+                                <svg class="bi"><use xlink:href="#plus-circle"></use></svg>
+                            </a>
+                        </h6>
 
                         <ul class="nav flex-column mb-auto" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu">
                             <li class="nav-item">
                                 <router-link :to="{ name: 'control-panel.reports' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.reports' }">
                                     <i class="bi-file-text"></i>
-                                    Reports
+                                    Shipment/Returns
                                 </router-link>
                             </li>
+                            <li class="nav-item">
+                                <router-link :to="{ name: 'control-panel.reports.recount' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.reports.recount' }">
+                                    <i class="bi-file-text"></i>
+                                    Recounting
+                                </router-link>
+                            </li>
+                        </ul>
+
+                        <hr class="my-3">
+
+                        <ul class="nav flex-column mb-auto" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu">
                             <li class="nav-item">
                                 <router-link :to="{ name: 'control-panel.settings' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.settings' }">
                                     <i class="bi-gear-wide-connected"></i>

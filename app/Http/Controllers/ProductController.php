@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 
+use App\Models\User;
 use App\Services\ConnectWiseService;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
@@ -22,6 +23,8 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'barcode' => ['nullable', 'string'],
         ]);
+
+        $user = $request->user();
 
         $identifier = $request->get('identifier');
         $description = $request->get('description');
@@ -46,11 +49,25 @@ class ProductController extends Controller
         $qty = $connectWiseService->getCatalogItemsQty($conditions)->count ?? 0;
 
         if ($qty > 0) {
+
+            $checked = new Collection();
+
+            if ($user->reportMode) {
+                User::all()->map(function (User $user) use ($connectWiseService, &$checked) {
+                    $checked->push(...$connectWiseService->getUserReportByUserId($user->id, 'ProductChecked'));
+                });
+            }
+
             $onHands = collect($connectWiseService->getProductCatalogOnHand(null, "catalogItem/id in ({$products->pluck('id')->join(',')})", null, $products->count()));
-            $products->map(function (\stdClass $product) use ($connectWiseService, $onHands) {
+            $products->map(function (\stdClass $product) use ($connectWiseService, $onHands, $checked, $user) {
                 $product->barcodes = $connectWiseService->extractBarcodesFromCatalogItem($product);
                 $product->files = [];
                 $product->onHand = $onHands->where('catalogItem.id', $product->id)->first()->onHand ?? 0;
+
+                if ($user->reportMode) {
+                    $product->checked = $checked->where('item.id', '=', $product->id)->where('item.checked', '=', true)->count() > 0;
+                }
+
                 return $product;
             });
         }
@@ -330,5 +347,20 @@ class ProductController extends Controller
         ]);
 
         return $connectWiseService->getPoReport($request->get('poId'));
+    }
+
+    public function check($id, Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'checked' => ['required', 'boolean']
+        ]);
+
+        $catalogItem = $connectWiseService->getCatalogItem($id);
+
+        $catalogItem->checked = $request->get('checked');
+
+        $connectWiseService->addToReport('ProductChecked', $catalogItem, 'checked');
+
+        return $catalogItem;
     }
 }

@@ -102,11 +102,37 @@ class ConnectWiseService
         return $reports->{$type};
     }
 
+    public function getUserReportByUserId($userId, $type)
+    {
+        $reportType = "{$userId}-reports";
+
+        $reports = cache()->has($reportType) ? cache()->get($reportType) : null;
+
+        if (!$reports || !isset($reports->{$type})) {
+            return new Collection();
+        }
+
+        return $reports->{$type};
+    }
+
     public function getAllUserReports()
     {
         $user = \request()->user();
 
         $reportType = "{$user->id}-reports";
+
+        $reports = cache()->has($reportType) ? cache()->get($reportType) : null;
+
+        if (!$reports) {
+            return new \stdClass();
+        }
+
+        return $reports;
+    }
+
+    public function getAllUserReportsByUserId(int $userId)
+    {
+        $reportType = "{$userId}-reports";
 
         $reports = cache()->has($reportType) ? cache()->get($reportType) : null;
 
