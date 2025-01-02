@@ -72,6 +72,7 @@ export default {
                     this.words = text.replace(/[&#,+()$~%'":*?<>{}|]/g, ' ')
                         .replace(/-+/g, "-")
                         .replace(/_+/g, "_")
+                        .replace(/—+/g, "-")
                         .replace(/\n/g, ' ')
                         .replace(/\s+/g, ' ')
                         .trim('-')
