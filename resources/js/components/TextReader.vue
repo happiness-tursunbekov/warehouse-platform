@@ -115,7 +115,7 @@ export default {
             this.selected = []
             this.words = []
             setTimeout(() => {
-                this.$store.dispatch('textReaderField', this.textReader.fields[0])
+                this.field = this.textReader.fields[0]
             }, 1000)
         }
     }
