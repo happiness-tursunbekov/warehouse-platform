@@ -114,10 +114,7 @@ export default {
             this.modal = false
             this.selected = []
             this.words = []
-        },
-
-        handleField(e) {
-            console.log(e)
+            this.$store.dispatch('textReaderField', this.textReader.fields[0])
         }
     }
 }
