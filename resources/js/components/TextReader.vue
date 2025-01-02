@@ -114,7 +114,9 @@ export default {
             this.modal = false
             this.selected = []
             this.words = []
-            this.$store.dispatch('textReaderField', this.textReader.fields[0])
+            setTimeout(() => {
+                this.$store.dispatch('textReaderField', this.textReader.fields[0])
+            }, 1000)
         }
     }
 }
