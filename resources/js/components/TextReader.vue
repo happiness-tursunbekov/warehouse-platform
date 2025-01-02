@@ -6,7 +6,7 @@
                     @snapshot="snapshop"
                     :resolution="{ width: 1000, height: 1000 }"
                 >
-                    <div v-if="selected.length > 0" class="card mt-2">
+                    <div v-if="selected.length > 0" class="card position-absolute" style="bottom: 0">
                         <div class="card-body">
                             <strong>Selected: </strong>
                             <span v-for="(word, key) in selected" :key="key" class="ms-1 border-bottom">{{ word }} <i @click.prevent="selected.splice(key, 1)" class="bi-x-circle" style="cursor: pointer"></i></span>
