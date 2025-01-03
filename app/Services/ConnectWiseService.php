@@ -1110,7 +1110,7 @@ class ConnectWiseService
                 ],
             ]);
         } catch (GuzzleException $e) {
-            return \stdClass();
+            return new \stdClass();
         }
         return json_decode($result->getBody()->getContents());
     }
