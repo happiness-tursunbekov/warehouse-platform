@@ -2,9 +2,9 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Product Catalog</h1>
     </div>
-    <div class="position-relative">
+    <div class="position-relative min-vh-100">
         <form @submit.prevent="getProducts(true)">
-            <div class="table-responsive min-vh-100">
+            <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
                     <tr>
