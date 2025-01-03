@@ -2,9 +2,9 @@
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Product Catalog</h1>
     </div>
-    <div class="position-relative min-vh-100">
+    <div class="position-relative">
         <form @submit.prevent="getProducts(true)">
-            <div class="table-responsive">
+            <div class="table-responsive min-vh-100">
                 <table class="table table-striped">
                     <thead>
                     <tr>
@@ -76,8 +76,8 @@
                     </tr>
                     </tbody>
                 </table>
+                <div v-if="nothingFound" class="alert alert-warning">Nothing found</div>
             </div>
-            <div v-if="nothingFound" class="alert alert-warning">Nothing found</div>
         </form>
         <modal v-model:show="posModal" :modal-title="'Po\'s/Shipment - ' + (selectedProduct ? selectedProduct.identifier : '')">
             <strong>On hand:</strong> {{ selectedProduct.onHand }}
