@@ -76,6 +76,7 @@
                     </tr>
                     </tbody>
                 </table>
+                <div v-if="nothingFound" class="alert alert-warning">Nothing found</div>
             </div>
         </form>
         <modal v-model:show="posModal" :modal-title="'Po\'s/Shipment - ' + (selectedProduct ? selectedProduct.identifier : '')">
@@ -256,7 +257,8 @@ export default {
             loadPhotosAutomatically: false,
             adjustItemModal: false,
             shipmentModal: false,
-            usedItemModal: false
+            usedItemModal: false,
+            nothingFound: false
         }
     },
 
@@ -357,6 +359,7 @@ export default {
             }).then(res => {
                 this.catalogItems = res.data.products
                 this.meta = res.data.meta
+                this.nothingFound = this.catalogItems.length === 0
             }).then(() => {
                 if (this.loadPhotosAutomatically) {
                     this.getProductImages();
