@@ -41,11 +41,7 @@ export default {
             axios.get('/api/auth/user/reports', {
                 params: {type: 'ProductChecked'}
             }).then(res => {
-                this.report = res.data = res.data.filter((value, index, self) =>
-                        index === self.findIndex((t) => (
-                            t.id === value.id
-                        ))
-                )
+                this.report = res.data
             })
         },
 
