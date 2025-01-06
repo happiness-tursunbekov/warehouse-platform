@@ -215,7 +215,7 @@
                 </div>
             </form>
         </modal>
-        <modal v-model:show="sellableModal" modal-title="Adding used catalog item">
+        <modal v-model:show="sellableModal" modal-title="Adding product to sellable products list">
             <form @submit.prevent="handleSellable($refs.sellableQty.value)">
                 <ul class="list-group">
                     <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
