@@ -234,7 +234,7 @@ class ProductController extends Controller
 
         return response()->json([
             'items' => $connectWiseService->findItemFromPos($productIdentifier),
-            'products' => collect($connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/identifier='{$productIdentifier}'"))
+            'products' => collect($connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/identifier='{$productIdentifier}'", 50))
                 ->map(function ($product) use ($connectWiseService) {
 
                     $pickShip = collect($connectWiseService->getProductPickingShippingDetails($product->id));
