@@ -224,7 +224,7 @@
                 <div class="mb-3">
                     <label class="form-label">Quantity</label>
                     <div class="input-group">
-                        <input ref="sellableQty" type="number" min="1" class="form-control" required>
+                        <input ref="sellableQty" type="number" min="1" :max="selectedProduct.onHand" :value="selectedProduct.onHand" class="form-control" required>
                         <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
                     </div>
                 </div>
