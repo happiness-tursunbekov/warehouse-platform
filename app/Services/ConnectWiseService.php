@@ -476,6 +476,23 @@ class ConnectWiseService
             $request = $this->http->post("procurement/products/{$id}/pickingShippingDetails?clientId=" . $this->clientId, [
                 'json' => $pickShip,
             ]);
+
+            $result = json_decode($request->getBody()->getContents());
+
+            // Fixes ConnectWise api bug
+            $this->http->post(
+                "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
+                    "productDetail" => [
+                        "IV_Product_RecID" => $id,
+                        "quantity_Picked" => $result->pickedQuantity,
+                        "quantity_Shipped" => $result->shippedQuantity,
+                        "warehouse_Bin_RecID" => 1,
+                        "IV_Product_Detail_RecID" => $result->id
+                    ]
+                ],
+                    "SavePickingAndShippingAction",
+                    "ProcurementCommon"
+                ));
         } catch (GuzzleException $e) {
             $errBody = $e->getResponse()->getBody()->getContents();
 
@@ -531,8 +548,6 @@ class ConnectWiseService
 
             return response()->json(['code' => 'ERROR', 'message' => $errBody], 500);
         }
-
-        $result = json_decode($request->getBody()->getContents());
 
         $this->addToReport('ProductShipment', $result, $quantity < 0 ? 'unshipped/returned' : 'shipped');
 
