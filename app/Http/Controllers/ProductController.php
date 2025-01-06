@@ -363,4 +363,17 @@ class ProductController extends Controller
 
         return $catalogItem;
     }
+
+    public function sellable($id, Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'quantity' => ['required', 'integer']
+        ]);
+
+        $catalogItem = $connectWiseService->getCatalogItem($id);
+
+        $connectWiseService->addToReport('ProductSellable', $catalogItem, $request->get('quantity'));
+
+        return $catalogItem;
+    }
 }

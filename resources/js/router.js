@@ -11,6 +11,7 @@ import Login from "./components/pages/Login.vue";
 import Settings from "./components/pages/Settings.vue";
 import Reports from "./components/pages/reports/Reports.vue";
 import Recount from "./components/pages/reports/Recount.vue";
+import SellableProducts from "./components/pages/reports/SellableProducts.vue";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -47,6 +48,11 @@ const router = createRouter({
                     path: 'reports/recount',
                     name: 'control-panel.reports.recount',
                     component: Recount
+                },
+                {
+                    path: 'reports/sellable',
+                    name: 'control-panel.reports.sellable',
+                    component: SellableProducts
                 },
                 {
                     path: 'products',

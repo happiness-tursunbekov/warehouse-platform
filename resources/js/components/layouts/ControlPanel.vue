@@ -94,6 +94,12 @@
                                     Recounting
                                 </router-link>
                             </li>
+                            <li class="nav-item">
+                                <router-link :to="{ name: 'control-panel.reports.sellable' }" class="nav-link d-flex align-items-center gap-2" :class="{ 'active': $route.name === 'control-panel.reports.sellable' }">
+                                    <i class="bi-file-text"></i>
+                                    Sellable Products
+                                </router-link>
+                            </li>
                         </ul>
 
                         <hr class="my-3">

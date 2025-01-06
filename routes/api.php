@@ -58,6 +58,7 @@ Route::group([
             Route::post('{id}/create-used-item', [ProductController::class, 'createUsedItem']);
             Route::post('{id}/adjust', [ProductController::class, 'adjust']);
             Route::post('{id}/check', [ProductController::class, 'check']);
+            Route::post('{id}/sellable', [ProductController::class, 'sellable']);
             Route::get('{id}/on-hand', [ProductController::class, 'onHand']);
             Route::get('{id}/images', [ProductController::class, 'images']);
             Route::post('{product}/upload', [ProductController::class, 'upload']);

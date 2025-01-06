@@ -70,6 +70,7 @@
                                     <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="dropdown-item" title="Adjust">Adjust quantity</button>
                                     <button @click.prevent="showUploadPhotoModal(product)" type="button" class="dropdown-item" title="Upload a photo">Upload a photo</button>
                                     <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="dropdown-item" title="Add used product">Add used product</button>
+                                    <button v-if="user.reportMode" @click.prevent="selectedProduct=product;sellableModal=true" type="button" class="dropdown-item" title="Add used product">Add to sellable products list</button>
                                 </div>
                             </div>
                         </td>
@@ -214,6 +215,24 @@
                 </div>
             </form>
         </modal>
+        <modal v-model:show="sellableModal" modal-title="Adding used catalog item">
+            <form @submit.prevent="handleSellable($refs.sellableQty.value)">
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
+                    <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.onHand }}</li>
+                </ul>
+                <div class="mb-3">
+                    <label class="form-label">Quantity</label>
+                    <div class="input-group">
+                        <input ref="sellableQty" type="number" min="1" class="form-control" required>
+                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-success">Save</button>
+                </div>
+            </form>
+        </modal>
     </div>
 </template>
 
@@ -258,7 +277,8 @@ export default {
             adjustItemModal: false,
             shipmentModal: false,
             usedItemModal: false,
-            nothingFound: false
+            nothingFound: false,
+            sellableModal: false
         }
     },
 
@@ -306,6 +326,14 @@ export default {
         handleCheck(product) {
             axios.post(`/api/products/${product.id}/check`, {
                 checked: product.checked
+            })
+        },
+        handleSellable(quantity) {
+            axios.post(`/api/products/${this.selectedProduct.id}/sellable`, {
+                quantity: quantity
+            }).then(res => {
+                this.sellableModal=false
+                this.$snotify.success('Added to sellable products list!')
             })
         },
         ship(qty) {
