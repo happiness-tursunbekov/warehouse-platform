@@ -518,7 +518,7 @@ class ConnectWiseService
                     return $result1;
                 }
 
-                if ($quantity < 0 && ($quantity * -1) == $origPickShip->shippedQuantity && ($quantity * -1) == $origPickShip->pickedQuantity) {
+                if ($quantity < 0) {
 
                     // Force upship
                     $request2 = $this->http->post(
@@ -527,7 +527,9 @@ class ConnectWiseService
                                 "IV_Product_Detail_RecID" => $origPickShip->id,
                                 "IV_Product_RecID" => $id,
                                 "line_Number" => 1,
-                                "warehouse_Bin_RecID" => 1
+                                "warehouse_Bin_RecID" => 1,
+                                "quantity_Picked" => $origPickShip->pickedQuantity + $quantity,
+                                "quantity_Shipped" => $origPickShip->shippedQuantity + $quantity,
                             ]
                         ],
                             "SavePickingAndShippingAction",
