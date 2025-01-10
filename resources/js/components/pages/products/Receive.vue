@@ -128,7 +128,7 @@
         </div>
     </file-upload-modal>
     <modal v-model:show="poReportModal" modal-title="Report">
-        <embed v-if="poReportLink" :src="poReportLink" style="min-width: 400px;min-height: 400px"/>
+        <iframe v-if="poReportLink" :src="poReportLink" style="min-width: 400px;min-height: 400px"/>
     </modal>
 </template>
 
