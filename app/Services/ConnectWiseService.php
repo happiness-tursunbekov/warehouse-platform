@@ -1041,8 +1041,8 @@ class ConnectWiseService
             $catalogItem->cost = round($catalogItem->cost/3, 2);
         }
 
-        if (Str::trim(Str::lower($catalogItem->unitOfMeasure->name)) == 'ft') {
-            $catalogItem->identifier = $catalogItem->identifier . Str::lower("({$qty}{$catalogItem->unitOfMeasure->name}-used)");
+        if (($uom = Str::trim(Str::lower($catalogItem->unitOfMeasure->name))) == 'ft') {
+            $catalogItem->identifier = $catalogItem->identifier . Str::lower("({$qty}{$uom}-used)");
         } else {
             $catalogItem->identifier = $catalogItem->identifier . "-RF";
         }
