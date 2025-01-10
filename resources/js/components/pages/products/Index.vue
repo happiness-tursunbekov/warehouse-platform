@@ -20,7 +20,7 @@
                         <th scope="col">Action</th>
                     </tr>
                     <tr>
-                        <th></th>
+                        <th v-if="user.reportMode"></th>
                         <th scope="col"><input v-model="filter.identifier" type="text" class="form-control"/></th>
                         <th scope="col"><input v-model="filter.barcode" type="text" class="form-control"/></th>
                         <th scope="col"><input v-model="filter.description" type="text" class="form-control"/></th>
