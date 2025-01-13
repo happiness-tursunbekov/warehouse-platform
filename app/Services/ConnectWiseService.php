@@ -496,7 +496,7 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             $errBody = $e->getResponse()->getBody()->getContents();
 
-            if (Str::contains($errBody, 'only on an opportunity')) {
+            if (Str::contains($errBody, 'only on an opportunity') || Str::contains($errBody, 'unexpected database error')) {
                 $request1 = $this->http->post(
                     "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
                         "productDetail" => [

@@ -22,6 +22,7 @@ class ProductController extends Controller
             'identifier' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
             'barcode' => ['nullable', 'string'],
+            'conditions' => ['nullable', 'string']
         ]);
 
         $user = $request->user();
@@ -30,7 +31,13 @@ class ProductController extends Controller
         $description = $request->get('description');
         $barcode = $request->get('barcode');
 
-        $conditions = "inactiveFlag=false";
+        $conditions = $request->get('conditions', '');
+
+        if ($conditions) {
+            $conditions .= ' and ';
+        }
+
+        $conditions .= "inactiveFlag=false";
 
         $customFieldConditions=null;
 

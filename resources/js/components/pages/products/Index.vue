@@ -260,7 +260,8 @@ export default {
                 page: this.$route.query.page || 1,
                 identifier: this.$route.query.identifier || '',
                 description: this.$route.query.description || '',
-                barcode: this.$route.query.barcode || ''
+                barcode: this.$route.query.barcode || '',
+                conditions: this.$route.query.conditions || '',
             },
             pos: [],
             products: [],
