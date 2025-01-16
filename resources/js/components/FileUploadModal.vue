@@ -1,6 +1,6 @@
 <template>
     <modal v-model:show="modal" :modal-title="modalTitle">
-        <form @submit.prevent="$emit('upload', files);files=[]">
+        <form @submit.prevent="$emit('upload', files)">
             <slot/>
             <div class="mb-3">
                 <label for="upload-file-modal" class="form-label">File</label>
@@ -54,7 +54,7 @@ export default {
 
         'modal' (val) {
             this.$emit('update:show', val)
-            if (!val) {
+            if (val) {
                 this.files = []
             }
         }
@@ -103,6 +103,7 @@ export default {
                     this.$snotify.error('Can\'t accept this type of file')
                 }
             }
+            e.target.value=""
         },
 
         paste(e) {
