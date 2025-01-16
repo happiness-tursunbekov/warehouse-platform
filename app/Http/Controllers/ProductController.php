@@ -8,6 +8,7 @@ use App\Services\ConnectWiseService;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
 
 class ProductController extends Controller
@@ -253,6 +254,112 @@ class ProductController extends Controller
                     return $product;
                 })
         ]);
+    }
+
+    public function uoms(ConnectWiseService $connectWiseService)
+    {
+        return $connectWiseService->unitOfMeasures();
+    }
+
+    public function updateUom($id, Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'uomId' => ['required', 'integer']
+        ]);
+
+        $catalogItem = $connectWiseService->getCatalogItem($id);
+
+        $uom = $connectWiseService->unitOfMeasure($request->get('uomId'));
+
+        $uomQty = Str::numbers($uom->name);
+
+        $catalogItem->price = $catalogItem->price * $uomQty;
+        $catalogItem->cost = $catalogItem->cost * $uomQty;
+
+        $unitOfMeasureShort = new \stdClass();
+
+        $unitOfMeasureShort->_info = new \stdClass();
+        $unitOfMeasureShort->_info->uom_href = Str::replace($catalogItem->unitOfMeasure->id, $uom->id, $catalogItem->unitOfMeasure->_info->uom_href);
+        $unitOfMeasureShort->id = $uom->id;
+        $unitOfMeasureShort->name = $uom->name;
+
+        $catalogItem->unitOfMeasure = $unitOfMeasureShort;
+
+        $onHand = $connectWiseService->getCatalogItemOnHand($id)->count ?? 0;
+
+        if (!is_int($onHand / $uomQty)) {
+            abort(500, 'Check the catalogItem quantity. There is a wrong quantity');
+        }
+
+        $products = collect();
+
+        collect($connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/id={$id}", 1000))
+            ->map(function ($product) use ($connectWiseService, $uomQty, &$products, $unitOfMeasureShort) {
+
+                if (!isset($product->project)) {
+                    return false;
+                }
+
+                $product->original = clone $product;
+
+                $product->original->quantity = $product->original->quantity / $uomQty;
+
+                $product->original->unitOfMeasure = $unitOfMeasureShort;
+
+                $product->original->price = $product->original->price * $uomQty;
+                $product->original->cost = $product->original->cost * $uomQty;
+
+                $ships = collect($connectWiseService->getProductPickingShippingDetails($product->id, null, 'lineNumber!=0'));
+
+                $product->shippedQuantity = $ships->map(function ($ps) {
+                    return $ps->pickedQuantity ?: $ps->shippedQuantity;
+                })->sum();
+
+                if ($product->shippedQuantity == $product->quantity || $product->quantity < $uomQty) {
+                    return false;
+                }
+
+                if (strval($product->original->quantity) !== strval(intval($product->original->quantity))) {
+                    $product->original->quantity = round($product->original->quantity);
+                }
+
+                $ships = $ships->map(function ($ship) use ($uomQty, $connectWiseService) {
+                    $ship->pickedQuantity = $ship->shippedQuantity = round($ship->shippedQuantity / $uomQty);
+                    $ship->quantity = $ship->quantity / $uomQty;
+
+                    if (strval($ship->quantity) !== strval(intval($ship->quantity))) {
+                        abort(500, 'Check the shipped quantities. There is a wrong quantity shipped');
+                    }
+
+                    return $ship;
+                });
+
+                $product->ships = $ships;
+
+                $ships->map(function ($ship) use ($connectWiseService) {
+                    $connectWiseService->productPickShipDelete($ship->productItem->id, $ship->id);
+                });
+
+                $connectWiseService->updateProduct($product->original);
+
+                $products->push($product);
+            });
+
+        $onHand = $connectWiseService->getCatalogItemOnHand($id)->count ?? 0;
+
+        if ($onHand > 0) {
+            $connectWiseService->catalogItemAdjust($catalogItem, ($onHand / $uomQty) - $onHand);
+        }
+
+        $connectWiseService->updateCatalogItem($catalogItem);
+
+        $products->map(function ($product) use ($connectWiseService) {
+            $product->ships->map(function ($ship) use ($connectWiseService) {
+                $connectWiseService->productPickShip($ship->productItem->id, $ship->shippedQuantity);
+            });
+        });
+
+        return $catalogItem;
     }
 
     public function ship(Request $request, ConnectWiseService $connectWiseService)

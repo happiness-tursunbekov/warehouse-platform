@@ -54,7 +54,9 @@ Route::group([
             Route::get('po-items', [ProductController::class, 'poItems']);
             Route::get('po-report', [ProductController::class, 'poReport']);
             Route::get('pos', [ProductController::class, 'pos']);
+            Route::get('uoms', [ProductController::class, 'uoms']);
             Route::get('find-po-by-product', [ProductController::class, 'findPoByProduct']);
+            Route::post('{id}/uom', [ProductController::class, 'updateUom']);
             Route::post('{id}/create-used-item', [ProductController::class, 'createUsedItem']);
             Route::post('{id}/adjust', [ProductController::class, 'adjust']);
             Route::post('{id}/check', [ProductController::class, 'check']);

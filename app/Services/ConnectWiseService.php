@@ -295,7 +295,7 @@ class ConnectWiseService
             $poItems = cache()->get('poItems');
         }
 
-        return $poItems->whereIn('poStatus.id', [1,3])->where('poClosedFlag', false);
+        return $poItems->whereIn('poStatus.id', [1,3])->where('poClosedFlag', false)->where('closedFlag', false);
     }
 
     private function preparePoItem(int $poId, $poItem, \stdClass $po=null)
@@ -417,7 +417,6 @@ class ConnectWiseService
                     'page' => $page,
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
-                    'fields' => 'id,catalogItem,project,phase,quantity,description,company,poApprovedFlag',
                     'pageSize' => $pageSize
                 ],
             ]);
@@ -437,6 +436,23 @@ class ConnectWiseService
         return json_decode($result->getBody()->getContents());
     }
 
+    public function updateProduct(\stdClass $product)
+    {
+        try {
+            $result = $this->http->put("procurement/products/{$product->id}?clientId={$this->clientId}", [
+                'json' => $product,
+            ]);
+        }  catch (GuzzleException $e) {
+            $errBody = $e->getResponse()->getBody()->getContents();
+
+            if (Str::contains($errBody, 'This opportunity is closed and cannot be edited')) {
+                return $product;
+            }
+            abort(500, $errBody . $product->id);
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
     public function getProductPickingShippingDetails($id, $page=null, $conditions=null)
     {
         try {
@@ -451,6 +467,11 @@ class ConnectWiseService
             return [];
         }
         return json_decode($result->getBody()->getContents());
+    }
+
+    public function productPickShipDelete($productId, $shipmentId)
+    {
+        $this->http->delete("procurement/products/{$productId}/pickingShippingDetails/{$shipmentId}?clientId=" . $this->clientId);
     }
 
     public function productPickShip($id, $quantity, $used=false)
@@ -955,9 +976,9 @@ class ConnectWiseService
         return $project;
     }
 
-    public function catalogItemAdjust(\stdClass $catalogItem, $qty)
+    public function catalogItemAdjust(\stdClass $catalogItem, $qty, $prefix="")
     {
-        $adjustmentID = date('m/d/Y') . ' - ' . time();
+        $adjustmentID = date('m/d/Y') . ' - ' . time() . $prefix;
 
         $adjustment = json_decode("
         {
@@ -1034,15 +1055,25 @@ class ConnectWiseService
     {
         $catalogItem = $this->getCatalogItem($catalogItemId);
 
-        if (Str::contains($catalogItem->identifier, '-used)')) {
+        $uom = Str::replace(' ', '', Str::lower($catalogItem->unitOfMeasure->name));
+
+        if (Str::contains($uom, 'usedcable')) {
             $catalogItem->identifier = explode('(', $catalogItem->identifier)[0];
         } else {
-            $catalogItem->price = round($catalogItem->price/3, 2);
-            $catalogItem->cost = round($catalogItem->cost/3, 2);
+            $num = (int)Str::numbers($uom);
+
+            if ($num) {
+                $catalogItem->price = round($catalogItem->price / $num / 3, 2);
+                $catalogItem->cost = round($catalogItem->cost / $num / 3, 2);
+            } else {
+                $catalogItem->price = round($catalogItem->price / 3, 2);
+                $catalogItem->cost = round($catalogItem->cost / 3, 2);
+            }
         }
 
-        if (($uom = Str::trim(Str::lower($catalogItem->unitOfMeasure->name))) == 'ft') {
-            $catalogItem->identifier = $catalogItem->identifier . Str::lower("({$qty}{$uom}-used)");
+        if (Str::contains($uom, 'ft)') || Str::contains($uom, 'usedcable')) {
+            $catalogItem->identifier = $catalogItem->identifier . Str::lower("({$qty}ft)");
+            $qty = 1;
         } else {
             $catalogItem->identifier = $catalogItem->identifier . "-RF";
         }
@@ -1195,6 +1226,29 @@ class ConnectWiseService
         $result = $this->http->post("{$this->systemIO}/actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
 
         return $result->getBody()->getContents();
+    }
+
+    public function unitOfMeasures()
+    {
+        $result = $this->http->get("procurement/unitOfMeasures", [
+            'query' => [
+                'clientId' => $this->clientId,
+                'conditions' => 'inactiveFlag=false'
+            ],
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function unitOfMeasure(int $id)
+    {
+        $result = $this->http->get("procurement/unitOfMeasures/{$id}", [
+            'query' => [
+                'clientId' => $this->clientId
+            ],
+        ]);
+
+        return json_decode($result->getBody()->getContents());
     }
 
 }

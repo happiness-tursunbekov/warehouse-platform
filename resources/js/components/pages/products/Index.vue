@@ -47,10 +47,10 @@
                             <div>{{ product.barcodes.join("\n") }}</div>
                             <button @click.prevent="showBarcodeLinkModal(product)" type="button" class="btn btn btn-secondary btn-sm">Link a barcode</button>
                         </td>
-                        <td>{{ product.description }}</td>
+                        <td>{{ product.customerDescription	 }}</td>
                         <td>{{ product.category.name }}</td>
                         <td>
-                            {{ product.onHand }}
+                            {{ product.onHand }} {{ product.unitOfMeasure.name }}
                         </td>
                         <td>
                             <button v-if="typeof productImages[product.id] === ('undefined' || null)" class="btn btn-success btn-sm" type="button" @click.prevent="getProductImages(product)">Load</button>
@@ -70,6 +70,7 @@
                                     <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="dropdown-item" title="Adjust">Adjust quantity</button>
                                     <button @click.prevent="showUploadPhotoModal(product)" type="button" class="dropdown-item" title="Upload a photo">Upload a photo</button>
                                     <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="dropdown-item" title="Add used product">Add used product</button>
+                                    <button @click.prevent="selectedProduct=product;uomModal=true" type="button" class="dropdown-item" title="Add used product">Edit unit of measure</button>
                                     <button v-if="user.reportMode" @click.prevent="selectedProduct=product;sellableModal=true" type="button" class="dropdown-item" title="Add used product">Add to sellable products list</button>
                                 </div>
                             </div>
@@ -207,7 +208,7 @@
                     <label class="form-label">Quantity</label>
                     <div class="input-group">
                         <input ref="usedItemQty" type="number" min="1" class="form-control" required>
-                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                        <span class="input-group-text">{{ (selectedProduct.unitOfMeasure.name.toLowerCase().replace(/\s/g, '').trim().includes('usedcable') || selectedProduct.unitOfMeasure.name.toLowerCase().replace(/\s/g, '').includes('ft)')) ? 'Ft' : 'Pcs'  }}</span>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -226,6 +227,26 @@
                     <div class="input-group">
                         <input ref="sellableQty" type="number" min="1" :max="selectedProduct.onHand" :value="selectedProduct.onHand" class="form-control" required>
                         <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-success">Save</button>
+                </div>
+            </form>
+        </modal>
+        <modal v-model:show="uomModal" modal-title="Editing unit of measure of a product">
+            <form @submit.prevent="updateUom($refs.catalogItemUom.value)">
+                <div class="alert alert-warning">Warning: It will change Catalog items & project products price & cost as well</div>
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
+                    <li class="list-group-item"><strong>Unit of measure:</strong> {{ selectedProduct.unitOfMeasure.name }}</li>
+                </ul>
+                <div class="mb-3">
+                    <label class="form-label">Unit of measure</label>
+                    <div class="input-group">
+                        <select ref="catalogItemUom" :value="selectedProduct.unitOfMeasure.id" class="form-select" required>
+                            <option v-for="option in uoms" :key="option.id" :value="option.id">{{ option.name }}</option>
+                        </select>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -279,7 +300,9 @@ export default {
             shipmentModal: false,
             usedItemModal: false,
             nothingFound: false,
-            sellableModal: false
+            sellableModal: false,
+            uomModal: false,
+            uoms: []
         }
     },
 
@@ -316,6 +339,11 @@ export default {
             if (val) {
                 this.getProductImages()
             }
+        },
+        'uomModal' (val) {
+            if (val && !this.uoms.length) {
+                this.fetchUoms()
+            }
         }
     },
 
@@ -324,6 +352,22 @@ export default {
     },
 
     methods: {
+        fetchUoms() {
+            axios.get(`/api/products/uoms`).then(res => {
+                this.uoms = res.data
+            })
+        },
+        updateUom(uomId) {
+            axios.post(`/api/products/${this.selectedProduct.id}/uom`, {
+                uomId: uomId
+            }).then(res => {
+                this.uomModal=false
+                this.$snotify.success('Unit of measure changed successfully!')
+                setTimeout(() => {
+                    this.getProducts()
+                }, 500)
+            })
+        },
         handleCheck(product) {
             axios.post(`/api/products/${product.id}/check`, {
                 checked: product.checked
