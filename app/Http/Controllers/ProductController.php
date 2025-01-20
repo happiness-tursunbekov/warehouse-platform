@@ -23,8 +23,11 @@ class ProductController extends Controller
             'identifier' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
             'barcode' => ['nullable', 'string'],
-            'conditions' => ['nullable', 'string']
+            'conditions' => ['nullable', 'string'],
+            'perPage' => ['nullable', 'integer']
         ]);
+
+        $perPage = $request->get('perPage', 25);
 
         $user = $request->user();
 
@@ -66,7 +69,7 @@ class ProductController extends Controller
                 });
             }
 
-            $onHands = collect($connectWiseService->getProductCatalogOnHand(null, "catalogItem/id in ({$products->pluck('id')->join(',')})", null, $products->count()));
+            $onHands = collect($connectWiseService->getProductCatalogOnHand(null, "catalogItem/id in ({$products->pluck('id')->join(',')})", null, $perPage));
             $products->map(function (\stdClass $product) use ($connectWiseService, $onHands, $checked, $user) {
                 $product->barcodes = $connectWiseService->extractBarcodesFromCatalogItem($product);
                 $product->files = [];
@@ -85,8 +88,8 @@ class ProductController extends Controller
             'meta' => [
                 'total' => $qty,
                 'currentPage' => $page,
-                'perPage' => 25,
-                'totalPages' => ceil($qty / 25),
+                'perPage' => $perPage,
+                'totalPages' => ceil($qty / $perPage),
             ],
         ]);
     }

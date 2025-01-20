@@ -586,8 +586,8 @@ class ConnectWiseService
         $ext = $file->extension();
         if (Str::contains($file->getMimeType(), 'image')) {
             $img = Image::read($file->path());
-            if ($img->width() > 1920 || $img->height() > 1440) {
-                $file = $img->scale(1920, 1440)->encode();
+            if ($img->width() > 4032 || $img->height() > 4032) {
+                $file = $img->scale(4032, 4032)->encode();
             }
         }
 
@@ -1162,7 +1162,7 @@ class ConnectWiseService
                 ],
             ]);
         } catch (GuzzleException $e) {
-            return new \stdClass();
+            return [];
         }
         return json_decode($result->getBody()->getContents());
     }
