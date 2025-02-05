@@ -1061,7 +1061,13 @@ class ConnectWiseService
         $uom = Str::replace(' ', '', Str::lower($catalogItem->unitOfMeasure->name));
 
         if (Str::contains($uom, 'usedcable')) {
-            $catalogItem->identifier = explode('(', $catalogItem->identifier)[0];
+            $identifierArr = explode('(', $catalogItem->identifier);
+            $catalogItem->identifier = $identifierArr[0];
+
+            $oldLength = (int)Str::numbers($identifierArr[1]);
+
+            $catalogItem->price = round($catalogItem->price / $oldLength, 2);
+            $catalogItem->cost = round($catalogItem->cost / $oldLength, 2);
         } else {
             $num = (int)Str::numbers($uom);
 
