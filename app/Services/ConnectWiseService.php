@@ -349,9 +349,15 @@ class ConnectWiseService
      */
     public function purchaseOrderItemReceive(int $itemId, $quantity)
     {
-        $item = $this->getOpenPoItems()->where('id', $itemId)->first();
+        try {
+            $item = $this->getOpenPoItems()->where('id', $itemId)->first();
 
-        $poId = $item->poId;
+            $poId = $item->poId;
+        } catch (\Exception $e) {
+            $this->cachePos();
+
+            throw $e;
+        }
 
         $putItem = $this->purchaseOrderItem($poId, $itemId);
 
@@ -711,7 +717,7 @@ class ConnectWiseService
         return json_decode($result->getBody()->getContents());
     }
 
-    public function getCategories($page=null, $conditions=null, $orderBy=null)
+    public function getCategories($page=null, $conditions=null, $orderBy=null, $pageSize=100)
     {
         try {
             $result = $this->http->get('procurement/categories', [
@@ -719,7 +725,8 @@ class ConnectWiseService
                     'page' => $page,
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
-                    'orderBy' => $orderBy
+                    'orderBy' => $orderBy,
+                    'pageSize' => $pageSize
                 ],
             ]);
         } catch (GuzzleException $e) {
@@ -839,35 +846,31 @@ class ConnectWiseService
         return $values;
     }
 
-    public function setCatalogItemBigCommerceProductId(\stdClass $catalogItem, $bcProductId)
+    public function extractCin7ProductId(\stdClass $catalogItem)
     {
-        try {
-            $customFields = collect($catalogItem->customFields);
-
-            $bcProduct = $customFields->where('caption', 'BigCommerce Product ID')->first();
-
-            $customFields = $customFields->where('caption', '!=', 'BigCommerce Product ID');
-
-            $bcProduct->value = $bcProductId;
-
-            $customFields->push($bcProduct);
-
-            $catalogItem->customFields = $customFields->sortBy('id')->values()->toArray();
-
-            $this->updateCatalogItem($catalogItem);
-        } catch (GuzzleException $e) {
-            return ($e->getResponse()->getBody()->getContents());
-        }
-
-        return $catalogItem;
-    }
-
-    public function getBigCommerceProductId(\stdClass $catalogItem)
-    {
-        $bcProduct = collect($catalogItem->customFields)->where('caption', 'BigCommerce Product ID')->first();
+        $bcProduct = collect($catalogItem->customFields)->where('caption', 'Cin7 Product ID')->first();
 
         return $bcProduct->value ?? null;
 
+    }
+
+    public function updateCatalogItemCin7ProductId(\stdClass $catalogItem, $productId)
+    {
+        $customFields = collect($catalogItem->customFields);
+
+        $bcProduct = $customFields->where('caption', 'Cin7 Product ID')->first();
+
+        $customFields = $customFields->where('caption', '!=', 'Cin7 Product ID');
+
+        $bcProduct->value = $productId;
+
+        $customFields->push($bcProduct);
+
+        $catalogItem->customFields = $customFields->sortBy('id')->values()->toArray();
+
+        $this->updateCatalogItem($catalogItem);
+
+        return $catalogItem;
     }
 
     public function extractBarcodesFromCatalogItem(\stdClass $catalogItem) : array
@@ -1074,6 +1077,13 @@ class ConnectWiseService
         if (Str::contains($uom, 'ft)') || Str::contains($uom, 'usedcable')) {
             $catalogItem->identifier = $catalogItem->identifier . Str::lower("({$qty}ft)");
             $qty = 1;
+            $catalogItem->unitOfMeasure = [
+                'id' => 22,
+                'name' => 'Box (Used cable)'
+            ];
+
+            $catalogItem->price *= $qty;
+            $catalogItem->cost *= $qty;
         } else {
             $catalogItem->identifier = $catalogItem->identifier . "-RF";
         }
@@ -1246,6 +1256,15 @@ class ConnectWiseService
             'query' => [
                 'clientId' => $this->clientId
             ],
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function updateUnitOfMeasure(\stdClass $unitOfMeasure)
+    {
+        $result = $this->http->put("procurement/unitOfMeasures/{$unitOfMeasure->id}?clientId={$this->clientId}", [
+            'json' => $unitOfMeasure,
         ]);
 
         return json_decode($result->getBody()->getContents());

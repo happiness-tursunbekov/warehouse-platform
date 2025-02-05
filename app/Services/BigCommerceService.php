@@ -35,12 +35,49 @@ class BigCommerceService
                 'query' => [
                     'page' => $page,
                     'limit' => $limit,
-                    'channel_id:in' => 1
                 ],
             ]);
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function getProductVariants($id, $page=null, $limit=null)
+    {
+        try {
+            $result = $this->http->get("catalog/products/{$id}/variants", [
+                'query' => [
+                    'page' => $page,
+                    'limit' => $limit,
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return new \stdClass();
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function getProductOptions($id, $page=null, $limit=null)
+    {
+        try {
+            $result = $this->http->get("catalog/products/{$id}/options", [
+                'query' => [
+                    'page' => $page,
+                    'limit' => $limit,
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return new \stdClass();
+        }
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function updateProductOptions($productId, \stdClass $option)
+    {
+        $result = $this->http->put("catalog/products/{$productId}/options/{$option->id}", [
+            'json' => $option,
+        ]);
         return json_decode($result->getBody()->getContents());
     }
 
@@ -196,5 +233,29 @@ class BigCommerceService
     public function deleteProduct($productId)
     {
         $this->http->delete("catalog/products/{$productId}");
+    }
+
+    public function setProductChannels($productId, array $channelIds)
+    {
+        $this->http->put("catalog/products/channel-assignments", [
+            'json' => array_map(function ($channelId) use ($productId) {
+                return [
+                    'channel_id' => $channelId,
+                    'product_id' => $productId
+                ];
+            }, $channelIds)
+        ]);
+    }
+
+    public function setProductCategories($productId, array $categoryIds)
+    {
+        $this->http->put("catalog/products/category-assignments", [
+            'json' => array_map(function ($categoryId) use ($productId) {
+                return [
+                    'category_id' => $categoryId,
+                    'product_id' => $productId
+                ];
+            }, $categoryIds)
+        ]);
     }
 }
