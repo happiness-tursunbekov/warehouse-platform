@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Integration\Cin7Controller;
 use App\Http\Controllers\Integration\ConnectWiseController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
@@ -20,10 +21,15 @@ Route::prefix('/integration')->group(function () {
         Route::prefix('connect-wise')->group(function () {
             Route::post('product-catalog', [ConnectWiseController::class, 'productCatalog']);
             Route::post('project', [ConnectWiseController::class, 'project']);
-            Route::post('activity', [ConnectWiseController::class, 'activity']);
-            Route::post('ticket', [ConnectWiseController::class, 'ticket']);
             Route::post('purchase-order', [ConnectWiseController::class, 'purchaseOrder']);
-            Route::post('invoice', [ConnectWiseController::class, 'invoice']);
+        });
+    });
+
+    Route::group([
+        'middleware' => 'integration:cin7'
+    ], function () {
+        Route::prefix('cin7')->group(function () {
+            Route::post('sale-shipment-authorized', [Cin7Controller::class, 'saleShipmentAuthorized']);
         });
     });
 

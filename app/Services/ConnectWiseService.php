@@ -18,9 +18,19 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ConnectWiseService
 {
+    const ACTION_ADDED = 'added';
+    const ACTION_UPDATED = 'updated';
+    const ACTION_DELETED = 'deleted';
+
+    const RECORD_TYPE_PRODUCT_SETUP = 'ProductSetup';
+
     private Client $http;
     private string $clientId;
     private string $systemIO = 'https://na.myconnectwise.net/v2024_1/services/system_io';
+
+    private Cin7Service $cin7Service;
+    private BigCommerceService $bigCommerceService;
+
     public function __construct()
     {
         $this->clientId = config('cw.client_id');
@@ -28,6 +38,9 @@ class ConnectWiseService
             'auth' => [config('cw.company_id') . '+' . config('cw.public_key'), config('cw.private_key')],
             'base_uri' => config('cw.base_uri'),
         ]);
+
+        $this->cin7Service = new Cin7Service();
+        $this->bigCommerceService = new BigCommerceService();
     }
 
     private function payloadHandler(array $payload, string $payloadClassName, string $payloadProject)
@@ -257,6 +270,14 @@ class ConnectWiseService
     public function purchaseOrderItems($id, $page=null, $conditions=null, $fields=null)
     {
         $po = $this->purchaseOrders(null, 'id=' . $id)[0];
+
+        return array_map(function (\stdClass $item) use ($po) {
+            return $this->preparePoItem($po->id, $item, $po);
+        }, $this->purchaseOrderItemsOriginal($id, $page, $conditions, $fields));
+    }
+
+    public function purchaseOrderItemsOriginal($id, $page=null, $conditions=null, $fields=null)
+    {
         try {
             $result = $this->http->get("procurement/purchaseorders/{$id}/lineitems", [
                 'query' => [
@@ -271,9 +292,7 @@ class ConnectWiseService
             return [];
         }
 
-        return array_map(function (\stdClass $item) use ($po) {
-            return $this->preparePoItem($po->id, $item, $po);
-        }, json_decode($result->getBody()->getContents()));
+        return json_decode($result->getBody()->getContents());
     }
 
     public function purchaseOrderItem($poId, $itemId)
@@ -478,6 +497,87 @@ class ConnectWiseService
     public function productPickShipDelete($productId, $shipmentId)
     {
         $this->http->delete("procurement/products/{$productId}/pickingShippingDetails/{$shipmentId}?clientId=" . $this->clientId);
+    }
+
+    /**
+     * @throws GuzzleException
+     */
+    public function pickProduct($id, $quantity) : void
+    {
+        $pickShip = $this->getProductPickingShippingDetails($id)[0];
+        $pickShip->pickedQuantity = $quantity;
+        $pickShip->shippedQuantity = '0';
+        $pickShip->id = 0;
+        $pickShip->quantity = $quantity;
+        $pickShip->warehouseBin->id = 1;
+        $pickShip->warehouseBin->name = 'Default Bin';
+        $pickShip->warehouseBin->_info->warehouseBin_href = 'https:\/\/api-na.myconnectwise.net\/v4_6_release\/apis\/3.0\/\/procurement\/warehouseBins\/1';
+
+        $this->addOrUpdatePickShip($pickShip);
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function shipProduct($id, $quantity) : void
+    {
+        $dynamicQty = $quantity;
+
+        collect($this->getProductPickingShippingDetails($id, null, 'lineNumber != 0 and pickedQuantity > 0'))
+            ->map(function ($pickShip) use (&$dynamicQty) {
+
+                if ($dynamicQty == 0) {
+                    return false;
+                }
+
+                $pickShip->shippedQuantity = $dynamicQty;
+
+                $dynamicQty = $dynamicQty > $pickShip->pickedQuantity ? $dynamicQty - $pickShip->pickedQuantity : 0;
+
+                return $pickShip;
+            })
+            ->map(function ($pickShip) use ($dynamicQty) {
+
+                if ($dynamicQty > 0) {
+                    throw new \Exception('Shipping quantity cannot be greater than picked quantity');
+                }
+
+                if ($pickShip) {
+                    $this->addOrUpdatePickShip($pickShip);
+                }
+            })
+        ;
+
+        if ($dynamicQty == $quantity) {
+            throw new \Exception('Shipping quantity cannot be greater than picked quantity');
+        }
+    }
+
+    /**
+     * @throws GuzzleException|\Exception
+     */
+    private function addOrUpdatePickShip(\stdClass $pickShipDetail) : void
+    {
+        $request = $this->http->post(
+            "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
+                "productDetail" => [
+                    "IV_Product_RecID" => $pickShipDetail->productItem->id,
+                    "quantity_Picked" => $pickShipDetail->pickedQuantity,
+                    "quantity_Shipped" => $pickShipDetail->shippedQuantity,
+                    "warehouse_Bin_RecID" => 1,
+                    "IV_Product_Detail_RecID" => $pickShipDetail->id ?? null
+                ]
+            ],
+                "SavePickingAndShippingAction",
+                "ProcurementCommon"
+            )
+        );
+
+        $result = json_decode($request->getBody()->getContents());
+
+        if (!$result->data->isSuccess) {
+            throw new \Exception(json_encode($result->data->error));
+        }
     }
 
     public function productPickShip($id, $quantity, $used=false)
@@ -846,9 +946,17 @@ class ConnectWiseService
         return $values;
     }
 
-    public function extractCin7ProductId(\stdClass $catalogItem)
+    public function extractCin7ProductId(\stdClass $item)
     {
-        $bcProduct = collect($catalogItem->customFields)->where('caption', 'Cin7 Product ID')->first();
+        $bcProduct = collect($item->customFields)->where('caption', 'Cin7 Product ID')->first();
+
+        return $bcProduct->value ?? null;
+
+    }
+
+    public function extractCin7ProductFamilyId(\stdClass $catalogItem)
+    {
+        $bcProduct = collect($catalogItem->customFields)->where('caption', 'Cin7 Product Family ID')->first();
 
         return $bcProduct->value ?? null;
 
@@ -863,6 +971,44 @@ class ConnectWiseService
         $customFields = $customFields->where('caption', '!=', 'Cin7 Product ID');
 
         $bcProduct->value = $productId;
+
+        $customFields->push($bcProduct);
+
+        $catalogItem->customFields = $customFields->sortBy('id')->values()->toArray();
+
+        $this->updateCatalogItem($catalogItem);
+
+        return $catalogItem;
+    }
+
+    public function updateProjectProductCin7ProductId(\stdClass $projectProduct, $cin7ProductId)
+    {
+        $customFields = collect($projectProduct->customFields);
+
+        $bcProduct = $customFields->where('caption', 'Cin7 Product ID')->first();
+
+        $customFields = $customFields->where('caption', '!=', 'Cin7 Product ID');
+
+        $bcProduct->value = $cin7ProductId;
+
+        $customFields->push($bcProduct);
+
+        $projectProduct->customFields = $customFields->sortBy('id')->values()->toArray();
+
+        $this->updateProduct($projectProduct);
+
+        return $projectProduct;
+    }
+
+    public function updateCatalogItemCin7ProductFamilyId(\stdClass $catalogItem, $productFamilyId)
+    {
+        $customFields = collect($catalogItem->customFields);
+
+        $bcProduct = $customFields->where('caption', 'Cin7 Product Family ID')->first();
+
+        $customFields = $customFields->where('caption', '!=', 'Cin7 Product Family ID');
+
+        $bcProduct->value = $productFamilyId;
 
         $customFields->push($bcProduct);
 
@@ -916,7 +1062,14 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return '';
         }
-        return $this->fileResponse($result->getBody()->getContents());
+        return $this->fileResponse($result->getBody()->getContents())->deleteFileAfterSend();
+    }
+
+    public function downloadAllAttachments($recordType, $recordId)
+    {
+        return array_map(function ($attachment) {
+            return $this->downloadAttachment($attachment->id);
+        }, $this->getAttachments($recordType, $recordId));
     }
 
     public function systemDocumentUploadProduct($file, $recordId, $filename, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
@@ -1244,6 +1397,115 @@ class ConnectWiseService
         return $result->getBody()->getContents();
     }
 
+    /**
+     * @throws GuzzleException|\Exception
+     */
+    public function getPurchaseOrderItemTicketInfo($poId, $poItemId)
+    {
+        $payload = [
+            "requestAllCount" => false,
+            "usePagination" => false,
+            "multilineType" => "SalesMultiline",
+            "activePage" => 1,
+            "maxResult" => 25,
+            "culture" => "en_US",
+            "multilineName" => "purchaseordersalesandserviceinformationlist",
+            "sortDirection" => "",
+            "sortField" => "",
+            "multilineUserParams" => [
+                [
+                    "paramKey" => "Purchase_Header_RecID",
+                    "paramValue" => $poId
+                ],
+                [
+                    "paramKey" => "Purchase_Detail_RecID",
+                    "paramValue" => $poItemId
+                ]
+            ],
+            "columns" => [
+                "item_id",
+                "product_description",
+                "serial_number",
+                "quantity",
+                "unit_cost",
+                "sr_service_recid",
+                "order_header_recid",
+                "summary",
+                "project_id",
+                "invoice_number",
+                "company_name",
+                "opportunity_name",
+                "minimum_stock_flag"
+            ]
+        ];
+
+        $result = $this->http->post(
+            "{$this->systemIO}/actionprocessor/System/GetMultilineDataAction_purchaseordersalesandserviceinformationlist.rails?"
+            . $this->payloadHandler($payload, "GetMultilineDataAction", "SystemCommon")
+        );
+
+        $response = json_decode($result->getBody()->getContents());
+
+        if (!$response->success || !$response->data->isSuccess) {
+            throw new \Exception(json_encode($response->error ?: $response->data->error));
+        }
+
+        return array_map(function ($item) {
+            return json_decode($item->row);
+        }, $response->data->action->multilineRows);
+    }
+
+    /**
+     * @throws GuzzleException|\Exception
+     */
+    public function getProductPoItems(int $productId)
+    {
+        $payload = [
+            "requestAllCount" => true,
+            "usePagination" => true,
+            "multilineType" => "ProcurementMultiline",
+            "activePage" => 1,
+            "maxResult" => 25,
+            "culture" => "en_US",
+            "multilineName" => "ProductPurchaseOrderList",
+            "sortDirection" => "",
+            "sortField" => "",
+            "multilineUserParams" => [
+                [
+                    "paramKey" => "iv_product_recid",
+                    "paramValue" => $productId
+                ]
+            ],
+            "columns" => [
+                "po_number",
+                "vendor_name",
+                "po_date",
+                "po_status",
+                "product_status",
+                "expected_ship_date",
+                "ship_date",
+                "expected_date_of_arrival",
+                "tracking_number",
+                "received_qty"
+            ]
+        ];
+
+        $result = $this->http->post(
+            "{$this->systemIO}/actionprocessor/System/GetMultilineDataAction_ProductPurchaseOrderList.rails?"
+            . $this->payloadHandler($payload, "GetMultilineDataAction", "SystemCommon")
+        );
+
+        $response = json_decode($result->getBody()->getContents());
+
+        if (!$response->success || !$response->data->isSuccess) {
+            throw new \Exception(json_encode($response->error ?: $response->data->error));
+        }
+
+        return array_map(function ($item) {
+            return json_decode($item->row);
+        }, $response->data->action->multilineRows);
+    }
+
     public function unitOfMeasures()
     {
         $result = $this->http->get("procurement/unitOfMeasures", [
@@ -1276,4 +1538,116 @@ class ConnectWiseService
         return json_decode($result->getBody()->getContents());
     }
 
+    public function publishProductOnCin7(\stdClass $product, $quantity, $publishOnBigCommerce=false)
+    {
+        $catalogItem = $this->getCatalogItem($product->catalogItem->id);
+
+        $productFamilyId = $this->extractCin7ProductFamilyId($catalogItem);
+
+        $productFamily = $productFamilyId ? $this->cin7Service->productFamily($productFamilyId) : null;
+
+        if (!$productFamily) {
+            $productFamily = $this->cin7Service->createProductFamily(
+                $this->generateCin7ProductFamilySku($catalogItem->identifier),
+                $catalogItem->description,
+                $catalogItem->category->name,
+                $catalogItem->unitOfMeasure->name,
+                $catalogItem->customerDescription
+            );
+
+            $this->updateCatalogItemCin7ProductFamilyId($catalogItem, $productFamily->ID);
+
+            array_map(function ($attachment) use ($productFamily) {
+                $file = $this->downloadAttachment($attachment->id)->getFile()->getContent();
+
+                $this->cin7Service->uploadProductFamilyAttachment(
+                    $productFamily->ID,
+                    $attachment->fileName,
+                    base64_encode($file)
+                );
+            }, $this->getAttachments(ConnectWiseService::RECORD_TYPE_PRODUCT_SETUP, $product->catalogItem->id));
+        }
+
+        $cin7ProductId = $this->extractCin7ProductId($product);
+
+        $cin7Product = $cin7ProductId ? $this->cin7Service->product($cin7ProductId) : null;
+
+        if (!$cin7Product) {
+            $cin7Product = $this->cin7Service->generateFamilyProduct(
+                $productFamilyId,
+                $this->generateCin7ProductSku($productFamily->SKU, $product->project->id, $product->ticket->id ?? null),
+                $this->generateCin7ProjectName($product->project->id, $product->project->name, $product->phase->name ?? null),
+                $productFamily
+            );
+
+            $this->updateProjectProductCin7ProductId($product, $cin7Product->ID);
+        }
+
+        $this->cin7Service->stockAdjust($cin7Product->ID, $quantity);
+
+        if ($publishOnBigCommerce) {
+            $this->publishOnBigCommerce($product, $quantity, $catalogItem);
+        }
+
+        return $cin7Product;
+    }
+
+    public function publishOnBigCommerce(\stdClass $product, $quantity, \stdClass $catalogItem=null)
+    {
+        $catalogItem = $catalogItem ?: $this->getCatalogItem($product->catalogItem->id);
+
+        $cin7ProductFamilySku = $this->generateCin7ProductFamilySku($catalogItem->identifier);
+
+        $cin7ProductSku = $this->generateCin7ProductSku($cin7ProductFamilySku, $product->project->id, $product->ticket->id ?? null);
+
+        $bigCommerceProduct = $this->bigCommerceService->getProductBySku($cin7ProductFamilySku);
+
+        if (!$bigCommerceProduct) {
+            $bigCommerceCategory = $this->bigCommerceService->getCategoryByNameOrCreate($catalogItem->category->name);
+
+            $bigCommerceProduct = $this->bigCommerceService->createProduct(
+                $this->generateCin7ProductFamilySku($catalogItem->identifier),
+                $catalogItem->description,
+                $catalogItem->customerDescription,
+                [$bigCommerceCategory->id],
+                0,
+                0
+            );
+
+            $attachments = $this->getAttachments(ConnectWiseService::RECORD_TYPE_PRODUCT_SETUP, $product->catalogItem->id);
+
+            array_map(function ($attachment, $index) use ($bigCommerceProduct) {
+                $file = $this->downloadAttachment($attachment->id)->getFile()->getContent();
+
+                $this->bigCommerceService->uploadProductImage($bigCommerceProduct->id, $file, $attachment->fileName, $index == 0);
+            }, $attachments, array_keys($attachments));
+        }
+
+        $bigCommerceProductVariant = $this->bigCommerceService->getProductVariantBySku($bigCommerceProduct->id, $cin7ProductSku);
+
+        if (!$bigCommerceProductVariant) {
+            $bigCommerceProductVariant = $this->bigCommerceService->createProductVariantProject(
+                $bigCommerceProduct->id,
+                $cin7ProductSku,
+                $this->generateCin7ProjectName($product->project->id, $product->project->name, $product->phase->name ?? null)
+            );
+        }
+
+        $this->bigCommerceService->adjustVariant($bigCommerceProductVariant->id, $quantity);
+    }
+
+    public function generateCin7ProductSku($cin7ProductFamilySku, $projectId, $ticketId)
+    {
+        return $cin7ProductFamilySku . '-' . $projectId . ($ticketId ? "-{$ticketId}" : "");
+    }
+
+    public function generateCin7ProductFamilySku($catalogItemIdentifier)
+    {
+        return Str::upper($catalogItemIdentifier) . '-PROJECT';
+    }
+
+    public function generateCin7ProjectName($projectId, $projectName, $phaseName)
+    {
+        return "#{$projectId} {$projectName}" . ($phaseName ? ": {$phaseName}" : "");
+    }
 }

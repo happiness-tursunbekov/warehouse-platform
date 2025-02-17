@@ -7,6 +7,17 @@ use Illuminate\Support\Str;
 
 trait ModelCamelCase
 {
+    public static function convertCamelToSnake(array $attributes)
+    {
+        $attrs = [];
+
+        foreach ($attributes as $key => $value) {
+            $attrs[Str::snake($key)] = $value;
+        }
+
+        return $attrs;
+    }
+
     public function getAttribute($key)
     {
         return parent::getAttribute(Str::snake($key));
@@ -19,12 +30,8 @@ trait ModelCamelCase
 
     public function fill(array $attributes)
     {
-        $attrs = [];
+        parent::fill(self::convertCamelToSnake($attributes));
 
-        foreach ($attributes as $key => $value) {
-            $attrs[Str::snake($key)] = $value;
-        }
-
-        return parent::fill($attrs);
+        return $this;
     }
 }
