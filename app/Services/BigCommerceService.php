@@ -467,7 +467,7 @@ class BigCommerceService
             ]
         ]);
 
-        $sharedModifier = json_decode($request->getBody()->getContents())->data;
+        $sharedModifier = json_decode($request->getBody()->getContents())->data[0];
 
         cache()->put('bc-cachedSharedModifier-' . $name, $sharedModifier, now()->addMinute());
 
@@ -488,7 +488,7 @@ class BigCommerceService
             ]
         ]);
 
-        $sharedOption = json_decode($request->getBody()->getContents())->data;
+        $sharedOption = json_decode($request->getBody()->getContents())->data[0];
 
         cache()->put('bc-cachedSharedOption-' . $name, $sharedOption, now()->addMinute());
 
