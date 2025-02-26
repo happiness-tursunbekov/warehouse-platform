@@ -32,6 +32,12 @@ class IntegrationMiddleware
                 'Entity' => ['nullable', 'required_unless:Action,' . ConnectWiseService::ACTION_DELETED, 'string']
             ]);
 
+            $cache = cache()->get('cw-webhook-' . $request->get('Type') . $request->get('ID'));
+
+            if ($cache) {
+                return \response()->json(['Message' => 'Successful!']);
+            }
+
             if (config('cw.access_key') != $request->get('key')) {
                 return \response()->json(['key' => 'Incorrect Key'], 422);
             }
@@ -40,6 +46,8 @@ class IntegrationMiddleware
                 'Entity' => json_decode($request->get('Entity'), true),
                 'key' => ''
             ]);
+
+            cache()->put('cw-webhook-' . $request->get('Type') . $request->get('ID'), true, now()->addSeconds(5));
         }
 
         elseif ($type == 'cin7') {

@@ -455,24 +455,44 @@ class BigCommerceService
 
     public function getSharedModifierByName($name)
     {
+        $cachedSharedModifier = cache()->get('bc-cachedSharedModifier-' . $name);
+
+        if ($cachedSharedModifier) {
+            return $cachedSharedModifier;
+        }
+
         $request = $this->http->get("catalog/shared-modifiers", [
             'query' => [
                 'name' => $name
             ]
         ]);
 
-        return json_decode($request->getBody()->getContents())->data;
+        $sharedModifier = json_decode($request->getBody()->getContents())->data;
+
+        cache()->put('bc-cachedSharedModifier-' . $name, $sharedModifier, now()->addMinute());
+
+        return $sharedModifier;
     }
 
     public function getSharedOptionByName($name)
     {
+        $cachedSharedOption = cache()->get('bc-cachedSharedOption-' . $name);
+
+        if ($cachedSharedOption) {
+            return $cachedSharedOption;
+        }
+
         $request = $this->http->get("catalog/shared-product-options", [
             'query' => [
                 'name' => $name
             ]
         ]);
 
-        return json_decode($request->getBody()->getContents())->data;
+        $sharedOption = json_decode($request->getBody()->getContents())->data;
+
+        cache()->put('bc-cachedSharedOption-' . $name, $sharedOption, now()->addMinute());
+
+        return $sharedOption;
     }
 
     public function getSharedModifierProject()
@@ -530,7 +550,7 @@ class BigCommerceService
         $sharedModifierValue = $this->getSharedValueByTitle($modifier, $value);
 
         if (!$sharedModifierValue) {
-            $sharedModifierValue = $this->addSharedModifierValue($modifier->id, $value);
+            $sharedModifierValue = $this->addSharedModifierValue($modifier, $value);
         }
 
         return $sharedModifierValue;
@@ -541,15 +561,15 @@ class BigCommerceService
         $sharedOptionValue = $this->getSharedValueByTitle($option, $value);
 
         if (!$sharedOptionValue) {
-            $sharedOptionValue = $this->addSharedOptionValue($option->id, $value);
+            $sharedOptionValue = $this->addSharedOptionValue($option, $value);
         }
 
         return $sharedOptionValue;
     }
 
-    public function addSharedOptionValue(int $optionId, string $value)
+    public function addSharedOptionValue(\stdClass $option, string $value)
     {
-        $request = $this->http->post("catalog/shared-product-options/{$optionId}/values", [
+        $request = $this->http->post("catalog/shared-product-options/{$option->id}/values", [
             'json' => [
                 [
                     "is_default" => false,
@@ -559,30 +579,62 @@ class BigCommerceService
             ]
         ]);
 
-        return json_decode($request->getBody()->getContents())->data[0] ?? null;
+        $valueItem = json_decode($request->getBody()->getContents())->data[0];
+
+        $cachedSharedOption = cache()->get('bc-cachedSharedOption-' . $option->name);
+
+        if ($cachedSharedOption) {
+            $cachedSharedOption->values[] = $valueItem;
+
+            cache()->put('bc-cachedSharedOption-' . $cachedSharedOption->name, $cachedSharedOption, now()->addMinute());
+        }
+
+        return $valueItem;
     }
 
-    public function updateSharedOptionValue(int $optionId, \stdClass $value)
+    public function updateSharedOptionValue(\stdClass $option, \stdClass $value)
     {
-        $request = $this->http->put("catalog/shared-product-options/{$optionId}/values/{$value->id}", [
+        $request = $this->http->put("catalog/shared-product-options/{$option->id}/values/{$value->id}", [
             'json' => $value
         ]);
 
-        return json_decode($request->getBody()->getContents())->data[0] ?? null;
+        $valueItem = json_decode($request->getBody()->getContents())->data[0];
+
+        $cachedSharedOption = cache()->get('bc-cachedSharedOption-' . $option->name);
+
+        if ($cachedSharedOption) {
+            $cachedSharedOption->values = array_filter($cachedSharedOption->values, fn($val) => $val->id != $value->id);
+            $cachedSharedOption->values[] = $valueItem;
+
+            cache()->put('bc-cachedSharedOption-' . $cachedSharedOption->name, $cachedSharedOption, now()->addMinute());
+        }
+
+        return $valueItem;
     }
 
-    public function updateSharedModifierValue(int $modifierId, \stdClass $value)
+    public function updateSharedModifierValue(\stdClass $modifier, \stdClass $value)
     {
-        $request = $this->http->put("catalog/shared-modifiers/{$modifierId}/values/{$value->id}", [
+        $request = $this->http->put("catalog/shared-modifiers/{$modifier->id}/values/{$value->id}", [
             'json' => $value
         ]);
 
-        return json_decode($request->getBody()->getContents())->data[0] ?? null;
+        $valueItem = json_decode($request->getBody()->getContents())->data[0];
+
+        $cachedSharedModifier = cache()->get('bc-cachedSharedModifier-' . $modifier->name);
+
+        if ($cachedSharedModifier) {
+            $cachedSharedModifier->values = array_filter($cachedSharedModifier->values, fn($val) => $val->id != $value->id);
+            $cachedSharedModifier->values[] = $valueItem;
+
+            cache()->put('bc-cachedSharedModifier-' . $cachedSharedModifier->name, $cachedSharedModifier, now()->addMinute());
+        }
+
+        return $valueItem;
     }
 
-    public function addSharedModifierValue(int $modifierId, string $value)
+    public function addSharedModifierValue(\stdClass $modifier, string $value)
     {
-        $request = $this->http->post("catalog/shared-modifiers/{$modifierId}/values", [
+        $request = $this->http->post("catalog/shared-modifiers/{$modifier->id}/values", [
             'json' => [
                 [
                     "is_default" => false,
@@ -592,7 +644,17 @@ class BigCommerceService
             ]
         ]);
 
-        return json_decode($request->getBody()->getContents())->data[0] ?? null;
+        $valueItem = json_decode($request->getBody()->getContents())->data[0];
+
+        $cachedSharedModifier = cache()->get('bc-cachedSharedModifier-' . $modifier->name);
+
+        if ($cachedSharedModifier) {
+            $cachedSharedModifier->values[] = $valueItem;
+
+            cache()->put('bc-cachedSharedModifier-' . $cachedSharedModifier->name, $cachedSharedModifier, now()->addMinute());
+        }
+
+        return $valueItem;
     }
 
     public function removeSharedModifierValue(int $modifierId, int $valueId)
