@@ -240,6 +240,8 @@ class ConnectWiseController extends Controller
 
                             } elseif ($sharedOptionProjectTicketValue != $ticketTitle) {
 
+                                $sharedOptionProjectTicketValue = $ticketTitle;
+
                                 $bigCommerceService->updateSharedOptionValue($sharedOptionProjectTicket, $sharedOptionProjectTicketValue);
 
                             }
@@ -252,6 +254,8 @@ class ConnectWiseController extends Controller
                             $ticket = $connectWiseService->setBigCommerceModifierId($ticket, $modifierValue->id);
 
                         } elseif ($sharedModifierProjectTicketValue->label != $ticketTitle) {
+
+                            $sharedModifierProjectTicketValue->label = $ticketTitle;
 
                             $bigCommerceService->updateSharedModifierValue($sharedModifierProjectTicket, $sharedModifierProjectTicketValue);
 
@@ -301,6 +305,8 @@ class ConnectWiseController extends Controller
 
                                 $phase = $connectWiseService->setBigCommerceOptionId($phase, $optionValue->id);
                             } elseif ($sharedOptionPhaseValue->label != $phaseTitle) {
+                                $sharedOptionPhaseValue->label = $phaseTitle;
+
                                 $bigCommerceService->updateSharedOptionValue($sharedOptionPhase, $sharedOptionPhaseValue);
                             }
 
@@ -309,6 +315,8 @@ class ConnectWiseController extends Controller
 
                                 $phase = $connectWiseService->setBigCommerceModifierId($phase, $modifierValue->id);
                             } elseif ($sharedModifierPhaseValue->label != $phaseTitle) {
+                                $sharedModifierPhaseValue->label = $phaseTitle;
+
                                 $bigCommerceService->updateSharedModifierValue($sharedModifierPhase, $sharedModifierPhaseValue);
                             }
 
