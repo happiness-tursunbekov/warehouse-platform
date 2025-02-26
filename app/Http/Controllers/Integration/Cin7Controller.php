@@ -22,6 +22,8 @@ class Cin7Controller extends Controller
             'CustomerReference' => ['nullable', 'string']
         ]);
 
+        return response()->json(['message' => 'Service temporarily inactive']);
+
         $bigCommerceOrderId = $request->get('CustomerReference');
 
         $bigCommerceOrder = null;
