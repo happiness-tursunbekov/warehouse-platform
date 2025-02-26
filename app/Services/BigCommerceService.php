@@ -599,7 +599,6 @@ class BigCommerceService
                 [
                     'id' => $value->id,
                     'label' => $value->label,
-                    'sort_order' => $value->sort_order
                 ]
             ]
         ]);
@@ -624,8 +623,7 @@ class BigCommerceService
             'json' => [
                 [
                     'id' => $value->id,
-                    'label' => $value->label,
-                    'sort_order' => $value->sort_order
+                    'label' => $value->label
                 ]
             ]
         ]);
