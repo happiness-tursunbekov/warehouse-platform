@@ -595,12 +595,7 @@ class BigCommerceService
     public function updateSharedOptionValue(\stdClass $option, \stdClass $value)
     {
         $request = $this->http->put("catalog/shared-product-options/{$option->id}/values", [
-            'json' => [
-                [
-                    'id' => $value->id,
-                    'label' => $value->label,
-                ]
-            ]
+            'json' => [$value]
         ]);
 
         $valueItem = json_decode($request->getBody()->getContents())->data[0];
@@ -620,12 +615,7 @@ class BigCommerceService
     public function updateSharedModifierValue(\stdClass $modifier, \stdClass $value)
     {
         $request = $this->http->put("catalog/shared-modifiers/{$modifier->id}/values", [
-            'json' => [
-                [
-                    'id' => $value->id,
-                    'label' => $value->label
-                ]
-            ]
+            'json' => [$value]
         ]);
 
         $valueItem = json_decode($request->getBody()->getContents())->data[0];
