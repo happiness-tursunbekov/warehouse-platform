@@ -931,7 +931,7 @@ class ConnectWiseService
 
     public function updateTicket(\stdClass $ticket)
     {
-        $url = (@$ticket->project ? "project/projects/{$ticket->project->id}" : "service");
+        $url = (@$ticket->project ? "project" : "service");
 
         $response = $this->http->put($url . "/tickets/{$ticket->id}?clientId={$this->clientId}", [
             'json' => $ticket,
@@ -939,9 +939,9 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function ticket(int $ticketId, int $projectId=null)
+    public function ticket(int $ticketId, bool $isProject=false)
     {
-        $url = ($projectId ? "project/projects/{$projectId}" : "service");
+        $url = ($isProject ? "project" : "service");
 
         $response = $this->http->get($url . "/tickets/{$ticketId}?clientId={$this->clientId}");
 

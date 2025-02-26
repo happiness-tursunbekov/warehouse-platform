@@ -188,7 +188,6 @@ class ConnectWiseController extends Controller
         return response()->json(['message' => 'Successful!']);
     }
 
-    // TODO: Add back ticket webhook on ConnectWise
     public function ticket(Request $request, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
         $action = $request->get('Action');
@@ -197,7 +196,7 @@ class ConnectWiseController extends Controller
 
         if (@$entity['project']) {
 
-            $ticket = $connectWiseService->ticket($id, $entity['project']['id']);
+            $ticket = $connectWiseService->ticket($id, true);
 
             $phase = @$ticket->phase ? $connectWiseService->getProjectPhase($ticket->project->id, $ticket->phase->id) : null;
 
@@ -440,7 +439,6 @@ class ConnectWiseController extends Controller
         }
     }
 
-    // TODO: Add Company webhook to ConnectWise
     public function company(Request $request, BigCommerceService $bigCommerceService, ConnectWiseService $connectWiseService)
     {
         $action = $request->get('Action');
