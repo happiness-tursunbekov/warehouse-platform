@@ -275,8 +275,8 @@ class ConnectWiseController extends Controller
                         $modifierId = $connectWiseService->extractBigCommerceModifierId($phase);
                         $optionId = $connectWiseService->extractBigCommerceOptionId($phase);
 
-                        $sharedModifierPhaseValue = $bigCommerceService->getSharedValueById($sharedModifierPhase, $modifierId);
-                        $sharedOptionPhaseValue = $bigCommerceService->getSharedValueById($sharedOptionPhase, $optionId);
+                        $sharedModifierPhaseValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierPhase, $modifierId) : null;
+                        $sharedOptionPhaseValue = $optionId ? $bigCommerceService->getSharedValueById($sharedOptionPhase, $optionId) : null;
 
                         if ($phase->status->name == 'Closed') {
 
