@@ -172,7 +172,10 @@ class ProductController extends Controller
 
         return response()->json([
             'items' => $poItems->map(function (\stdClass $product) use ($catalogItems, $connectWiseService) {
-                $product->barcodes = $connectWiseService->extractBarcodesFromCatalogItem($catalogItems->where('id', $product->productId)->first());
+
+                $catalogItem = $catalogItems->where('id', $product->productId)->first();
+
+                $product->barcodes = $catalogItem ? $connectWiseService->extractBarcodesFromCatalogItem($catalogItem) : [];
                 return $product;
             }),
             'code' => 'SUCCESS'
