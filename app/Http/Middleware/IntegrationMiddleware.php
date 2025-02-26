@@ -24,13 +24,13 @@ class IntegrationMiddleware
                 ConnectWiseService::ACTION_DELETED
             ];
 
-//            $request->validate([
-//                'key' => ['required', 'string'],
-//                'ID' => ['required', 'integer'],
-//                'Action' => ['required', 'string', "in:" . implode(',', $actions)],
-//                'Type' => ['required', 'string'],
-//                'Entity' => ['nullable', 'required_unless:Action,' . ConnectWiseService::ACTION_DELETED, 'string']
-//            ]);
+            $request->validate([
+                'key' => ['required', 'string'],
+                'ID' => ['required', 'integer'],
+                'Action' => ['required', 'string', "in:" . implode(',', $actions)],
+                'Type' => ['required', 'string'],
+                'Entity' => ['nullable', 'required_unless:Action,' . ConnectWiseService::ACTION_DELETED, 'string']
+            ]);
 
             $cache = cache()->get('cw-webhook-' . $request->get('Type') . $request->get('ID'));
 
