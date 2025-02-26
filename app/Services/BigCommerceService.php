@@ -594,7 +594,7 @@ class BigCommerceService
 
     public function updateSharedOptionValue(\stdClass $option, \stdClass $value)
     {
-        $request = $this->http->post("catalog/shared-product-options/{$option->id}/values/{$value->id}", [
+        $request = $this->http->patch("catalog/shared-product-options/{$option->id}/values/{$value->id}", [
             'json' => $value
         ]);
 
@@ -614,7 +614,7 @@ class BigCommerceService
 
     public function updateSharedModifierValue(\stdClass $modifier, \stdClass $value)
     {
-        $request = $this->http->post("catalog/shared-modifiers/{$modifier->id}/values/{$value->id}", [
+        $request = $this->http->patch("catalog/shared-modifiers/{$modifier->id}/values/{$value->id}", [
             'json' => $value
         ]);
 
