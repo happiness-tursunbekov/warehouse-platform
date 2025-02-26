@@ -1814,7 +1814,7 @@ class ConnectWiseService
     {
         $phase = $phase ?: ($phaseId ? $this->getProjectPhase($projectId, $phaseId) : null);
 
-        return $phaseId ? ("#{$projectId}: #{$phase->id} - {$phase->description}" . (@$phase->phaseParent ? ": {$phase->phaseParent->description}" : "")) : null;
+        return $phaseId ? ("#{$projectId}: #{$phase->id} - {$phase->description}" . (@$phase->parentPhase ? ": {$phase->parentPhase->description}" : "")) : null;
     }
 
     public function generateProjectTicketName($projectId, $ticketId, $ticketSummary, $phaseId=null)
