@@ -457,6 +457,11 @@ class ConnectWiseController extends Controller
         $entity = $request->get('Entity');
         $id = $request->get('ID');
 
+        WebhookLog::create([
+            'type' => 'Company',
+            'data' => $request->all()
+        ]);
+
         $company = $connectWiseService->company($id);
 
         switch ($action) {
