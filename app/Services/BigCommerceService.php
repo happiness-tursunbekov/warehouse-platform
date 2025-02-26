@@ -497,52 +497,52 @@ class BigCommerceService
 
     public function getSharedModifierProject()
     {
-        return $this->getSharedModifierByName('Project')[0] ?? null;
+        return $this->getSharedModifierByName('Project');
     }
 
     public function getSharedOptionProject()
     {
-        return $this->getSharedOptionByName('Project')[0] ?? null;
+        return $this->getSharedOptionByName('Project');
     }
 
     public function getSharedModifierCompany()
     {
-        return $this->getSharedModifierByName('Company')[0] ?? null;
+        return $this->getSharedModifierByName('Company');
     }
 
     public function getSharedOptionCompany()
     {
-        return $this->getSharedOptionByName('Company')[0] ?? null;
+        return $this->getSharedOptionByName('Company');
     }
 
     public function getSharedModifierPhase()
     {
-        return $this->getSharedModifierByName('Phase')[0] ?? null;
+        return $this->getSharedModifierByName('Phase');
     }
 
     public function getSharedOptionPhase()
     {
-        return $this->getSharedOptionByName('Phase')[0] ?? null;
+        return $this->getSharedOptionByName('Phase');
     }
 
     public function getSharedModifierServiceTicket()
     {
-        return $this->getSharedModifierByName('Service Ticket')[0] ?? null;
+        return $this->getSharedModifierByName('Service Ticket');
     }
 
     public function getSharedOptionServiceTicket()
     {
-        return $this->getSharedOptionByName('Service Ticket')[0] ?? null;
+        return $this->getSharedOptionByName('Service Ticket');
     }
 
     public function getSharedModifierProjectTicket()
     {
-        return $this->getSharedModifierByName('Project Ticket')[0] ?? null;
+        return $this->getSharedModifierByName('Project Ticket');
     }
 
     public function getSharedOptionProjectTicket()
     {
-        return $this->getSharedOptionByName('Project Ticket')[0] ?? null;
+        return $this->getSharedOptionByName('Project Ticket');
     }
 
     public function addSharedModifierValueIfNotExists(\stdClass $modifier, string $value)
