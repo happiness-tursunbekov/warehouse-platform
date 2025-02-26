@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 
 class BigCommerceService
 {
+    const NO_PHASE_LABEL = 'No phase';
+
     private Client $http;
     private Client $httpV2;
     public function __construct()
@@ -65,17 +67,14 @@ class BigCommerceService
         return $this->getProductVariants($id, 1, 1, $sku)->data[0] ?? null;
     }
 
-    public function createProductVariantProject($productId, $variantSku, $optionLabel)
+    public function createProductVariantProject($productId, $variantSku, $optionProjectLabel, $optionPhaseLabel=null)
     {
-        $optionProject = $this->getProductOptionProject($productId);
+        $optionPhaseLabel = $optionPhaseLabel ?: self::NO_PHASE_LABEL;
 
-        if (!$optionProject) {
-            $optionProject = $this->createProductOptionProject($productId, [
-                [
-                    "label" => $optionLabel
-                ]
-            ]);
-        }
+        $productOptions = $this->getProductOptions($productId);
+
+        $optionProject = $this->getProductOptionOrModifierProject($productOptions);
+        $optionPhase = $this->getProductOptionOrModifierPhase($productOptions);
 
         $request = $this->http->post("catalog/products/{$productId}/variants", [
             'json' => [
@@ -83,13 +82,29 @@ class BigCommerceService
                 "option_values" => [
                     [
                         "option_id" => $optionProject->id,
-                        "id" => $optionProject->option_values[0]->id
-                    ]
+                        "id" => $this->getSharedValueByTitle($optionProject, $optionProjectLabel)->id
+                    ],
+                    [
+                        "option_id" => $optionPhase->id,
+                        "id" => $this->getSharedValueByTitle($optionPhase, $optionPhaseLabel)->id
+                    ],
                 ]
             ]
         ]);
 
         return json_decode($request->getBody()->getContents())->data;
+    }
+
+    public function getSharedValueByTitle(\stdClass $sharedOptionOrModifier, string $title)
+    {
+        $values = $sharedOptionOrModifier->values ?? $sharedOptionOrModifier->option_values;
+        return collect($values)->filter(fn($value) => Str::contains(Str::lower($value->label), Str::lower($title)))->first();
+    }
+
+    public function getSharedValueById(\stdClass $sharedOptionOrModifier, int $valueId)
+    {
+        $values = $sharedOptionOrModifier->values ?? $sharedOptionOrModifier->option_values;
+        return collect($values)->filter(fn($value) => $value->id == $valueId)->first();
     }
 
     public function getProductOptions($productId, $page=null, $limit=null)
@@ -104,10 +119,20 @@ class BigCommerceService
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($result->getBody()->getContents())->data;
     }
 
-    public function updateProductOptions($productId, \stdClass $option)
+    public function getProductOptionOrModifierProject(array $productOptions)
+    {
+        return collect($productOptions)->filter(fn($value) => $value->name == 'Project')->first();
+    }
+
+    public function getProductOptionOrModifierPhase(array $productOptions)
+    {
+        return collect($productOptions)->filter(fn($value) => $value->name == 'Phase')->first();
+    }
+
+    public function updateProductOption($productId, \stdClass $option)
     {
         $result = $this->http->put("catalog/products/{$productId}/options/{$option->id}", [
             'json' => $option,
@@ -212,24 +237,42 @@ class BigCommerceService
         return json_decode($result->getBody()->getContents());
     }
 
-    public function createProduct(string $sku, string $name, string $description, array $categories, float $price, float $cost, string $barcode='', $isProject=true)
+    public function createProduct(string $sku, string $name, string $description, array $categories, float $price, float $cost, string $barcode='')
     {
-        $request = $this->http->post('catalog/products', [
-            'json' => [
-                "name" => $name,
-                "description" => $description,
-                "categories" => $categories,
-                "price" => $price,
-                "cost" => $cost,
-                "upc" => $barcode,
-                "sku" => Str::upper($sku),
-                "type" => 'physical',
-                "inventory_tracking" => 'variant',
-                'weight' => 0
-            ]
-        ]);
+        $i = 0;
+        while (true) {
+            try {
+                $request = $this->http->post('catalog/products', [
+                    'json' => [
+                        "name" => $name . ($i ? "[{$i}]" : ""),
+                        "description" => $description,
+                        "categories" => $categories,
+                        "price" => $price,
+                        "cost" => $cost,
+                        "upc" => $barcode,
+                        "sku" => $sku,
+                        "type" => 'physical',
+                        "inventory_tracking" => 'variant',
+                        'weight' => 0
+                    ]
+                ]);
+
+                break;
+            } catch (GuzzleException $e) {
+
+                if (!Str::contains($e->getMessage(), 'The product name is a duplicate')) {
+                    throw $e;
+                }
+
+                $i++;
+            }
+        }
 
         $product = json_decode($request->getBody()->getContents())->data;
+
+        // Adding shared values to the product
+        $this->addProductSharedOption($product->id, $this->getSharedOptionProject());
+        $this->addProductSharedOption($product->id, $this->getSharedOptionPhase());
 
         $this->http->put('catalog/products/channel-assignments', [
             'json' => [
@@ -241,13 +284,6 @@ class BigCommerceService
         ]);
 
         return $product;
-    }
-
-    public function getProductOptionProject($productId)
-    {
-        return array_filter($this->getProductOptions($productId)->data, function ($option) {
-            return Str::replace(' ', '', Str::lower($option->display_name)) == 'project&phase';
-        })[0] ?? null;
     }
 
     public function createProductOption($productId, $display_name, array $option_values, $type="dropdown")
@@ -263,9 +299,24 @@ class BigCommerceService
         return json_decode($request->getBody()->getContents())->data;
     }
 
-    public function createProductOptionProject($productId, array $option_values)
+    public function addProductSharedOption($productId, $sharedOption)
     {
-        return $this->createProductOption($productId, 'Project & Phase', $option_values);
+        $optionValues = [new \stdClass()];
+
+        $optionValues[0]->id = 0;
+
+        $request = $this->http->post("catalog/products/{$productId}/options", [
+            'json' => [
+                "type" => $sharedOption->type,
+                "display_name" => $sharedOption->name,
+                "shared_option_id" => $sharedOption->id,
+                "required" => false,
+                "config" => new \stdClass(),
+                "option_values" => $optionValues
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data;
     }
 
     public function uploadProductImage($productId, $file, $filename, $default=false)
@@ -280,6 +331,11 @@ class BigCommerceService
                 ]
             ]
         ]);
+    }
+
+    public function deleteProductImage($productId, $imageId)
+    {
+        $this->http->delete("catalog/products/{$productId}/images/{$imageId}");
     }
 
     public function uploadProductImageUrl($productId, $url)
@@ -301,7 +357,7 @@ class BigCommerceService
 
     public function adjustVariant($variantId, $qty)
     {
-        $request = $this->http->put("inventory/adjustments/absolute", [
+        $request = $this->http->post("inventory/adjustments/relative", [
             'json' => [
                 "reason" => "Initial count",
                 "items" => [
@@ -381,5 +437,171 @@ class BigCommerceService
                 ];
             }, $categoryIds)
         ]);
+    }
+
+    public function getOrder($id)
+    {
+        $response = $this->httpV2->get("orders/{$id}");
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getOrderProducts($id)
+    {
+        $response = $this->httpV2->get("orders/{$id}/products");
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getSharedModifierByName($name)
+    {
+        $request = $this->http->get("catalog/shared-modifiers", [
+            'query' => [
+                'name' => $name
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data;
+    }
+
+    public function getSharedOptionByName($name)
+    {
+        $request = $this->http->get("catalog/shared-product-options", [
+            'query' => [
+                'name' => $name
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data;
+    }
+
+    public function getSharedModifierProject()
+    {
+        return $this->getSharedModifierByName('Project')[0] ?? null;
+    }
+
+    public function getSharedOptionProject()
+    {
+        return $this->getSharedOptionByName('Project')[0] ?? null;
+    }
+
+    public function getSharedModifierCompany()
+    {
+        return $this->getSharedModifierByName('Company')[0] ?? null;
+    }
+
+    public function getSharedOptionCompany()
+    {
+        return $this->getSharedOptionByName('Company')[0] ?? null;
+    }
+
+    public function getSharedModifierPhase()
+    {
+        return $this->getSharedModifierByName('Phase')[0] ?? null;
+    }
+
+    public function getSharedOptionPhase()
+    {
+        return $this->getSharedOptionByName('Phase')[0] ?? null;
+    }
+
+    public function getSharedModifierServiceTicket()
+    {
+        return $this->getSharedModifierByName('Service Ticket')[0] ?? null;
+    }
+
+    public function getSharedOptionServiceTicket()
+    {
+        return $this->getSharedOptionByName('Service Ticket')[0] ?? null;
+    }
+
+    public function getSharedModifierProjectTicket()
+    {
+        return $this->getSharedModifierByName('Project Ticket')[0] ?? null;
+    }
+
+    public function getSharedOptionProjectTicket()
+    {
+        return $this->getSharedOptionByName('Project Ticket')[0] ?? null;
+    }
+
+    public function addSharedModifierValueIfNotExists(\stdClass $modifier, string $value)
+    {
+        $sharedModifierValue = $this->getSharedValueByTitle($modifier, $value);
+
+        if (!$sharedModifierValue) {
+            $sharedModifierValue = $this->addSharedModifierValue($modifier->id, $value);
+        }
+
+        return $sharedModifierValue;
+    }
+
+    public function addSharedOptionValueIfNotExists(\stdClass $option, string $value)
+    {
+        $sharedOptionValue = $this->getSharedValueByTitle($option, $value);
+
+        if (!$sharedOptionValue) {
+            $sharedOptionValue = $this->addSharedOptionValue($option->id, $value);
+        }
+
+        return $sharedOptionValue;
+    }
+
+    public function addSharedOptionValue(int $optionId, string $value)
+    {
+        $request = $this->http->post("catalog/shared-product-options/{$optionId}/values", [
+            'json' => [
+                [
+                    "is_default" => false,
+                    "label" => $value,
+                    "sort_order" => 0
+                ]
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data[0] ?? null;
+    }
+
+    public function updateSharedOptionValue(int $optionId, \stdClass $value)
+    {
+        $request = $this->http->put("catalog/shared-product-options/{$optionId}/values/{$value->id}", [
+            'json' => $value
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data[0] ?? null;
+    }
+
+    public function updateSharedModifierValue(int $modifierId, \stdClass $value)
+    {
+        $request = $this->http->put("catalog/shared-modifiers/{$modifierId}/values/{$value->id}", [
+            'json' => $value
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data[0] ?? null;
+    }
+
+    public function addSharedModifierValue(int $modifierId, string $value)
+    {
+        $request = $this->http->post("catalog/shared-modifiers/{$modifierId}/values", [
+            'json' => [
+                [
+                    "is_default" => false,
+                    "label" => $value,
+                    "sort_order" => 0
+                ]
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data[0] ?? null;
+    }
+
+    public function removeSharedModifierValue(int $modifierId, int $valueId)
+    {
+        $this->http->delete("catalog/shared-modifiers/{$modifierId}/values?id:in={$valueId}");
+    }
+
+    public function removeSharedOptionValue(int $optionId, int $valueId)
+    {
+        $this->http->delete("catalog/shared-product-options/{$optionId}/values?id:in={$valueId}");
     }
 }

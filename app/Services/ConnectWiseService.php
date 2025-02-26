@@ -2,17 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Request;
-use Illuminate\Http\File;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
-use Psr\Http\Message\RequestInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -159,7 +155,7 @@ class ConnectWiseService
     public function getCatalogItems($page=null, $conditions=null, $customFieldConditions=null, $fields=null, $pageSize=25)
     {
         try {
-            $result = $this->http->get('procurement/catalog', [
+            $response = $this->http->get('procurement/catalog', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -172,13 +168,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getCatalogItemByIdentifier($identifier)
     {
         try {
-            $result = $this->http->get('procurement/catalog', [
+            $response = $this->http->get('procurement/catalog', [
                 'query' => [
                     'clientId' => $this->clientId,
                     'conditions' => "identifier='{$identifier}'"
@@ -187,13 +183,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
-        return @json_decode($result->getBody()->getContents())[0];
+        return @json_decode($response->getBody()->getContents())[0];
     }
 
     public function getCatalogItemsByBarcode(string $barcode, $fields=null, $page=null, $pageSize=25)
     {
         try {
-            $result = $this->http->get('procurement/catalog', [
+            $response = $this->http->get('procurement/catalog', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -205,13 +201,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getCatalogItemsQty($conditions=null)
     {
         try {
-            $result = $this->http->get('procurement/catalog/count', [
+            $response = $this->http->get('procurement/catalog/count', [
                 'query' => [
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
@@ -220,13 +216,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getCatalogItemOnHand($id)
     {
         try {
-            $result = $this->http->get("procurement/catalog/{$id}/quantityOnHand", [
+            $response = $this->http->get("procurement/catalog/{$id}/quantityOnHand", [
                 'query' => [
                     'clientId' => $this->clientId,
                     'warehouseBinId' => 1
@@ -235,13 +231,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function purchaseOrders($page=null, $conditions=null, $fields=null, $orderBy=null)
     {
         try {
-            $result = $this->http->get('procurement/purchaseorders', [
+            $response = $this->http->get('procurement/purchaseorders', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -254,17 +250,24 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function purchaseOrder(int $id)
     {
         try {
-            $result = $this->http->get("procurement/purchaseorders/{$id}?clientId={$this->clientId}");
+            $response = $this->http->get("procurement/purchaseorders/{$id}?clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function company(int $id)
+    {
+        $response = $this->http->get("company/companies/{$id}?clientId={$this->clientId}");
+
+        return json_decode($response->getBody()->getContents());
     }
 
     public function purchaseOrderItems($id, $page=null, $conditions=null, $fields=null)
@@ -279,7 +282,7 @@ class ConnectWiseService
     public function purchaseOrderItemsOriginal($id, $page=null, $conditions=null, $fields=null)
     {
         try {
-            $result = $this->http->get("procurement/purchaseorders/{$id}/lineitems", [
+            $response = $this->http->get("procurement/purchaseorders/{$id}/lineitems", [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -292,18 +295,18 @@ class ConnectWiseService
             return [];
         }
 
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function purchaseOrderItem($poId, $itemId)
     {
         try {
-            $result = $this->http->get("procurement/purchaseorders/{$poId}/lineitems/{$itemId}?clientId={$this->clientId}");
+            $response = $this->http->get("procurement/purchaseorders/{$poId}/lineitems/{$itemId}?clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
 
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getOpenPoItems() : Collection
@@ -386,7 +389,7 @@ class ConnectWiseService
 
         $putItem->receivedQuantity = $quantity;
         $putItem->closedFlag = true;
-        $result = $this->http->put("procurement/purchaseorders/{$poId}/lineitems/{$item->id}", [
+        $response = $this->http->put("procurement/purchaseorders/{$poId}/lineitems/{$item->id}", [
             'query' => [
                 'clientId' => $this->clientId
             ],
@@ -395,9 +398,9 @@ class ConnectWiseService
 
         $this->updatePoItems($poId);
 
-        $result = json_decode($result->getBody()->getContents());
+        $response = json_decode($response->getBody()->getContents());
 
-        return $this->preparePoItem($poId, $result);
+        return $this->preparePoItem($poId, $response);
     }
 
     public function findItemFromPos($itemIdentifier)
@@ -434,54 +437,61 @@ class ConnectWiseService
         return $poItems;
     }
 
-    public function getProducts($page=null, $conditions=null, $pageSize=null)
+    public function getProducts($page=null, $conditions=null, $pageSize=null, $customFieldConditions=null)
     {
-        try {
-            $result = $this->http->get('procurement/products', [
+//        try {
+            $response = $this->http->get('procurement/products', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
-                    'pageSize' => $pageSize
+                    'pageSize' => $pageSize,
+                    'customFieldConditions' => $customFieldConditions
                 ],
             ]);
-        } catch (GuzzleException $e) {
-            return [];
-        }
-        return json_decode($result->getBody()->getContents());
+//        } catch (GuzzleException $e) {
+//            return [];
+//        }
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getProduct($id)
     {
         try {
-            $result = $this->http->get("procurement/products/{$id}?clientId={$this->clientId}");
+            $response = $this->http->get("procurement/products/{$id}?clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getProductsByCin7ProductId($id)
+    {
+        return $this->getProducts(1, null, 25, "caption='Cin7 Product ID' and value='{$id}'");
     }
 
     public function updateProduct(\stdClass $product)
     {
-        try {
-            $result = $this->http->put("procurement/products/{$product->id}?clientId={$this->clientId}", [
-                'json' => $product,
-            ]);
-        }  catch (GuzzleException $e) {
-            $errBody = $e->getResponse()->getBody()->getContents();
+        $response = $this->http->put("procurement/products/{$product->id}?clientId={$this->clientId}", [
+            'json' => $product,
+        ]);
 
-            if (Str::contains($errBody, 'This opportunity is closed and cannot be edited')) {
-                return $product;
-            }
-            abort(500, $errBody . $product->id);
-        }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function updateProject(\stdClass $project)
+    {
+        $response = $this->http->put("project/projects/{$project->id}?clientId={$this->clientId}", [
+            'json' => $project,
+        ]);
+
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getProductPickingShippingDetails($id, $page=null, $conditions=null)
     {
         try {
-            $result = $this->http->get("procurement/products/{$id}/pickingShippingDetails", [
+            $response = $this->http->get("procurement/products/{$id}/pickingShippingDetails", [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -491,7 +501,7 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function productPickShipDelete($productId, $shipmentId)
@@ -505,10 +515,10 @@ class ConnectWiseService
     public function pickProduct($id, $quantity) : void
     {
         $pickShip = $this->getProductPickingShippingDetails($id)[0];
-        $pickShip->pickedQuantity = $quantity;
-        $pickShip->shippedQuantity = '0';
+        $pickShip->pickedQuantity = (int)$quantity;
+        $pickShip->shippedQuantity = 0;
         $pickShip->id = 0;
-        $pickShip->quantity = $quantity;
+        $pickShip->quantity = (int)$quantity;
         $pickShip->warehouseBin->id = 1;
         $pickShip->warehouseBin->name = 'Default Bin';
         $pickShip->warehouseBin->_info->warehouseBin_href = 'https:\/\/api-na.myconnectwise.net\/v4_6_release\/apis\/3.0\/\/procurement\/warehouseBins\/1';
@@ -517,34 +527,78 @@ class ConnectWiseService
     }
 
     /**
-     * @throws \Exception
+     * @throws \Exception|GuzzleException
      */
-    public function shipProduct($id, $quantity) : void
+    public function unpickProduct($id, $quantity) : void
     {
         $dynamicQty = $quantity;
-
-        collect($this->getProductPickingShippingDetails($id, null, 'lineNumber != 0 and pickedQuantity > 0'))
+        collect($this->getProductPickingShippingDetails($id, null, "lineNumber != 0"))
+            ->filter(fn($pickShip) => $pickShip->shippedQuantity < $pickShip->pickedQuantity)
             ->map(function ($pickShip) use (&$dynamicQty) {
 
                 if ($dynamicQty == 0) {
                     return false;
                 }
 
-                $pickShip->shippedQuantity = $dynamicQty;
+                $unpickAvailableQty = $pickShip->pickedQuantity - $pickShip->shippedQuantity;
 
-                $dynamicQty = $dynamicQty > $pickShip->pickedQuantity ? $dynamicQty - $pickShip->pickedQuantity : 0;
+                if ($dynamicQty > $unpickAvailableQty) {
+                    $pickShip->pickedQuantity -= $unpickAvailableQty;
+                    $dynamicQty = $dynamicQty - $unpickAvailableQty;
+                } else {
+                    $pickShip->pickedQuantity -= $dynamicQty;
+                    $dynamicQty = 0;
+                }
 
                 return $pickShip;
             })
+            ->filter(fn($pickShip) => !!$pickShip)
+            ->map(function ($pickShip) use ($dynamicQty) {
+
+                if ($dynamicQty > 0) {
+                    throw new \Exception('Unpicking quantity cannot be greater than picked quantity');
+                }
+
+                $this->addOrUpdatePickShip($pickShip);
+            })
+        ;
+    }
+
+    /**
+     * @throws \Exception|GuzzleException
+     */
+    public function shipProduct($id, $quantity) : void
+    {
+        $dynamicQty = $quantity;
+
+        collect($this->getProductPickingShippingDetails($id, null, 'lineNumber != 0'))
+            ->filter(fn($pickShip) => $pickShip->shippedQuantity < $pickShip->pickedQuantity)
+            ->map(function ($pickShip) use (&$dynamicQty) {
+
+                if ($dynamicQty == 0) {
+                    return false;
+                }
+
+                $shippableQuantity = $pickShip->pickedQuantity - $pickShip->shippedQuantity;
+
+                if ($dynamicQty > $shippableQuantity) {
+                    $pickShip->shippedQuantity += $shippableQuantity;
+                    $dynamicQty = $dynamicQty - $shippableQuantity;
+                } else {
+                    $pickShip->shippedQuantity += $dynamicQty;
+                    $dynamicQty = 0;
+                }
+
+                return $pickShip;
+            })
+            ->filter(fn($pickShip) => !!$pickShip)
             ->map(function ($pickShip) use ($dynamicQty) {
 
                 if ($dynamicQty > 0) {
                     throw new \Exception('Shipping quantity cannot be greater than picked quantity');
                 }
 
-                if ($pickShip) {
-                    $this->addOrUpdatePickShip($pickShip);
-                }
+                $this->addOrUpdatePickShip($pickShip);
             })
         ;
 
@@ -558,25 +612,31 @@ class ConnectWiseService
      */
     private function addOrUpdatePickShip(\stdClass $pickShipDetail) : void
     {
-        $request = $this->http->post(
+        $details = [
+            "IV_Product_RecID" => $pickShipDetail->productItem->id,
+            "quantity_Picked" => $pickShipDetail->pickedQuantity,
+            "quantity_Shipped" => $pickShipDetail->shippedQuantity,
+            "warehouse_Bin_RecID" => $pickShipDetail->warehouse->id
+        ];
+
+        if ($pickShipDetail->id) {
+            $details['IV_Product_Detail_RecID'] = $pickShipDetail->id;
+            $details['line_Number'] = $pickShipDetail->lineNumber;
+        }
+
+        $response = $this->http->post(
             "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
-                "productDetail" => [
-                    "IV_Product_RecID" => $pickShipDetail->productItem->id,
-                    "quantity_Picked" => $pickShipDetail->pickedQuantity,
-                    "quantity_Shipped" => $pickShipDetail->shippedQuantity,
-                    "warehouse_Bin_RecID" => 1,
-                    "IV_Product_Detail_RecID" => $pickShipDetail->id ?? null
-                ]
+                "productDetail" => $details
             ],
                 "SavePickingAndShippingAction",
                 "ProcurementCommon"
             )
         );
 
-        $result = json_decode($request->getBody()->getContents());
+        $response = json_decode($response->getBody()->getContents());
 
-        if (!$result->data->isSuccess) {
-            throw new \Exception(json_encode($result->data->error));
+        if (!$response->data->isSuccess) {
+            throw new \Exception(json_encode($response->data->error));
         }
     }
 
@@ -600,21 +660,21 @@ class ConnectWiseService
         $pickShip->warehouseBin->_info->warehouseBin_href = 'https:\/\/api-na.myconnectwise.net\/v4_6_release\/apis\/3.0\/\/procurement\/warehouseBins\/1';
 
         try {
-            $request = $this->http->post("procurement/products/{$id}/pickingShippingDetails?clientId=" . $this->clientId, [
+            $response = $this->http->post("procurement/products/{$id}/pickingShippingDetails?clientId=" . $this->clientId, [
                 'json' => $pickShip,
             ]);
 
-            $result = json_decode($request->getBody()->getContents());
+            $response = json_decode($response->getBody()->getContents());
 
             // Fixes ConnectWise api bug
             $this->http->post(
                 "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
                     "productDetail" => [
                         "IV_Product_RecID" => $id,
-                        "quantity_Picked" => $result->pickedQuantity,
-                        "quantity_Shipped" => $result->shippedQuantity,
+                        "quantity_Picked" => $response->pickedQuantity,
+                        "quantity_Shipped" => $response->shippedQuantity,
                         "warehouse_Bin_RecID" => 1,
-                        "IV_Product_Detail_RecID" => $result->id
+                        "IV_Product_Detail_RecID" => $response->id
                     ]
                 ],
                     "SavePickingAndShippingAction",
@@ -624,7 +684,7 @@ class ConnectWiseService
             $errBody = $e->getResponse()->getBody()->getContents();
 
             if (Str::contains($errBody, 'only on an opportunity') || Str::contains($errBody, 'unexpected database error')) {
-                $request1 = $this->http->post(
+                $response1 = $this->http->post(
                     "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
                         "productDetail" => [
                             "IV_Product_RecID" => $id,
@@ -637,18 +697,18 @@ class ConnectWiseService
                         "ProcurementCommon"
                     ));
 
-                $result1 = json_decode($request1->getBody()->getContents());
+                $response1 = json_decode($response1->getBody()->getContents());
 
-                if ($result1->data->isSuccess) {
+                if ($response1->data->isSuccess) {
                     $this->addToReport('ProductShipment', $pickShip, $quantity < 0 ? 'unshipped/returned' : 'shipped');
 
-                    return $result1;
+                    return $response1;
                 }
 
                 if ($quantity < 0) {
 
                     // Force upship
-                    $request2 = $this->http->post(
+                    $response2 = $this->http->post(
                         "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
                             "productDetail" => [
                                 "IV_Product_Detail_RecID" => $origPickShip->id,
@@ -663,9 +723,9 @@ class ConnectWiseService
                             "ProcurementCommon"
                         ));
 
-                    $result2 = json_decode($request2->getBody()->getContents());
+                    $response2 = json_decode($response2->getBody()->getContents());
 
-                    if ($result2->data->isSuccess) {
+                    if ($response2->data->isSuccess) {
 
                         $this->addToReport('ProductShipment', $pickShip, 'unshipped/returned');
 
@@ -678,9 +738,9 @@ class ConnectWiseService
             return response()->json(['code' => 'ERROR', 'message' => $errBody], 500);
         }
 
-        $this->addToReport('ProductShipment', $result, $quantity < 0 ? 'unshipped/returned' : 'shipped');
+        $this->addToReport('ProductShipment', $response, $quantity < 0 ? 'unshipped/returned' : 'shipped');
 
-        return $result;
+        return $response;
     }
 
     /**
@@ -701,7 +761,7 @@ class ConnectWiseService
 
         $file = method_exists($file, 'getContent') ? $file->getContent() : $file;
 
-        $request = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
+        $response = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
             'multipart' => [
                 [
                     'name'     => 'file',
@@ -735,13 +795,13 @@ class ConnectWiseService
             ]
         ]);
 
-       return json_decode($request->getBody()->getContents());
+       return json_decode($response->getBody()->getContents());
     }
 
     public function getSystemMembers($page=null, $conditions=null)
     {
         try {
-            $result = $this->http->get('system/members', [
+            $response = $this->http->get('system/members', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -751,13 +811,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getProjects($page=null, $conditions=null)
     {
         try {
-            $result = $this->http->get('project/projects', [
+            $response = $this->http->get('project/projects', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -768,13 +828,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getProject($id, $fields=null)
     {
         try {
-            $result = $this->http->get('project/projects/' . $id, [
+            $response = $this->http->get('project/projects/' . $id, [
                 'query' => [
                     'clientId' => $this->clientId,
                     'fields' => $fields
@@ -783,13 +843,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getSystemDepartments($page=null, $conditions=null)
     {
         try {
-            $result = $this->http->get('system/departments', [
+            $response = $this->http->get('system/departments', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -799,13 +859,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getSystemDepartment($id, $fields=null)
     {
         try {
-            $result = $this->http->get('system/departments/' . $id, [
+            $response = $this->http->get('system/departments/' . $id, [
                 'query' => [
                     'clientId' => $this->clientId,
                     'fields' => $fields
@@ -814,13 +874,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getCategories($page=null, $conditions=null, $orderBy=null, $pageSize=100)
     {
         try {
-            $result = $this->http->get('procurement/categories', [
+            $response = $this->http->get('procurement/categories', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -832,32 +892,66 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getCategory($id)
     {
         try {
-            $result = $this->http->get("procurement/categories/{$id}?clientId={$this->clientId}");
+            $response = $this->http->get("procurement/categories/{$id}?clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return null;
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function updateCategory(\stdClass $category)
     {
-
-        $result = $this->http->put("procurement/categories/{$category->id}?clientId={$this->clientId}", [
+        $response = $this->http->put("procurement/categories/{$category->id}?clientId={$this->clientId}", [
             'json' => $category,
         ]);
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function updateCompany(\stdClass $company)
+    {
+        $response = $this->http->put("company/companies/{$company->id}?clientId={$this->clientId}", [
+            'json' => $company,
+        ]);
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function updatePhase(\stdClass $phase)
+    {
+        $response = $this->http->put("project/projects/{$phase->projectId}/phases/{$phase->id}?clientId={$this->clientId}", [
+            'json' => $phase,
+        ]);
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function updateTicket(\stdClass $ticket)
+    {
+        $url = (@$ticket->project ? "project/projects/{$ticket->project->id}" : "service");
+
+        $response = $this->http->put($url . "/tickets/{$ticket->id}?clientId={$this->clientId}", [
+            'json' => $ticket,
+        ]);
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function ticket(int $ticketId, int $projectId=null)
+    {
+        $url = ($projectId ? "project/projects/{$projectId}" : "service");
+
+        $response = $this->http->get($url . "/tickets/{$ticketId}?clientId={$this->clientId}");
+
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getSubcategories($page=null, $conditions=null, $orderBy=null)
     {
         try {
-            $result = $this->http->get('procurement/subcategories', [
+            $response = $this->http->get('procurement/subcategories', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -868,35 +962,35 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getSubcategory($id)
     {
         try {
-            $result = $this->http->get("procurement/subcategories/{$id}?clientId={$this->clientId}");
+            $response = $this->http->get("procurement/subcategories/{$id}?clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return null;
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function updateSubcategory(\stdClass $category)
     {
         try {
-            $result = $this->http->put("procurement/subcategories/{$category->id}?clientId={$this->clientId}", [
+            $response = $this->http->put("procurement/subcategories/{$category->id}?clientId={$this->clientId}", [
                 'json' => $category,
             ]);
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getCatalogItem($id)
     {
         try {
-            $result = $this->http->get('procurement/catalog/' . $id, [
+            $response = $this->http->get('procurement/catalog/' . $id, [
                 'query' => [
                     'clientId' => $this->clientId
                 ],
@@ -904,115 +998,59 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return new \stdClass();
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
-    public function addBarcode(int $catalogItemId, array $barcodes)
+    public function addBarcode(int $catalogItemId, array $newBarcodes)
     {
         $catalogItem = $this->getCatalogItem($catalogItemId);
 
-        $customFields = collect($catalogItem->customFields);
+        $barcodes = $this->extractBarcodesFromCatalogItem($catalogItem);
 
-        $barcode = $customFields->where('caption', 'Barcodes')->first();
+        $values = array_unique(array_merge($barcodes, $newBarcodes));
 
-        $customFields = $customFields->where('caption', '!=', 'Barcodes');
+        $barcodeValue = json_encode($values);
 
-        if (isset($barcode->value))
-            $values = json_decode($barcode->value);
-        else
-            $values = [];
+        $catalogItem = $this->setCustomFieldValue($catalogItem, 'Barcodes', $barcodeValue);
 
-        $values = array_unique(array_merge($values, $barcodes));
+        $this->updateCatalogItem($catalogItem);
 
-        $barcode->value = json_encode($values);
-
-        $customFields->push($barcode);
-
-        $catalogItem->customFields = $customFields->sortBy('id')->values()->toArray();
-
-
-        $this->http->put( "procurement/catalog/{$catalogItemId}?clientId=" . $this->clientId, [
-            'json' => $catalogItem
-        ]);
-
-        if (!Str::contains($catalogItem->identifier, 'used)')) {
-            $usedItems = $this->getCatalogItems(null, "identifier like '{$catalogItem->identifier}(*' and identifier contains 'used'", null, null, 100);
+        if (!Str::contains($catalogItem->unitOfMeasure->name, 'Used cable')) {
+            $usedItems = $this->getCatalogItems(null, "identifier like '{$catalogItem->identifier}(*' and unitOfMeasure/name contains 'Used cable'", null, null, 100);
 
             foreach ($usedItems as $usedItem) {
-                $this->addBarcode($usedItem->id, $values);
+
+                $usedItem = $this->setCustomFieldValue($usedItem, 'Barcodes', $barcodeValue);
+
+                $this->updateCatalogItem($usedItem);
             }
         }
 
         return $values;
     }
 
-    public function extractCin7ProductId(\stdClass $item)
+    public function extractCin7ProductId(\stdClass $catalogItem)
     {
-        $bcProduct = collect($item->customFields)->where('caption', 'Cin7 Product ID')->first();
-
-        return $bcProduct->value ?? null;
-
+        return $this->extractCustomFieldValueByName($catalogItem, 'Cin7 Product ID');
     }
 
     public function extractCin7ProductFamilyId(\stdClass $catalogItem)
     {
-        $bcProduct = collect($catalogItem->customFields)->where('caption', 'Cin7 Product Family ID')->first();
-
-        return $bcProduct->value ?? null;
-
+        return $this->extractCustomFieldValueByName($catalogItem, 'Cin7 Product Family ID');
     }
 
     public function updateCatalogItemCin7ProductId(\stdClass $catalogItem, $productId)
     {
-        $customFields = collect($catalogItem->customFields);
-
-        $bcProduct = $customFields->where('caption', 'Cin7 Product ID')->first();
-
-        $customFields = $customFields->where('caption', '!=', 'Cin7 Product ID');
-
-        $bcProduct->value = $productId;
-
-        $customFields->push($bcProduct);
-
-        $catalogItem->customFields = $customFields->sortBy('id')->values()->toArray();
+        $catalogItem = $this->setCustomFieldValue($catalogItem, 'Cin7 Product ID', $productId);
 
         $this->updateCatalogItem($catalogItem);
 
         return $catalogItem;
     }
 
-    public function updateProjectProductCin7ProductId(\stdClass $projectProduct, $cin7ProductId)
-    {
-        $customFields = collect($projectProduct->customFields);
-
-        $bcProduct = $customFields->where('caption', 'Cin7 Product ID')->first();
-
-        $customFields = $customFields->where('caption', '!=', 'Cin7 Product ID');
-
-        $bcProduct->value = $cin7ProductId;
-
-        $customFields->push($bcProduct);
-
-        $projectProduct->customFields = $customFields->sortBy('id')->values()->toArray();
-
-        $this->updateProduct($projectProduct);
-
-        return $projectProduct;
-    }
-
     public function updateCatalogItemCin7ProductFamilyId(\stdClass $catalogItem, $productFamilyId)
     {
-        $customFields = collect($catalogItem->customFields);
-
-        $bcProduct = $customFields->where('caption', 'Cin7 Product Family ID')->first();
-
-        $customFields = $customFields->where('caption', '!=', 'Cin7 Product Family ID');
-
-        $bcProduct->value = $productFamilyId;
-
-        $customFields->push($bcProduct);
-
-        $catalogItem->customFields = $customFields->sortBy('id')->values()->toArray();
+        $catalogItem = $this->setCustomFieldValue($catalogItem, 'Cin7 Product Family ID', $productFamilyId);
 
         $this->updateCatalogItem($catalogItem);
 
@@ -1021,20 +1059,18 @@ class ConnectWiseService
 
     public function extractBarcodesFromCatalogItem(\stdClass $catalogItem) : array
     {
-        $customFields = collect($catalogItem->customFields);
+        $barcodes = $this->extractCustomFieldValueByName($catalogItem, 'Barcodes');
 
-        $barcode = $customFields->where('caption', 'Barcodes')->first();
-
-        if (!isset($barcode->value))
+        if (!$barcodes)
             return [];
 
-        return json_decode($barcode->value);
+        return json_decode($barcodes);
     }
 
     public function getAttachments($recordType, $recordId, $page=null, $conditions=null, $fields=null, $pageSize=25)
     {
         try {
-            $result = $this->http->get('system/documents', [
+            $response = $this->http->get('system/documents', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -1048,13 +1084,13 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function downloadAttachment($id)
     {
         try {
-            $result = $this->http->get("system/documents/{$id}/download", [
+            $response = $this->http->get("system/documents/{$id}/download", [
                 'query' => [
                     'clientId' => $this->clientId
                 ],
@@ -1062,7 +1098,7 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return '';
         }
-        return $this->fileResponse($result->getBody()->getContents())->deleteFileAfterSend();
+        return $this->fileResponse($response->getBody()->getContents())->deleteFileAfterSend();
     }
 
     public function downloadAllAttachments($recordType, $recordId)
@@ -1074,7 +1110,7 @@ class ConnectWiseService
 
     public function systemDocumentUploadProduct($file, $recordId, $filename, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
     {
-        $request = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
+        $response = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
             'multipart' => [
                 [
                     'name'     => 'file',
@@ -1108,7 +1144,7 @@ class ConnectWiseService
             ]
         ]);
 
-        return json_decode($request->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function setProjectBigcommerceGroupId(\stdClass $project, int $groupId)
@@ -1197,14 +1233,14 @@ class ConnectWiseService
         }
         ");
         try {
-            $request = $this->http->post('procurement/adjustments?clientId=' . $this->clientId, [
+            $response = $this->http->post('procurement/adjustments?clientId=' . $this->clientId, [
                 'json' => $adjustment
             ]);
         } catch (GuzzleException $e) {
             abort(500, $e->getResponse()->getBody()->getContents());
         }
 
-        return json_decode($request->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function createUsedCatalogItem(int $catalogItemId, int $qty)
@@ -1249,11 +1285,11 @@ class ConnectWiseService
 
         $catalogItem->id = 0;
 
-        $request = $this->http->post('procurement/catalog?clientId=' . $this->clientId, [
+        $response = $this->http->post('procurement/catalog?clientId=' . $this->clientId, [
             'json' => $catalogItem
         ]);
 
-        $newCatalogItem = json_decode($request->getBody()->getContents());
+        $newCatalogItem = json_decode($response->getBody()->getContents());
 
         $this->catalogItemAdjust($newCatalogItem, $qty);
 
@@ -1262,11 +1298,11 @@ class ConnectWiseService
 
     public function updateCatalogItem(\stdClass $item)
     {
-        $request = $this->http->put( "procurement/catalog/{$item->id}?clientId=" . $this->clientId, [
+        $response = $this->http->put( "procurement/catalog/{$item->id}?clientId=" . $this->clientId, [
             'json' => $item
         ]);
 
-        return json_decode($request->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function systemDocumentUploadTemp($file, $recordType, $recordId, $title, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
@@ -1281,7 +1317,7 @@ class ConnectWiseService
 
 //        $filename = md5($title) . '.jpg';
 
-        $request = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
+        $response = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
             'multipart' => [
                 [
                     'name'     => 'file',
@@ -1315,13 +1351,13 @@ class ConnectWiseService
             ]
         ]);
 
-        return json_decode($request->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getProductCatalogOnHand($page=null, $conditions=null, $fields=null, $pageSize=25)
     {
         try {
-            $result = $this->http->get('procurement/warehouseBins/1/inventoryOnHand', [
+            $response = $this->http->get('procurement/warehouseBins/1/inventoryOnHand', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,
@@ -1333,18 +1369,18 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function getPoReport($poId)
     {
         try {
-            $result = $this->http->get("{$this->systemIO}/reports/reportingservices/ReportPdfView.rails?reportLink=%2fbinyod%2fProcurement%2fPurchaseOrder_Button&reportOnly=true&rp=recordid%3D{$poId}%26Language%3Den-US%26&clientId={$this->clientId}");
+            $response = $this->http->get("{$this->systemIO}/reports/reportingservices/ReportPdfView.rails?reportLink=%2fbinyod%2fProcurement%2fPurchaseOrder_Button&reportOnly=true&rp=recordid%3D{$poId}%26Language%3Den-US%26&clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return '';
         }
 
-        return $this->fileResponse($result->getBody()->getContents());
+        return $this->fileResponse($response->getBody()->getContents());
     }
 
     private function fileResponse($body): BinaryFileResponse
@@ -1392,9 +1428,9 @@ class ConnectWiseService
             "fromProjectRecID" => $fromProjectRecID, // Project ID
         ];
 
-        $result = $this->http->post("{$this->systemIO}/actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
+        $response = $this->http->post("{$this->systemIO}/actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
 
-        return $result->getBody()->getContents();
+        return $response->getBody()->getContents();
     }
 
     /**
@@ -1439,12 +1475,12 @@ class ConnectWiseService
             ]
         ];
 
-        $result = $this->http->post(
+        $response = $this->http->post(
             "{$this->systemIO}/actionprocessor/System/GetMultilineDataAction_purchaseordersalesandserviceinformationlist.rails?"
             . $this->payloadHandler($payload, "GetMultilineDataAction", "SystemCommon")
         );
 
-        $response = json_decode($result->getBody()->getContents());
+        $response = json_decode($response->getBody()->getContents());
 
         if (!$response->success || !$response->data->isSuccess) {
             throw new \Exception(json_encode($response->error ?: $response->data->error));
@@ -1490,12 +1526,12 @@ class ConnectWiseService
             ]
         ];
 
-        $result = $this->http->post(
+        $response = $this->http->post(
             "{$this->systemIO}/actionprocessor/System/GetMultilineDataAction_ProductPurchaseOrderList.rails?"
             . $this->payloadHandler($payload, "GetMultilineDataAction", "SystemCommon")
         );
 
-        $response = json_decode($result->getBody()->getContents());
+        $response = json_decode($response->getBody()->getContents());
 
         if (!$response->success || !$response->data->isSuccess) {
             throw new \Exception(json_encode($response->error ?: $response->data->error));
@@ -1508,39 +1544,45 @@ class ConnectWiseService
 
     public function unitOfMeasures()
     {
-        $result = $this->http->get("procurement/unitOfMeasures", [
+        $response = $this->http->get("procurement/unitOfMeasures", [
             'query' => [
                 'clientId' => $this->clientId,
                 'conditions' => 'inactiveFlag=false'
             ],
         ]);
 
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function unitOfMeasure(int $id)
     {
-        $result = $this->http->get("procurement/unitOfMeasures/{$id}", [
+        $response = $this->http->get("procurement/unitOfMeasures/{$id}", [
             'query' => [
                 'clientId' => $this->clientId
             ],
         ]);
 
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
     public function updateUnitOfMeasure(\stdClass $unitOfMeasure)
     {
-        $result = $this->http->put("procurement/unitOfMeasures/{$unitOfMeasure->id}?clientId={$this->clientId}", [
+        $response = $this->http->put("procurement/unitOfMeasures/{$unitOfMeasure->id}?clientId={$this->clientId}", [
             'json' => $unitOfMeasure,
         ]);
 
-        return json_decode($result->getBody()->getContents());
+        return json_decode($response->getBody()->getContents());
     }
 
-    public function publishProductOnCin7(\stdClass $product, $quantity, $publishOnBigCommerce=false)
+    public function publishProductFamilyOnCin7($catalogItemId, $catalogItem=null, $onBigCommerceAsWell=false)
     {
-        $catalogItem = $this->getCatalogItem($product->catalogItem->id);
+        $catalogItem = $catalogItem ?: $this->getCatalogItem($catalogItemId);
+
+        $notAllowedCategories = Setting::getBySlug(Setting::NOT_ALLOWED_CATEGORIES);
+
+        if ($notAllowedCategories && in_array($catalogItem->category->id, $notAllowedCategories->value) || $catalogItem->inactiveFlag) {
+            return null;
+        }
 
         $productFamilyId = $this->extractCin7ProductFamilyId($catalogItem);
 
@@ -1548,24 +1590,102 @@ class ConnectWiseService
 
         if (!$productFamily) {
             $productFamily = $this->cin7Service->createProductFamily(
-                $this->generateCin7ProductFamilySku($catalogItem->identifier),
+                $this->generateProductFamilySku($catalogItem->identifier),
                 $catalogItem->description,
                 $catalogItem->category->name,
                 $catalogItem->unitOfMeasure->name,
                 $catalogItem->customerDescription
             );
+        }
 
+        if ($productFamilyId != $productFamily->ID) {
             $this->updateCatalogItemCin7ProductFamilyId($catalogItem, $productFamily->ID);
 
-            array_map(function ($attachment) use ($productFamily) {
+            if (Str::contains($productFamily->Name, Cin7Service::PRODUCT_FAMILY_INACTIVE)) {
+                $this->cin7Service->updateProductFamily([
+                    'ID' => $productFamily->ID,
+                    'Name' => Str::replace(Cin7Service::PRODUCT_FAMILY_INACTIVE, '', $productFamily->Name)
+                ]);
+            }
+        }
+
+        if ($onBigCommerceAsWell) {
+            $this->publishProductOnBigCommerce($catalogItemId, $catalogItem);
+        }
+
+        defer(fn() => $this->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $productFamily->ID, $onBigCommerceAsWell, $catalogItem));
+
+        return $productFamily;
+    }
+
+    public function syncCatalogItemAttachmentsWithCin7($catalogItemId, $cin7ProductFamilyId, $toBigCommerceAsWell=false, $catalogItem=null) : bool
+    {
+        $attachments = collect($this->getAttachments(ConnectWiseService::RECORD_TYPE_PRODUCT_SETUP, $catalogItemId));
+
+        if (!$attachments->count()) {
+            return false;
+        }
+
+        $cin7Attachments = collect($this->cin7Service->productFamilyAttachments($cin7ProductFamilyId));
+
+        $bigCommerceProduct = null;
+        $bigCommerceAttachments = null;
+
+        if ($toBigCommerceAsWell) {
+            $catalogItem = $catalogItem ?: $this->getCatalogItem($catalogItemId);
+
+            $bigCommerceProduct = $this->bigCommerceService->getProductBySku($this->generateProductFamilySku($catalogItem->identifier));
+
+            $bigCommerceAttachments = collect($this->bigCommerceService->getProductImages($bigCommerceProduct->id)->data);
+
+            if ($bigCommerceProduct && $bigCommerceAttachments->count() > 0) {
+
+                $bigCommerceAttachments
+                    ->filter(
+                        fn($bigCommerceAttachment) => !$attachments
+                            ->filter(
+                                fn($attachment) => Str::contains($bigCommerceAttachment->image_file, pathinfo($attachment->fileName, PATHINFO_FILENAME))
+                            )
+                            ->count()
+                    )
+                    ->map(fn($bigCommerceAttachment) => $this->bigCommerceService->deleteProductImage($bigCommerceProduct->id, $bigCommerceAttachment->id));
+
+            }
+        }
+
+        $cin7Attachments->filter(fn($cin7Attachment) => !$attachments->where('fileName', $cin7Attachment->FileName)->count())
+            ->map(fn($cin7Attachment) => $this->cin7Service->deleteProductFamilyAttachment($cin7Attachment->ID));
+
+        $attachments->filter(fn($attachment) => !$cin7Attachments->where('FileName', $attachment->fileName)->count())
+            ->map(function ($attachment, $index) use ($bigCommerceAttachments, $bigCommerceProduct, $toBigCommerceAsWell, $cin7ProductFamilyId) {
                 $file = $this->downloadAttachment($attachment->id)->getFile()->getContent();
 
                 $this->cin7Service->uploadProductFamilyAttachment(
-                    $productFamily->ID,
+                    $cin7ProductFamilyId,
                     $attachment->fileName,
                     base64_encode($file)
                 );
-            }, $this->getAttachments(ConnectWiseService::RECORD_TYPE_PRODUCT_SETUP, $product->catalogItem->id));
+
+                if ($toBigCommerceAsWell && $bigCommerceProduct) {
+                    $this->bigCommerceService->uploadProductImage(
+                        $bigCommerceProduct->id,
+                        $file,
+                        $attachment->fileName,
+                        !$index && !$bigCommerceAttachments->count());
+                }
+            });
+
+        return true;
+    }
+
+    public function publishProductOnCin7(\stdClass $product, $quantity, $onBigCommerceAsWell=false, $cin7AdjustmentId=null)
+    {
+        $catalogItem = $this->getCatalogItem($product->catalogItem->id);
+
+        $productFamily = $this->publishProductFamilyOnCin7($catalogItem->id, $catalogItem, $onBigCommerceAsWell);
+
+        if (!$productFamily) {
+            return null;
         }
 
         $cin7ProductId = $this->extractCin7ProductId($product);
@@ -1574,31 +1694,41 @@ class ConnectWiseService
 
         if (!$cin7Product) {
             $cin7Product = $this->cin7Service->generateFamilyProduct(
-                $productFamilyId,
-                $this->generateCin7ProductSku($productFamily->SKU, $product->project->id, $product->ticket->id ?? null),
-                $this->generateCin7ProjectName($product->project->id, $product->project->name, $product->phase->name ?? null),
+                $productFamily->ID,
+                $this->generateProductSku(
+                    $productFamily->SKU,
+                        $product->project->id ?? null,
+                        $product->ticket->id ?? null,
+                        $product->company->id ?? null
+                ),
+                $this->generateProjectName($product->project->id, $product->project->name),
+                $this->generatePhaseName($product->project->id, @$product->phase->id ?? null),
                 $productFamily
             );
-
-            $this->updateProjectProductCin7ProductId($product, $cin7Product->ID);
         }
 
-        $this->cin7Service->stockAdjust($cin7Product->ID, $quantity);
-
-        if ($publishOnBigCommerce) {
-            $this->publishOnBigCommerce($product, $quantity, $catalogItem);
+        if ($cin7Product->Status == Cin7Service::PRODUCT_STATUS_DEPRECATED) {
+            $this->cin7Service->updateProduct([
+                'ID' => $cin7Product->ID,
+                'Status' => Cin7Service::PRODUCT_STATUS_ACTIVE
+            ]);
         }
 
-        return $cin7Product;
+//        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
+        $adjustment = null;
+
+        if ($onBigCommerceAsWell) {
+            $this->publishVariantOnBigCommerce($product, $quantity, $catalogItem);
+        }
+
+        return $adjustment;
     }
 
-    public function publishOnBigCommerce(\stdClass $product, $quantity, \stdClass $catalogItem=null)
+    public function publishProductOnBigCommerce($catalogItemId, $catalogItem=null)
     {
-        $catalogItem = $catalogItem ?: $this->getCatalogItem($product->catalogItem->id);
+        $catalogItem = $catalogItem ?: $this->getCatalogItem($catalogItemId);
 
-        $cin7ProductFamilySku = $this->generateCin7ProductFamilySku($catalogItem->identifier);
-
-        $cin7ProductSku = $this->generateCin7ProductSku($cin7ProductFamilySku, $product->project->id, $product->ticket->id ?? null);
+        $cin7ProductFamilySku = $this->generateProductFamilySku($catalogItem->identifier);
 
         $bigCommerceProduct = $this->bigCommerceService->getProductBySku($cin7ProductFamilySku);
 
@@ -1606,22 +1736,36 @@ class ConnectWiseService
             $bigCommerceCategory = $this->bigCommerceService->getCategoryByNameOrCreate($catalogItem->category->name);
 
             $bigCommerceProduct = $this->bigCommerceService->createProduct(
-                $this->generateCin7ProductFamilySku($catalogItem->identifier),
+                $this->generateProductFamilySku($catalogItem->identifier),
                 $catalogItem->description,
                 $catalogItem->customerDescription,
                 [$bigCommerceCategory->id],
                 0,
                 0
             );
-
-            $attachments = $this->getAttachments(ConnectWiseService::RECORD_TYPE_PRODUCT_SETUP, $product->catalogItem->id);
-
-            array_map(function ($attachment, $index) use ($bigCommerceProduct) {
-                $file = $this->downloadAttachment($attachment->id)->getFile()->getContent();
-
-                $this->bigCommerceService->uploadProductImage($bigCommerceProduct->id, $file, $attachment->fileName, $index == 0);
-            }, $attachments, array_keys($attachments));
         }
+
+        if (!$bigCommerceProduct->is_visible) {
+            $this->bigCommerceService->updateProduct($bigCommerceProduct->id, [
+                'is_visible' => true
+            ]);
+        }
+
+        return $bigCommerceProduct;
+    }
+
+    public function publishVariantOnBigCommerce(\stdClass $product, $quantity, \stdClass $catalogItem=null)
+    {
+        $catalogItem = $catalogItem ?: $this->getCatalogItem($product->catalogItem->id);
+
+        $bigCommerceProduct = $this->publishProductOnBigCommerce($catalogItem->id, $catalogItem);
+
+        $cin7ProductSku = $this->generateProductSku(
+            $bigCommerceProduct->sku,
+            $product->project->id ?? null,
+                $product->ticket->id ?? null,
+                $product->company->id ?? null
+        );
 
         $bigCommerceProductVariant = $this->bigCommerceService->getProductVariantBySku($bigCommerceProduct->id, $cin7ProductSku);
 
@@ -1629,25 +1773,121 @@ class ConnectWiseService
             $bigCommerceProductVariant = $this->bigCommerceService->createProductVariantProject(
                 $bigCommerceProduct->id,
                 $cin7ProductSku,
-                $this->generateCin7ProjectName($product->project->id, $product->project->name, $product->phase->name ?? null)
+                $this->generateProjectName($product->project->id, $product->project->name),
+                $this->generatePhaseName($product->project->id, @$product->phase->id ?? null)
             );
         }
 
         $this->bigCommerceService->adjustVariant($bigCommerceProductVariant->id, $quantity);
     }
 
-    public function generateCin7ProductSku($cin7ProductFamilySku, $projectId, $ticketId)
+    public function stockTakeOnBigCommerce($variantSku, $quantity)
     {
-        return $cin7ProductFamilySku . '-' . $projectId . ($ticketId ? "-{$ticketId}" : "");
+        $bigCommerceProduct = $this->bigCommerceService->getProductBySku($this->generateProductFamilySku(Str::before($variantSku, '-PROJECT')));
+
+        $bigCommerceProductVariant = $this->bigCommerceService->getProductVariantBySku($bigCommerceProduct->id, $variantSku);
+
+        $this->bigCommerceService->adjustVariant($bigCommerceProductVariant->id, $quantity * -1);
     }
 
-    public function generateCin7ProductFamilySku($catalogItemIdentifier)
+    public function generateProductSku($cin7ProductFamilySku, $projectId, $ticketId, $companyId=null)
+    {
+        return $cin7ProductFamilySku . ($projectId ? "-{$projectId}" : ($companyId ? "-COMPANY-{$companyId}" : "")) . ($ticketId ? "-TICKET-{$ticketId}" : "");
+    }
+
+    public function generateProductFamilySku($catalogItemIdentifier)
     {
         return Str::upper($catalogItemIdentifier) . '-PROJECT';
     }
 
-    public function generateCin7ProjectName($projectId, $projectName, $phaseName)
+    public function generateProjectName($projectId, $projectName)
     {
-        return "#{$projectId} {$projectName}" . ($phaseName ? ": {$phaseName}" : "");
+        return "#{$projectId} - {$projectName}";
+    }
+
+    public function generateCompanyName($companyId, $companyName)
+    {
+        return "#{$companyId} - {$companyName}";
+    }
+
+    public function generatePhaseName($projectId, $phaseId, \stdClass $phase=null)
+    {
+        $phase = $phase ?: ($phaseId ? $this->getProjectPhase($projectId, $phaseId) : null);
+
+        return $phaseId ? ("#{$projectId}: #{$phase->id} - {$phase->description}" . (@$phase->phaseParent ? ": {$phase->phaseParent->description}" : "")) : null;
+    }
+
+    public function generateProjectTicketName($projectId, $ticketId, $ticketSummary, $phaseId=null)
+    {
+        return "#{$projectId}: " . ($phaseId ? "#{$phaseId}: " : "") . "#{$ticketId} - {$ticketSummary}";
+    }
+
+    public function generateServiceTicketName($companyId, $ticketId, $ticketName)
+    {
+        return "#{$companyId}: #{$ticketId} - {$ticketName}";
+    }
+
+    public function getProductsByTicketInfo($catalogItemIdentifier, $projectId, $ticketId)
+    {
+        $conditions = "catalogItem/identifier='{$catalogItemIdentifier}' and cancelledFlag=false";
+
+        $conditions .= $ticketId ? " and ticket/id={$ticketId}" : " and project/id={$projectId}";
+
+        return $this->getProducts(null, $conditions, 1000);
+    }
+
+    public function getProjectPhase($projectId, $phaseId)
+    {
+        $response = $this->http->get("project/projects/{$projectId}/phases/{$phaseId}", [
+            'query' => [
+                'clientId' => $this->clientId
+            ],
+        ]);
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function extractCustomFieldValueByName(\stdClass $record, $fieldName)
+    {
+        $field = collect($record->customFields)->where('caption', $fieldName)->first();
+
+        return $field->value ?? null;
+    }
+
+    public function extractBigCommerceOptionId(\stdClass $company)
+    {
+        return $this->extractCustomFieldValueByName($company, 'BigCommerce Option ID');
+    }
+
+    public function extractBigCommerceModifierId(\stdClass $company)
+    {
+        return $this->extractCustomFieldValueByName($company, 'BigCommerce Modifier ID');
+    }
+
+    public function setBigCommerceModifierId(\stdClass $record, string $value)
+    {
+        return $this->setCustomFieldValue($record, 'BigCommerce Modifier ID', $value);
+    }
+
+    public function setBigCommerceOptionId(\stdClass $record, string $value)
+    {
+        return $this->setCustomFieldValue($record, 'BigCommerce Option ID', $value);
+    }
+
+    public function setCustomFieldValue(\stdClass $record, string $fieldCaption, string $value)
+    {
+        $customFields = collect($record->customFields);
+
+        $customField = $customFields->where('caption', $fieldCaption)->first();
+
+        $customFields = $customFields->where('caption', '!=', $fieldCaption);
+
+        $customField->value = $value;
+
+        $customFields->push($customField);
+
+        $record->customFields = $customFields->sortBy('id')->values()->toArray();
+
+        return $record;
     }
 }

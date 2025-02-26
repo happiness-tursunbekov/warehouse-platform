@@ -299,7 +299,7 @@ class ProductController extends Controller
         collect($connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/id={$id}", 1000))
             ->map(function ($product) use ($connectWiseService, $uomQty, &$products, $unitOfMeasureShort) {
 
-                if (!isset($product->project)) {
+                if (!isset($product->project) || $product->id != 11316) {
                     return false;
                 }
 

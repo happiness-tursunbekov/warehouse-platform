@@ -17,6 +17,7 @@ class PurchaseOrderItem extends Model
         'id',
         'purchase_order_id',
         'received_status',
-        'catalog_item_id'
+        'catalog_item_id',
+        'cin7_adjustment_id'
     ];
 }

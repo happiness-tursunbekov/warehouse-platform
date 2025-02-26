@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('purchase_order_id')->constrained('purchase_orders')->onDelete('cascade');
             $table->bigInteger('catalog_item_id')->comment('ConnectWise catalog item ID');
             $table->enum('received_status', ['FullyReceived', 'Cancelled', 'Waiting']);
+            $table->string('cin7_adjustment_id')->nullable()->comment('Cin7 adjustment ID. (Used for voiding stock adjustment)');
             $table->timestamps();
         });
     }

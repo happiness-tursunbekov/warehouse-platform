@@ -35,7 +35,11 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+        $project = $connectWiseService->getProject(149);
 
+        $project->name .= '1';
+
+        $connectWiseService->updateProject($project);
     }
 }
 

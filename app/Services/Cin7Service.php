@@ -11,6 +11,14 @@ class Cin7Service
     const INVENTORY_AZAD_MAY = 'Azad May Inventory';
     const INVENTORY_BINYOD = 'Binyod Inventory';
 
+    const PRODUCT_STATUS_ACTIVE = 'Active';
+    const PRODUCT_STATUS_DEPRECATED = 'Deprecated';
+
+    /* On Cin7 Core product family doesn't have status field and no possibility to delete via API.
+     * So, this constant will be added to the beginning of the Name field value
+    */
+    const PRODUCT_FAMILY_INACTIVE = '[INACTIVE]';
+
     private Client $http;
     public function __construct()
     {
@@ -103,7 +111,11 @@ class Cin7Service
         return $this->productFamilies(1, 1, $sku)->ProductFamilies[0] ?? null;
     }
 
-    public function updateProduct(\stdClass $product)
+    /**
+     * @param \stdClass|array $product
+     * @return \stdClass|null
+     */
+    public function updateProduct($product)
     {
         $result = $this->http->put('product', [
             'json' => $product,
@@ -130,7 +142,7 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function createUnitOfMeasures($name)
+    public function createUnitOfMeasure($name)
     {
         $result = $this->http->post('ref/unit', [
             'json' => [
@@ -144,7 +156,7 @@ class Cin7Service
     /**
      * @throws GuzzleException
      */
-    public function createProductFamily($sku, $name, $categoryName, $uomName, $customerDescription, $price=0, $products=[], $option2=null, $defaultLocation=self::INVENTORY_BINYOD)
+    public function createProductFamily($sku, $name, $categoryName, $uomName, $customerDescription, $price=0, $products=[], $option3Name=null, $defaultLocation=self::INVENTORY_AZAD_MAY)
     {
         // Handling duplicated names
         $i = 0;
@@ -160,7 +172,8 @@ class Cin7Service
                         "ShortDescription" => $name,
                         "Description" => $customerDescription,
                         "Option1Name" => "Project",
-                        "Option2Name" => $option2,
+                        "Option2Name" => "Phase",
+                        "Option3Name" => $option3Name,
                         "CostingMethod" => "FIFO",
                         "PriceTier1" => $price,
                         "Products" => $products
@@ -187,7 +200,7 @@ class Cin7Service
         return json_decode($result->getBody()->getContents())->ProductFamilies[0];
     }
 
-    public function createProduct($sku, $name, $categoryName, $uomName, $description, $price, $weight=null, $barcode=null, $defaultLocation=self::INVENTORY_BINYOD)
+    public function createProduct($sku, $name, $categoryName, $uomName, $description, $price, $weight=null, $barcode=null, $defaultLocation=self::INVENTORY_AZAD_MAY)
     {
 
         $result = $this->http->post('product', [
@@ -254,6 +267,15 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
+    public function deleteProductFamilyAttachment($attachmentId)
+    {
+        $this->http->delete('productFamily/attachments', [
+            'json' => [
+                'ID' => $attachmentId
+            ]
+        ]);
+    }
+
 
     public function unitOfMeasures($page=1, $limit=100)
     {
@@ -306,25 +328,74 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function stockAdjust($productId, $quantity, $inventory=self::INVENTORY_BINYOD, $cost=0.0001)
+    public function productAvailabilities($productId=null, $page=1, $limit=100)
     {
-        $this->http->post('stockadjustment', [
+        $result = $this->http->get('ref/productavailability', [
+            'query' => [
+                'Page' => $page,
+                'Limit' => $limit,
+                'ID' => $productId
+            ],
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function undoStockAdjustment($id)
+    {
+        $this->http->delete('stockadjustment', [
             'json' => [
-                "EffectiveDate" => date('Y-m-d'),
-                "StocktakeNumber" => "ST-00001",
-                "Status" => "COMPLETED",
-                "Account" => "255",
-                "Reference" => "",
-                "Lines" => [
-                    [
-                        "ProductID" => $productId,
-                        "Quantity" => $quantity,
-                        "UnitCost" => $cost,
-                        "Location" => $inventory
-                    ]
-                ]
+                "ID" => $id
             ]
         ]);
+    }
+
+    public function stockAdjust($productId, $quantity, $inventory=self::INVENTORY_AZAD_MAY, $cost=0.0001, $adjustmentId=null)
+    {
+        $json = [
+            "EffectiveDate" => date("Y-m-d"),
+            "Status" => "COMPLETED",
+            "Account" => "255",
+            "Reference" => "",
+            "Lines" => [
+                [
+                    "ProductID" => $productId,
+                    "Quantity" => $quantity,
+                    "UnitCost" => $cost,
+                    "Location" => $inventory
+                ]
+            ]
+        ];
+
+        if ($adjustmentId) {
+            $json['TaskID'] = $adjustmentId;
+
+            $result = $this->http->put('stockadjustment', [
+                'json' => $json
+            ]);
+        } else {
+            $result = $this->http->post('stockadjustment', [
+                'json' => $json
+            ]);
+        }
+
+        //
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function productAvailability($productId)
+    {
+        return$this->productAvailabilities($productId)->ProductAvailabilityList[0] ?? null;
+    }
+
+    public function stockAdd($productId, $quantity, $inventory=self::INVENTORY_AZAD_MAY, $cost=0.0001, $adjustmentId=null)
+    {
+        $available = $this->productAvailability($productId);
+
+        $quantity += $available && $available->onHand ? $available->onHand : 0;
+
+        return $this->stockAdjust($productId, $quantity, $inventory, $cost, $adjustmentId);
     }
 
     public function stockAdjustBulk($lines)
@@ -370,7 +441,7 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function generateFamilyProduct($familyId, $newProductSKU, $newProductName, \stdClass $productFamily=null)
+    public function generateFamilyProduct($familyId, $newProductSKU, $newProductProjectName, $newProductPhaseName=null, \stdClass $productFamily=null)
     {
         $pf = $productFamily ?: $this->productFamily($familyId);
 
@@ -386,9 +457,7 @@ class Cin7Service
             $pf->Category,
             $pf->UOM,
             $pf->Description,
-            $pf->PriceTier1 ?: 0,
-            null,
-            null
+            $pf->PriceTier1 ?: 0
         );
 
         $this->updateProductFamily([
@@ -397,11 +466,23 @@ class Cin7Service
                 [
                     'ID' => $product->ID,
                     'SKU' => $product->SKU,
-                    'Option1' => $newProductName
+                    'Option1' => $newProductProjectName,
+                    'Option2' => $newProductPhaseName
                 ]
             ]
         ]);
 
         return $product;
+    }
+
+    public function saleOrder($saleId)
+    {
+        $result = $this->http->get('sale/order', [
+            'query' => [
+                'SaleID' => $saleId
+            ],
+        ]);
+
+        return json_decode($result->getBody()->getContents());
     }
 }

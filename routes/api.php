@@ -21,6 +21,7 @@ Route::prefix('/integration')->group(function () {
         Route::prefix('connect-wise')->group(function () {
             Route::post('product-catalog', [ConnectWiseController::class, 'productCatalog']);
             Route::post('project', [ConnectWiseController::class, 'project']);
+            Route::post('ticket', [ConnectWiseController::class, 'ticket']);
             Route::post('purchase-order', [ConnectWiseController::class, 'purchaseOrder']);
         });
     });
