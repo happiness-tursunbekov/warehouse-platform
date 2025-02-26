@@ -264,46 +264,28 @@ class ConnectWiseController extends Controller
                         }
                     }
 
+                    // Handling phase actions. Because there is no phase webhook
                     if ($phase) {
 
                         $phaseTitle = $connectWiseService->generatePhaseName($ticket->project->id, $ticket->phase->id, $phase);
 
-                        $optionValue = $bigCommerceService->addSharedOptionValueIfNotExists($bigCommerceService->getSharedOptionPhase(), $phaseTitle);
+                        $sharedModifierPhase = $bigCommerceService->getSharedModifierPhase();
+                        $sharedOptionPhase = $bigCommerceService->getSharedOptionPhase();
 
-                        $modifierValue = $bigCommerceService->addSharedModifierValueIfNotExists($bigCommerceService->getSharedModifierPhase(), $phaseTitle);
+                        $modifierId = $connectWiseService->extractBigCommerceModifierId($phase);
+                        $optionId = $connectWiseService->extractBigCommerceOptionId($phase);
 
-                        $phase = $connectWiseService->setBigCommerceOptionId($phase, $optionValue->id);
-
-                        $phase = $connectWiseService->setBigCommerceModifierId($phase, $modifierValue->id);
-
-                        $connectWiseService->updatePhase($phase);
+                        $sharedModifierPhaseValue = $bigCommerceService->getSharedValueById($sharedModifierPhase, $modifierId);
+                        $sharedOptionPhaseValue = $bigCommerceService->getSharedValueById($sharedOptionPhase, $optionId);
 
                         if ($phase->status->name == 'Closed') {
 
-                            $modifierId = $connectWiseService->extractBigCommerceModifierId($phase);
-                            $optionId = $connectWiseService->extractBigCommerceOptionId($phase);
-
-                            if ($modifierId) {
-
-                                $sharedModifierPhase = $bigCommerceService->getSharedModifierPhase();
-
-                                $sharedModifierPhaseValue = $bigCommerceService->getSharedValueById($sharedModifierPhase, $modifierId);
-
-                                if ($sharedModifierPhaseValue) {
-                                    $bigCommerceService->removeSharedModifierValue($sharedModifierPhase->id, $sharedModifierPhaseValue->id);
-                                }
+                            if ($sharedModifierPhaseValue) {
+                                $bigCommerceService->removeSharedModifierValue($sharedModifierPhase->id, $sharedModifierPhaseValue->id);
                             }
 
-                            if ($optionId) {
-
-                                $sharedOptionPhase = $bigCommerceService->getSharedOptionPhase();
-
-                                $sharedOptionPhaseValue = $bigCommerceService->getSharedValueById($sharedOptionPhase, $optionId);
-
-                                if ($sharedOptionPhaseValue) {
-                                    $bigCommerceService->removeSharedOptionValue($sharedOptionPhase->id, $sharedOptionPhaseValue->id);
-                                }
-
+                            if ($sharedOptionPhaseValue) {
+                                $bigCommerceService->removeSharedOptionValue($sharedOptionPhase->id, $sharedOptionPhaseValue->id);
                             }
 
                             $phase = $connectWiseService->setBigCommerceOptionId($phase, '');
@@ -311,6 +293,28 @@ class ConnectWiseController extends Controller
                             $phase = $connectWiseService->setBigCommerceModifierId($phase, '');
 
                             $connectWiseService->updatePhase($phase);
+
+                        } else {
+
+                            if (!$sharedOptionPhaseValue) {
+                                $optionValue = $bigCommerceService->addSharedOptionValueIfNotExists($bigCommerceService->getSharedOptionPhase(), $phaseTitle);
+
+                                $phase = $connectWiseService->setBigCommerceOptionId($phase, $optionValue->id);
+                            } elseif ($sharedOptionPhaseValue->label != $phaseTitle) {
+                                $bigCommerceService->updateSharedOptionValue($sharedOptionPhase->id, $sharedOptionPhaseValue);
+                            }
+
+                            if (!$sharedModifierPhaseValue) {
+                                $modifierValue = $bigCommerceService->addSharedModifierValueIfNotExists($bigCommerceService->getSharedModifierPhase(), $phaseTitle);
+
+                                $phase = $connectWiseService->setBigCommerceModifierId($phase, $modifierValue->id);
+                            } elseif ($sharedModifierPhaseValue->label != $phaseTitle) {
+                                $bigCommerceService->updateSharedModifierValue($sharedModifierPhase->id, $sharedModifierPhaseValue);
+                            }
+
+                            if (!$sharedOptionPhaseValue || !$sharedModifierPhaseValue) {
+                                $connectWiseService->updatePhase($phase);
+                            }
 
                         }
                     }
