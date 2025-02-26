@@ -137,7 +137,7 @@ class ConnectWiseController extends Controller
 
                         $sharedOptionProjectValue->label = $generatedProjectName;
 
-                        $bigCommerceService->updateSharedOptionValue($sharedOptionProject->id, $sharedOptionProjectValue);
+                        $bigCommerceService->updateSharedOptionValue($sharedOptionProject, $sharedOptionProjectValue);
 
                     }
 
@@ -240,7 +240,7 @@ class ConnectWiseController extends Controller
 
                             } elseif ($sharedOptionProjectTicketValue != $ticketTitle) {
 
-                                $bigCommerceService->updateSharedOptionValue($sharedOptionProjectTicket->id, $sharedOptionProjectTicketValue);
+                                $bigCommerceService->updateSharedOptionValue($sharedOptionProjectTicket, $sharedOptionProjectTicketValue);
 
                             }
                         }
@@ -301,7 +301,7 @@ class ConnectWiseController extends Controller
 
                                 $phase = $connectWiseService->setBigCommerceOptionId($phase, $optionValue->id);
                             } elseif ($sharedOptionPhaseValue->label != $phaseTitle) {
-                                $bigCommerceService->updateSharedOptionValue($sharedOptionPhase->id, $sharedOptionPhaseValue);
+                                $bigCommerceService->updateSharedOptionValue($sharedOptionPhase, $sharedOptionPhaseValue);
                             }
 
                             if (!$sharedModifierPhaseValue) {
@@ -396,7 +396,7 @@ class ConnectWiseController extends Controller
 
                         $sharedOptionServiceTicketValue->label = $ticketTitle;
 
-                        $bigCommerceService->updateSharedOptionValue($sharedOptionServiceTicket->id, $sharedOptionServiceTicketValue);
+                        $bigCommerceService->updateSharedOptionValue($sharedOptionServiceTicket, $sharedOptionServiceTicketValue);
 
                     }
 
@@ -410,7 +410,7 @@ class ConnectWiseController extends Controller
 
                         $sharedModifierServiceTicketValue->label = $ticketTitle;
 
-                        $bigCommerceService->updateSharedOptionValue($sharedModifierServiceTicket->id, $sharedModifierServiceTicketValue);
+                        $bigCommerceService->updateSharedOptionValue($sharedModifierServiceTicket, $sharedModifierServiceTicketValue);
 
                     }
 
@@ -494,7 +494,7 @@ class ConnectWiseController extends Controller
 
                         $sharedOptionCompanyValue->label = $generatedCompanyName;
 
-                        $bigCommerceService->updateSharedOptionValue($sharedOptionCompany->id, $sharedOptionCompanyValue);
+                        $bigCommerceService->updateSharedOptionValue($sharedOptionCompany, $sharedOptionCompanyValue);
 
                     }
 
