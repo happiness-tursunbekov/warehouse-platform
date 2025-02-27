@@ -99,13 +99,10 @@ class ConnectWiseController extends Controller
             case ConnectWiseService::ACTION_UPDATED:
 
                 $sharedModifierProject = $bigCommerceService->getSharedModifierProject();
-                $sharedOptionProject = $bigCommerceService->getSharedOptionProject();
 
                 $modifierId = $connectWiseService->extractBigCommerceModifierId($project);
-                $optionId = $connectWiseService->extractBigCommerceOptionId($project);
 
                 $sharedModifierProjectValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierProject, $modifierId) : null;
-                $sharedOptionProjectValue = $optionId ? $bigCommerceService->getSharedValueById($sharedOptionProject, $optionId) : null;
 
                 $generatedProjectName = $connectWiseService->generateProjectName($project->id, $project->name);
 
@@ -115,31 +112,11 @@ class ConnectWiseController extends Controller
                         $bigCommerceService->removeSharedModifierValue($sharedModifierProject->id, $sharedModifierProjectValue->id);
                     }
 
-                    if ($sharedOptionProjectValue) {
-                        $bigCommerceService->removeSharedOptionValue($sharedOptionProject->id, $sharedOptionProjectValue->id);
-                    }
-
-                    $project = $connectWiseService->setBigCommerceOptionId($project, '');
-
                     $project = $connectWiseService->setBigCommerceModifierId($project, '');
 
                     $connectWiseService->updateProject($project);
 
                 } else {
-
-                    if (!$sharedOptionProjectValue) {
-
-                        $optionValue = $bigCommerceService->addSharedOptionValueIfNotExists($bigCommerceService->getSharedOptionProject(), $generatedProjectName);
-
-                        $project = $connectWiseService->setBigCommerceOptionId($project, $optionValue->id);
-
-                    } elseif ($sharedOptionProjectValue->label != $generatedProjectName) {
-
-                        $sharedOptionProjectValue->label = $generatedProjectName;
-
-                        $bigCommerceService->updateSharedOptionValue($sharedOptionProject, $sharedOptionProjectValue);
-
-                    }
 
                     if (!$sharedModifierProjectValue) {
 
@@ -147,17 +124,13 @@ class ConnectWiseController extends Controller
 
                         $project = $connectWiseService->setBigCommerceModifierId($project, $modifierValue->id);
 
+                        $connectWiseService->updateProject($project);
+
                     }  elseif ($sharedModifierProjectValue->label != $generatedProjectName) {
 
                         $sharedModifierProjectValue->label = $generatedProjectName;
 
                         $bigCommerceService->updateSharedModifierValue($sharedModifierProject, $sharedModifierProjectValue);
-
-                    }
-
-                    if (!$sharedOptionProjectValue || !$sharedModifierProjectValue) {
-
-                        $connectWiseService->updateProject($project);
 
                     }
                 }
@@ -169,17 +142,11 @@ class ConnectWiseController extends Controller
                 $projectTitle = $connectWiseService->generateProjectName($entity['project']['id'], $entity['project']['name']);
 
                 $sharedModifierProject = $bigCommerceService->getSharedModifierProject();
-                $sharedOptionProject = $bigCommerceService->getSharedOptionProject();
 
                 $sharedModifierServiceProject = $bigCommerceService->getSharedValueByTitle($sharedModifierProject, $projectTitle);
-                $sharedOptionServiceProject = $bigCommerceService->getSharedValueByTitle($sharedOptionProject, $projectTitle);
 
                 if ($sharedModifierServiceProject) {
                     $bigCommerceService->removeSharedModifierValue($sharedModifierProject->id, $sharedModifierServiceProject->id);
-                }
-
-                if ($sharedOptionServiceProject) {
-                    $bigCommerceService->removeSharedOptionValue($sharedOptionProject->id, $sharedOptionServiceProject->id);
                 }
 
                 break;
@@ -205,13 +172,10 @@ class ConnectWiseController extends Controller
                 case ConnectWiseService::ACTION_UPDATED:
 
                     $sharedModifierProjectTicket = $bigCommerceService->getSharedModifierProjectTicket();
-                    $sharedOptionProjectTicket = $bigCommerceService->getSharedOptionProjectTicket();
 
                     $modifierId = $connectWiseService->extractBigCommerceModifierId($ticket);
-                    $optionId = $connectWiseService->extractBigCommerceOptionId($ticket);
 
                     $sharedModifierProjectTicketValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierProjectTicket, $modifierId) : null;
-                    $sharedOptionProjectTicketValue = $optionId ? $bigCommerceService->getSharedValueById($sharedOptionProjectTicket, $optionId) : null;
 
                     $ticketTitle = $connectWiseService->generateProjectTicketName($ticket->project->id, $ticket->id, $ticket->summary, $phase->id ?? null);
 
@@ -221,31 +185,10 @@ class ConnectWiseController extends Controller
                             $bigCommerceService->removeSharedModifierValue($sharedModifierProjectTicket->id, $sharedModifierProjectTicketValue->id);
                         }
 
-                        if ($sharedOptionProjectTicketValue) {
-                            $bigCommerceService->removeSharedOptionValue($sharedOptionProjectTicket->id, $sharedOptionProjectTicketValue->id);
-                        }
-
-                        $ticket = $connectWiseService->setBigCommerceOptionId($ticket, '');
-
                         $ticket = $connectWiseService->setBigCommerceModifierId($ticket, '');
 
                         $connectWiseService->updateTicket($ticket);
                     } else {
-                        if (!$phase) {
-                            if (!$sharedOptionProjectTicketValue) {
-
-                                $optionValue = $bigCommerceService->addSharedOptionValueIfNotExists($bigCommerceService->getSharedOptionProjectTicket(), $ticketTitle);
-
-                                $ticket = $connectWiseService->setBigCommerceOptionId($ticket, $optionValue->id);
-
-                            } elseif ($sharedOptionProjectTicketValue != $ticketTitle) {
-
-                                $sharedOptionProjectTicketValue = $ticketTitle;
-
-                                $bigCommerceService->updateSharedOptionValue($sharedOptionProjectTicket, $sharedOptionProjectTicketValue);
-
-                            }
-                        }
 
                         if (!$sharedModifierProjectTicketValue) {
 
@@ -253,17 +196,13 @@ class ConnectWiseController extends Controller
 
                             $ticket = $connectWiseService->setBigCommerceModifierId($ticket, $modifierValue->id);
 
+                            $connectWiseService->updateTicket($ticket);
+
                         } elseif ($sharedModifierProjectTicketValue->label != $ticketTitle) {
 
                             $sharedModifierProjectTicketValue->label = $ticketTitle;
 
                             $bigCommerceService->updateSharedModifierValue($sharedModifierProjectTicket, $sharedModifierProjectTicketValue);
-
-                        }
-
-                        if (!$sharedOptionProjectTicketValue || !$sharedModifierProjectTicketValue) {
-
-                            $connectWiseService->updateTicket($ticket);
 
                         }
                     }
@@ -274,13 +213,10 @@ class ConnectWiseController extends Controller
                         $phaseTitle = $connectWiseService->generatePhaseName($ticket->project->id, $ticket->phase->id, $phase);
 
                         $sharedModifierPhase = $bigCommerceService->getSharedModifierPhase();
-                        $sharedOptionPhase = $bigCommerceService->getSharedOptionPhase();
 
                         $modifierId = $connectWiseService->extractBigCommerceModifierId($phase);
-                        $optionId = $connectWiseService->extractBigCommerceOptionId($phase);
 
                         $sharedModifierPhaseValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierPhase, $modifierId) : null;
-                        $sharedOptionPhaseValue = $optionId ? $bigCommerceService->getSharedValueById($sharedOptionPhase, $optionId) : null;
 
                         if ($phase->status->name == 'Closed') {
 
@@ -288,40 +224,23 @@ class ConnectWiseController extends Controller
                                 $bigCommerceService->removeSharedModifierValue($sharedModifierPhase->id, $sharedModifierPhaseValue->id);
                             }
 
-                            if ($sharedOptionPhaseValue) {
-                                $bigCommerceService->removeSharedOptionValue($sharedOptionPhase->id, $sharedOptionPhaseValue->id);
-                            }
-
-                            $phase = $connectWiseService->setBigCommerceOptionId($phase, '');
-
                             $phase = $connectWiseService->setBigCommerceModifierId($phase, '');
 
                             $connectWiseService->updatePhase($phase);
 
                         } else {
 
-                            if (!$sharedOptionPhaseValue) {
-                                $optionValue = $bigCommerceService->addSharedOptionValueIfNotExists($bigCommerceService->getSharedOptionPhase(), $phaseTitle);
-
-                                $phase = $connectWiseService->setBigCommerceOptionId($phase, $optionValue->id);
-                            } elseif ($sharedOptionPhaseValue->label != $phaseTitle) {
-                                $sharedOptionPhaseValue->label = $phaseTitle;
-
-                                $bigCommerceService->updateSharedOptionValue($sharedOptionPhase, $sharedOptionPhaseValue);
-                            }
-
                             if (!$sharedModifierPhaseValue) {
                                 $modifierValue = $bigCommerceService->addSharedModifierValueIfNotExists($bigCommerceService->getSharedModifierPhase(), $phaseTitle);
 
                                 $phase = $connectWiseService->setBigCommerceModifierId($phase, $modifierValue->id);
+
+                                $connectWiseService->updatePhase($phase);
+
                             } elseif ($sharedModifierPhaseValue->label != $phaseTitle) {
                                 $sharedModifierPhaseValue->label = $phaseTitle;
 
                                 $bigCommerceService->updateSharedModifierValue($sharedModifierPhase, $sharedModifierPhaseValue);
-                            }
-
-                            if (!$sharedOptionPhaseValue || !$sharedModifierPhaseValue) {
-                                $connectWiseService->updatePhase($phase);
                             }
 
                         }
@@ -341,18 +260,6 @@ class ConnectWiseController extends Controller
                         $bigCommerceService->removeSharedModifierValue($sharedModifierProjectTicket->id, $sharedModifierProjectTicketValue->id);
                     }
 
-                    if (!@$ticket['phase']['id']) {
-
-                        $sharedOptionProjectTicket = $bigCommerceService->getSharedOptionProjectTicket();
-
-                        $sharedOptionProjectTicketValue = $bigCommerceService->getSharedValueByTitle($sharedOptionProjectTicket, $ticketTitle);
-
-                        if ($sharedOptionProjectTicketValue) {
-                            $bigCommerceService->removeSharedModifierValue($sharedOptionProjectTicket->id, $sharedOptionProjectTicketValue->id);
-                        }
-
-                    }
-
                     break;
             }
 
@@ -364,13 +271,10 @@ class ConnectWiseController extends Controller
                 case ConnectWiseService::ACTION_UPDATED:
 
                     $sharedModifierServiceTicket = $bigCommerceService->getSharedModifierServiceTicket();
-                    $sharedOptionServiceTicket = $bigCommerceService->getSharedOptionServiceTicket();
 
                     $modifierId = $connectWiseService->extractBigCommerceModifierId($ticket);
-                    $optionId = $connectWiseService->extractBigCommerceOptionId($ticket);
 
                     $sharedModifierServiceTicketValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierServiceTicket, $modifierId) : null;
-                    $sharedOptionServiceTicketValue = $optionId ? $bigCommerceService->getSharedValueById($sharedOptionServiceTicket, $optionId) : null;
 
                     $ticketTitle = $connectWiseService->generateServiceTicketName($ticket->company->id, $ticket->id, $ticket->summary);
 
@@ -380,31 +284,11 @@ class ConnectWiseController extends Controller
                             $bigCommerceService->removeSharedModifierValue($sharedModifierServiceTicket->id, $sharedModifierServiceTicketValue->id);
                         }
 
-                        if ($sharedOptionServiceTicketValue) {
-                            $bigCommerceService->removeSharedOptionValue($sharedOptionServiceTicket->id, $sharedOptionServiceTicketValue->id);
-                        }
-
-                        $ticket = $connectWiseService->setBigCommerceOptionId($ticket, '');
-
                         $ticket = $connectWiseService->setBigCommerceModifierId($ticket, '');
 
                         $connectWiseService->updateTicket($ticket);
 
                         break;
-
-                    }
-
-                    if (!$sharedOptionServiceTicketValue) {
-
-                        $optionValue = $bigCommerceService->addSharedOptionValueIfNotExists($sharedOptionServiceTicket, $ticketTitle);
-
-                        $ticket = $connectWiseService->setBigCommerceOptionId($ticket, $optionValue->id);
-
-                    } elseif ($sharedOptionServiceTicketValue->label != $ticketTitle) {
-
-                        $sharedOptionServiceTicketValue->label = $ticketTitle;
-
-                        $bigCommerceService->updateSharedOptionValue($sharedOptionServiceTicket, $sharedOptionServiceTicketValue);
 
                     }
 
@@ -414,16 +298,14 @@ class ConnectWiseController extends Controller
 
                         $ticket = $connectWiseService->setBigCommerceModifierId($ticket, $modifierValue->id);
 
+                        $connectWiseService->updateTicket($ticket);
+
                     } elseif ($sharedModifierServiceTicketValue->label != $ticketTitle) {
 
                         $sharedModifierServiceTicketValue->label = $ticketTitle;
 
-                        $bigCommerceService->updateSharedOptionValue($sharedModifierServiceTicket, $sharedModifierServiceTicketValue);
+                        $bigCommerceService->updateSharedModifierValue($sharedModifierServiceTicket, $sharedModifierServiceTicketValue);
 
-                    }
-
-                    if (!$sharedOptionServiceTicketValue || !$sharedModifierServiceTicketValue) {
-                        $connectWiseService->updateTicket($ticket);
                     }
 
                     break;
@@ -433,17 +315,11 @@ class ConnectWiseController extends Controller
                     $ticketTitle = $connectWiseService->generateServiceTicketName($entity['company']['id'], $id, $ticket['summary']);
 
                     $sharedModifierServiceTicket = $bigCommerceService->getSharedModifierServiceTicket();
-                    $sharedOptionServiceTicket = $bigCommerceService->getSharedOptionServiceTicket();
 
                     $sharedModifierServiceTicketValue = $bigCommerceService->getSharedValueByTitle($sharedModifierServiceTicket, $ticketTitle);
-                    $sharedOptionServiceTicketValue = $bigCommerceService->getSharedValueByTitle($sharedOptionServiceTicket, $ticketTitle);
 
                     if ($sharedModifierServiceTicketValue) {
                         $bigCommerceService->removeSharedModifierValue($sharedModifierServiceTicket->id, $sharedModifierServiceTicketValue->id);
-                    }
-
-                    if ($sharedOptionServiceTicketValue) {
-                        $bigCommerceService->removeSharedOptionValue($sharedOptionServiceTicket->id, $sharedOptionServiceTicketValue->id);
                     }
 
                     break;
@@ -457,11 +333,6 @@ class ConnectWiseController extends Controller
         $entity = $request->get('Entity');
         $id = $request->get('ID');
 
-        WebhookLog::create([
-            'type' => 'Company',
-            'data' => $request->all()
-        ]);
-
         $company = $connectWiseService->company($id);
 
         switch ($action) {
@@ -469,13 +340,10 @@ class ConnectWiseController extends Controller
             case ConnectWiseService::ACTION_UPDATED:
 
                 $sharedModifierCompany = $bigCommerceService->getSharedModifierCompany();
-                $sharedOptionCompany = $bigCommerceService->getSharedOptionCompany();
 
                 $modifierId = $connectWiseService->extractBigCommerceModifierId($company);
-                $optionId = $connectWiseService->extractBigCommerceOptionId($company);
 
                 $sharedModifierCompanyValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierCompany, $modifierId) : null;
-                $sharedOptionCompanyValue = $optionId ? $bigCommerceService->getSharedValueById($sharedOptionCompany, $optionId) : null;
 
                 $generatedCompanyName = $connectWiseService->generateCompanyName($company->id, $company->name);
 
@@ -485,31 +353,11 @@ class ConnectWiseController extends Controller
                         $bigCommerceService->removeSharedModifierValue($sharedModifierCompany->id, $sharedModifierCompanyValue->id);
                     }
 
-                    if ($sharedOptionCompanyValue) {
-                        $bigCommerceService->removeSharedOptionValue($sharedOptionCompany->id, $sharedOptionCompanyValue->id);
-                    }
-
-                    $company = $connectWiseService->setBigCommerceOptionId($company, '');
-
                     $company = $connectWiseService->setBigCommerceModifierId($company, '');
 
                     $connectWiseService->updateCompany($company);
 
                 } else {
-
-                    if (!$sharedOptionCompanyValue) {
-
-                        $optionValue = $bigCommerceService->addSharedOptionValueIfNotExists($bigCommerceService->getSharedOptionCompany(), $generatedCompanyName);
-
-                        $company = $connectWiseService->setBigCommerceOptionId($company, $optionValue->id);
-
-                    } elseif ($sharedOptionCompanyValue->label != $generatedCompanyName) {
-
-                        $sharedOptionCompanyValue->label = $generatedCompanyName;
-
-                        $bigCommerceService->updateSharedOptionValue($sharedOptionCompany, $sharedOptionCompanyValue);
-
-                    }
 
                     if (!$sharedModifierCompanyValue) {
 
@@ -517,17 +365,13 @@ class ConnectWiseController extends Controller
 
                         $company = $connectWiseService->setBigCommerceModifierId($company, $modifierValue->id);
 
+                        $connectWiseService->updateCompany($company);
+
                     }  elseif ($sharedModifierCompanyValue->label != $generatedCompanyName) {
 
                         $sharedModifierCompanyValue->label = $generatedCompanyName;
 
                         $bigCommerceService->updateSharedModifierValue($sharedModifierCompany, $sharedModifierCompanyValue);
-
-                    }
-
-                    if (!$sharedOptionCompanyValue || !$sharedModifierCompanyValue) {
-
-                        $connectWiseService->updateCompany($company);
 
                     }
                 }
@@ -539,17 +383,11 @@ class ConnectWiseController extends Controller
                 $companyTitle = $connectWiseService->generateCompanyName($entity['company']['id'], $entity['company']['name']);
 
                 $sharedModifierCompany = $bigCommerceService->getSharedModifierCompany();
-                $sharedOptionCompany = $bigCommerceService->getSharedOptionCompany();
 
                 $sharedModifierServiceCompany = $bigCommerceService->getSharedValueByTitle($sharedModifierCompany, $companyTitle);
-                $sharedOptionServiceCompany = $bigCommerceService->getSharedValueByTitle($sharedOptionCompany, $companyTitle);
 
                 if ($sharedModifierServiceCompany) {
                     $bigCommerceService->removeSharedModifierValue($sharedModifierCompany->id, $sharedModifierServiceCompany->id);
-                }
-
-                if ($sharedOptionServiceCompany) {
-                    $bigCommerceService->removeSharedOptionValue($sharedOptionCompany->id, $sharedOptionServiceCompany->id);
                 }
 
                 break;
