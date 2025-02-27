@@ -639,7 +639,6 @@ class BigCommerceService
                 [
                     "is_default" => false,
                     "label" => $value,
-                    "sort_order" => 0
                 ]
             ]
         ]);

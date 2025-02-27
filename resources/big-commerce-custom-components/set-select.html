@@ -1,0 +1,152 @@
+<div
+    class="form-field{{#or (if display_name '===' 'Project') (if display_name '===' 'Phase') (if display_name '===' 'Company') (if display_name '===' 'Project Ticket') (if display_name '===' 'Service Ticket')}} {{strReplace display_name ' ' ''}}Container{{/or}}"
+    data-product-attribute="set-select"
+    {{#or (if display_name '===' 'Company') (if display_name '===' 'Service Ticket')}}style="display: none"{{/or}}
+>
+<label class="form-label form-label--alternate form-label--inlineSmall" for="attribute_select_{{id}}">
+    {{ this.display_name }}:
+
+    {{#or (if required) (if display_name '===' 'Project') (if display_name '===' 'Phase') (if display_name '===' 'Company') (if display_name '===' 'Service Ticket') (if display_name '===' 'Project Ticket')}}
+    <small>{{lang 'common.required'}}</small>
+    {{/or}}
+</label>
+
+<select class="form-select form-select--small{{#or (if display_name '===' 'Project') (if display_name '===' 'Phase') (if display_name '===' 'Company') (if display_name '===' 'Project Ticket') (if display_name '===' 'Service Ticket')}} {{strReplace display_name ' ' ''}}{{/or}}" name="attribute[{{this.id}}]" id="attribute_select_{{id}}" {{#or (if required) (if display_name '===' 'Project')  (if display_name '===' 'Phase')}}required{{/or}}>
+<option value="">{{lang 'products.choose_options'}}</option>
+{{#each this.values}}
+<option data-product-attribute-value="{{id}}" value="{{id}}" {{#if selected}}selected data-default{{/if}}>{{label}}</option>
+{{/each}}
+</select>
+{{#if display_name '===' 'Project'}}
+{{#partial "scripts"}}
+<script>
+    window.addEventListener('load', () => {
+        const elProject = document.getElementsByClassName('Project')[0]
+        const elPhase = document.getElementsByClassName('Phase')[0]
+        const elPhaseContainer = document.getElementsByClassName('PhaseContainer')[0]
+        const elCompany = document.getElementsByClassName('Company')[0]
+        const elCompanyContainer = document.getElementsByClassName('CompanyContainer')[0]
+        const elProjectTicket = document.getElementsByClassName('ProjectTicket')[0]
+        const elProjectTicketContainer = document.getElementsByClassName('ProjectTicketContainer')[0]
+        const elServiceTicket = document.getElementsByClassName('ServiceTicket')[0]
+        const elServiceTicketContainer = document.getElementsByClassName('ServiceTicketContainer')[0]
+        const projects = Array.from(elProject.options).map(option => option.cloneNode(true))
+        const companies = Array.from(elCompany.options).map(option => option.cloneNode(true))
+        const phases = Array.from(elPhase.options).map(option => option.cloneNode(true))
+        const projectTickets = Array.from(elProjectTicket.options).map(option => option.cloneNode(true))
+        const projectTicketNoTicketOption = Array.from(elProjectTicket.options).filter(option => option.text.toLowerCase() === "no ticket")[0]
+        const serviceTickets = Array.from(elServiceTicket.options).map(option => option.cloneNode(true))
+        let selectedProjectId;
+        const removeAllPhaseOptions = () => {
+            Array.from(elPhase.options).filter(option => !["choose options", "no phase"].includes(option.text.toLowerCase())).map(option => option.remove())
+        }
+        const removeAllProjectTicketOptions = () => {
+            if (elProjectTicketContainer) {
+                Array.from(elProjectTicket.options).filter(option => !["choose options", "no ticket"].includes(option.text.toLowerCase())).map(option => option.remove())
+            }
+        }
+        const removeAllServiceTicketOptions = () => {
+            Array.from(elServiceTicket.options).filter(option => option.text.toLowerCase() !== "choose options").map(option => option.remove())
+        }
+        const showCompany = () => {
+            if (elCompanyContainer.style.display) {
+                elCompanyContainer.style.display = ''
+                elCompany.toggleAttribute('required')
+                elServiceTicketContainer.style.display = ''
+                elServiceTicket.toggleAttribute('required')
+                elPhaseContainer.style.display = 'none'
+                elPhase.toggleAttribute('required')
+                if (elProjectTicketContainer) {
+                    elProjectTicketContainer.style.display = 'none'
+                }
+            }
+        }
+        const hideCompany = () => {
+            if (elCompanyContainer.style.display !== 'none') {
+                elCompanyContainer.style.display = 'none'
+                elCompany.toggleAttribute('required')
+                elServiceTicketContainer.style.display = 'none'
+                elServiceTicket.toggleAttribute('required')
+                elPhaseContainer.style.display = ''
+                elPhase.toggleAttribute('required')
+                if (elProjectTicketContainer) {
+                    elProjectTicketContainer.style.display = ''
+                }
+                elCompany.value = ''
+            }
+        }
+        const handleCloneOption = (option, splitter='-') => {
+            const clonedOption = option.cloneNode(true)
+            clonedOption.text = clonedOption.text.split(splitter).slice(1).join(splitter)
+            return clonedOption
+        }
+
+        Array.from(elCompany.options).filter(option => option.text.toLowerCase() !== "choose options").map(option => {
+            option.text = handleCloneOption(option).text
+        })
+
+        removeAllPhaseOptions()
+        removeAllServiceTicketOptions()
+        removeAllProjectTicketOptions()
+        elProject.onchange = e => {
+            elPhase.value = ''
+            if (elProjectTicketContainer) {
+                elProjectTicket.value = ''
+            }
+            removeAllPhaseOptions()
+            if (e.target.value) {
+                const val = projects.filter(option => option.getAttribute('value') === e.target.value)[0].text
+                if (val === 'No project') {
+                    showCompany()
+                    selectedProjectId = null
+                    return false
+                } else {
+                    hideCompany()
+                }
+                selectedProjectId = "#" + val.split('-')[0].match(/\d+/).join('') + ":"
+                phases.filter(option => option.text.startsWith(selectedProjectId))
+                    .map(option => elPhase.add(handleCloneOption(option)))
+            } else {
+                hideCompany()
+                selectedProjectId = null
+            }
+        }
+        elPhase.onchange = e => {
+            removeAllProjectTicketOptions()
+            if (e.target.value) {
+                if (elProjectTicketContainer) {
+                    const val = Array.from(elPhase.options).filter(option => option.getAttribute('value') === e.target.value)[0].text
+                    if (val === 'No phase') {
+                        if (projectTicketNoTicketOption.disabled) {
+                            projectTicketNoTicketOption.disabled = false
+                        }
+                        projectTickets.filter(option => option.text.startsWith(selectedProjectId) && option.text.split(':')[1].includes('-'))
+                            .map(option => elPhase.add(handleCloneOption(option)))
+                    } else {
+                        if (!projectTicketNoTicketOption.disabled) {
+                            projectTicketNoTicketOption.disabled = true
+                        }
+                        const val = phases.filter(option => option.getAttribute('value') === e.target.value)[0].text.split(':')[1]
+                        const selectedPhaseId = "#" + val.split('-')[0].match(/\d+/).join('')
+                        projectTickets.filter(option => {
+                            const optionTextArr = option.text.split(':')
+                            return option.text.startsWith(selectedProjectId) && !optionTextArr[1].includes('-') && optionTextArr[1].endsWith(selectedPhaseId)
+                        }).map(option => elProjectTicket.add(handleCloneOption(option)))
+                    }
+                }
+            }
+        }
+        elCompany.onchange = e => {
+            removeAllServiceTicketOptions()
+            if (e.target.value) {
+                const val = companies.filter(option => option.getAttribute('value') === e.target.value)[0].text
+                const selectedCompanyId = "#" + val.split('-')[0].match(/\d+/).join('') + ":"
+                serviceTickets.filter(option => option.text.startsWith(selectedCompanyId))
+                    .map(option => elServiceTicket.add(handleCloneOption(option, ':')))
+            }
+        }
+    })
+</script>
+{{/partial}}
+{{/if}}
+</div>
