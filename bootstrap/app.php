@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BinyodMiddleware;
 use App\Http\Middleware\IntegrationMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'integration' => IntegrationMiddleware::class,
+            'binyod' => BinyodMiddleware::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -507,6 +507,7 @@ class BigCommerceService
 
     public function getSharedModifierCompany()
     {
+
         return $this->getSharedModifierByName('Company');
     }
 
@@ -573,8 +574,7 @@ class BigCommerceService
             'json' => [
                 [
                     "is_default" => false,
-                    "label" => $value,
-                    "sort_order" => 0
+                    "label" => $value
                 ]
             ]
         ]);
@@ -614,11 +614,7 @@ class BigCommerceService
 
     public function updateSharedModifierValue(\stdClass $modifier, \stdClass $value)
     {
-        $request = $this->http->put("catalog/shared-modifiers/{$modifier->id}/values", [
-            'json' => [$value]
-        ]);
-
-        $valueItem = json_decode($request->getBody()->getContents())->data[0];
+        $valueItem = $this->updateSharedModifierValues($modifier->id, [$value])[0];
 
         $cachedSharedModifier = cache()->get('bc-cachedSharedModifier-' . $modifier->name);
 
@@ -632,18 +628,18 @@ class BigCommerceService
         return $valueItem;
     }
 
-    public function addSharedModifierValue(\stdClass $modifier, string $value)
+    public function updateSharedModifierValues(int $modifierId, array $values)
     {
-        $request = $this->http->post("catalog/shared-modifiers/{$modifier->id}/values", [
-            'json' => [
-                [
-                    "is_default" => false,
-                    "label" => $value,
-                ]
-            ]
+        $request = $this->http->put("catalog/shared-modifiers/{$modifierId}/values", [
+            'json' => $values
         ]);
 
-        $valueItem = json_decode($request->getBody()->getContents())->data[0];
+        return json_decode($request->getBody()->getContents())->data;
+    }
+
+    public function addSharedModifierValue(\stdClass $modifier, string $valueLabel)
+    {
+        $valueItem = $this->addSharedModifierValues($modifier->id, [$valueLabel])[0];
 
         $cachedSharedModifier = cache()->get('bc-cachedSharedModifier-' . $modifier->name);
 
@@ -656,9 +652,30 @@ class BigCommerceService
         return $valueItem;
     }
 
+    public function addSharedModifierValues(int $modifierId, array $valueLabels) : array
+    {
+        $request = $this->http->post("catalog/shared-modifiers/{$modifierId}/values", [
+            'json' => array_map(function ($label, $index) {
+                return [
+                    'label' => $label,
+                    'sort_order' => $index+1
+                ];
+            }, $valueLabels, array_keys($valueLabels))
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data;
+    }
+
     public function removeSharedModifierValue(int $modifierId, int $valueId)
     {
         $this->http->delete("catalog/shared-modifiers/{$modifierId}/values?id:in={$valueId}");
+    }
+
+    public function removeSharedModifierValues(int $modifierId, array $valueIds)
+    {
+        $valuesStr = implode(',', $valueIds);
+
+        $this->http->delete("catalog/shared-modifiers/{$modifierId}/values?id:in={$valuesStr}");
     }
 
     public function removeSharedOptionValue(int $optionId, int $valueId)

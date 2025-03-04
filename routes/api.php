@@ -9,6 +9,18 @@ use App\Http\Controllers\Store\ProductController as StoreProductController;
 use App\Http\Controllers\Store\OrderController as StoreOrderController;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('/binyod')->group(function () {
+    Route::group([
+        'middleware' => 'binyod'
+    ], function () {
+        Route::get('projects', [ConnectWiseController::class, 'projects']);
+        Route::get('phases', [ConnectWiseController::class, 'phases']);
+        Route::get('companies', [ConnectWiseController::class, 'companies']);
+        Route::get('project-tickets', [ConnectWiseController::class, 'projectTickets']);
+        Route::get('service-tickets', [ConnectWiseController::class, 'serviceTickets']);
+    });
+});
+
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::get('/products/image/{attachmentId}/{fileName}', [ProductController::class, 'image']);
@@ -20,9 +32,6 @@ Route::prefix('/integration')->group(function () {
     ], function () {
         Route::prefix('connect-wise')->group(function () {
             Route::post('product-catalog', [ConnectWiseController::class, 'productCatalog']);
-            Route::post('project', [ConnectWiseController::class, 'project']);
-            Route::post('ticket', [ConnectWiseController::class, 'ticket']);
-            Route::post('company', [ConnectWiseController::class, 'company']);
             Route::post('purchase-order', [ConnectWiseController::class, 'purchaseOrder']);
         });
     });

@@ -35,11 +35,28 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $project = $connectWiseService->getProject(149);
+//        $projects = collect($connectWiseService->getCompanies(1, 'status/name = "Active" and deletedFlag=false', pageSize: 1000));
 
-        $project->name .= '1';
+        $projectModifier = $bigCommerceService->getSharedModifierCompany();
 
-        $connectWiseService->updateProject($project);
+        $bigCommerceService->removeSharedModifierValues($projectModifier->id, collect($projectModifier->values)->pluck('id')->values()->toArray());
+
+        return false;
+
+        $page=1;
+
+        while (true) {
+            $labels = $projects->forPage($page, 50)->map(function ($company) use ($connectWiseService, $projects) {
+                return $connectWiseService->generateCompanyName($company->id, $company->name);
+            })->toArray();
+            $bigCommerceService->addSharedModifierValues($projectModifier->id, $labels);
+
+            if (count($labels) < 50) {
+                break;
+            }
+
+            $page++;
+        }
     }
 }
 

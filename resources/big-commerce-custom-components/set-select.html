@@ -10,8 +10,12 @@
     <small>{{lang 'common.required'}}</small>
     {{/or}}
 </label>
-
-<select class="form-select form-select--small{{#or (if display_name '===' 'Project') (if display_name '===' 'Phase') (if display_name '===' 'Company') (if display_name '===' 'Project Ticket') (if display_name '===' 'Service Ticket')}} {{strReplace display_name ' ' ''}}{{/or}}" name="attribute[{{this.id}}]" id="attribute_select_{{id}}" {{#or (if required) (if display_name '===' 'Project')  (if display_name '===' 'Phase')}}required{{/or}}>
+{{#if display_name '===' 'Project'}}
+<div style="display: flex; justify-content: space-around">
+    <input class="form-input form-input--small" type="text" id="project-search-input" name="project-search" placeholder="Search..."/>
+</div>
+{{/if}}
+<select {{#or (if display_name '===' 'Project') (if display_name '===' 'Phase') (if display_name '===' 'Company') (if display_name '===' 'Project Ticket') (if display_name '===' 'Service Ticket') (if display_name '===' 'Bundle')}} style="max-width: 100%" class="form-select form-select--small {{strReplace display_name ' ' ''}}"{{else}}class="form-select form-select--small"{{/or}} name="attribute[{{this.id}}]" id="attribute_select_{{id}}" {{#or (if required) (if display_name '===' 'Project')  (if display_name '===' 'Phase')}}required{{/or}}>
 <option value="">{{lang 'products.choose_options'}}</option>
 {{#each this.values}}
 <option data-product-attribute-value="{{id}}" value="{{id}}" {{#if selected}}selected data-default{{/if}}>{{label}}</option>
@@ -21,6 +25,7 @@
 {{#partial "scripts"}}
 <script>
     window.addEventListener('load', () => {
+        const projectSearchInput = document.getElementById('project-search-input')
         const elProject = document.getElementsByClassName('Project')[0]
         const elPhase = document.getElementsByClassName('Phase')[0]
         const elPhaseContainer = document.getElementsByClassName('PhaseContainer')[0]
@@ -37,6 +42,10 @@
         const projectTicketNoTicketOption = Array.from(elProjectTicket.options).filter(option => option.text.toLowerCase() === "no ticket")[0]
         const serviceTickets = Array.from(elServiceTicket.options).map(option => option.cloneNode(true))
         let selectedProjectId;
+        let searchTimer;
+        const removeAllProjectOptions = () => {
+            Array.from(elProject.options).filter(option => !["choose options", "no project"].includes(option.text.toLowerCase())).map(option => option.remove())
+        }
         const removeAllPhaseOptions = () => {
             Array.from(elPhase.options).filter(option => !["choose options", "no phase"].includes(option.text.toLowerCase())).map(option => option.remove())
         }
@@ -80,15 +89,34 @@
             clonedOption.text = clonedOption.text.split(splitter).slice(1).join(splitter)
             return clonedOption
         }
-
         Array.from(elCompany.options).filter(option => option.text.toLowerCase() !== "choose options").map(option => {
             option.text = handleCloneOption(option).text
         })
-
         removeAllPhaseOptions()
         removeAllServiceTicketOptions()
         removeAllProjectTicketOptions()
+        projectSearchInput.oninput = e => {
+            if (searchTimer) {
+                clearTimeout(searchTimer)
+            }
+
+            searchTimer = setTimeout(() => {
+                removeAllProjectOptions()
+                const searchVal = e.target.value.toLowerCase()
+                if (searchVal) {
+                    searchTimer = null
+                    projects.filter(project => {
+                        return project.text.toLowerCase().includes(searchVal)
+                    }).map(option => elProject.add(option.cloneNode(true)))
+                } else {
+                    projects.filter(project => {
+                        return !["choose options", "no project"].includes(project.text.toLowerCase())
+                    }).map(option => elProject.add(option.cloneNode(true)))
+                }
+            }, 500)
+        }
         elProject.onchange = e => {
+            projectSearchInput.value=''
             elPhase.value = ''
             if (elProjectTicketContainer) {
                 elProjectTicket.value = ''

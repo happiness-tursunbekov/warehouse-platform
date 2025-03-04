@@ -86,316 +86,6 @@ class ConnectWiseController extends Controller
         }
     }
 
-    public function project(Request $request, BigCommerceService $bigCommerceService, ConnectWiseService $connectWiseService)
-    {
-        $action = $request->get('Action');
-        $entity = $request->get('Entity');
-        $id = $request->get('ID');
-
-        $project = $connectWiseService->getProject($id);
-
-        switch ($action) {
-            case ConnectWiseService::ACTION_ADDED:
-            case ConnectWiseService::ACTION_UPDATED:
-
-                $sharedModifierProject = $bigCommerceService->getSharedModifierProject();
-
-                $modifierId = $connectWiseService->extractBigCommerceModifierId($project);
-
-                $sharedModifierProjectValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierProject, $modifierId) : null;
-
-                $generatedProjectName = $connectWiseService->generateProjectName($project->id, $project->name);
-
-                if ($project->status->name == 'Cancelled') {
-
-                    if ($sharedModifierProjectValue) {
-                        $bigCommerceService->removeSharedModifierValue($sharedModifierProject->id, $sharedModifierProjectValue->id);
-                    }
-
-                    $project = $connectWiseService->setBigCommerceModifierId($project, '');
-
-                    $connectWiseService->updateProject($project);
-
-                } else {
-
-                    if (!$sharedModifierProjectValue) {
-
-                        $modifierValue = $bigCommerceService->addSharedModifierValueIfNotExists($bigCommerceService->getSharedModifierProject(), $generatedProjectName);
-
-                        $project = $connectWiseService->setBigCommerceModifierId($project, $modifierValue->id);
-
-                        $connectWiseService->updateProject($project);
-
-                    }  elseif ($sharedModifierProjectValue->label != $generatedProjectName) {
-
-                        $sharedModifierProjectValue->label = $generatedProjectName;
-
-                        $bigCommerceService->updateSharedModifierValue($sharedModifierProject, $sharedModifierProjectValue);
-
-                    }
-                }
-
-                break;
-
-            case ConnectWiseService::ACTION_DELETED:
-
-                $projectTitle = $connectWiseService->generateProjectName($entity['project']['id'], $entity['project']['name']);
-
-                $sharedModifierProject = $bigCommerceService->getSharedModifierProject();
-
-                $sharedModifierServiceProject = $bigCommerceService->getSharedValueByTitle($sharedModifierProject, $projectTitle);
-
-                if ($sharedModifierServiceProject) {
-                    $bigCommerceService->removeSharedModifierValue($sharedModifierProject->id, $sharedModifierServiceProject->id);
-                }
-
-                break;
-        }
-
-        return response()->json(['message' => 'Successful!']);
-    }
-
-    public function ticket(Request $request, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
-    {
-        $action = $request->get('Action');
-        $entity = $request->get('Entity');
-        $id = $request->get('ID');
-
-        if (@$entity['project']) {
-
-            $ticket = $connectWiseService->ticket($id, true);
-
-            $phase = @$ticket->phase ? $connectWiseService->getProjectPhase($ticket->project->id, $ticket->phase->id) : null;
-
-            switch ($action) {
-                case ConnectWiseService::ACTION_ADDED:
-                case ConnectWiseService::ACTION_UPDATED:
-
-                    $sharedModifierProjectTicket = $bigCommerceService->getSharedModifierProjectTicket();
-
-                    $modifierId = $connectWiseService->extractBigCommerceModifierId($ticket);
-
-                    $sharedModifierProjectTicketValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierProjectTicket, $modifierId) : null;
-
-                    $ticketTitle = $connectWiseService->generateProjectTicketName($ticket->project->id, $ticket->id, $ticket->summary, $phase->id ?? null);
-
-                    if ($ticket->status->name == '>Closed') {
-
-                        if ($sharedModifierProjectTicketValue) {
-                            $bigCommerceService->removeSharedModifierValue($sharedModifierProjectTicket->id, $sharedModifierProjectTicketValue->id);
-                        }
-
-                        $ticket = $connectWiseService->setBigCommerceModifierId($ticket, '');
-
-                        $connectWiseService->updateTicket($ticket);
-                    } else {
-
-                        if (!$sharedModifierProjectTicketValue) {
-
-                            $modifierValue = $bigCommerceService->addSharedModifierValueIfNotExists($bigCommerceService->getSharedModifierProjectTicket(), $ticketTitle);
-
-                            $ticket = $connectWiseService->setBigCommerceModifierId($ticket, $modifierValue->id);
-
-                            $connectWiseService->updateTicket($ticket);
-
-                        } elseif ($sharedModifierProjectTicketValue->label != $ticketTitle) {
-
-                            $sharedModifierProjectTicketValue->label = $ticketTitle;
-
-                            $bigCommerceService->updateSharedModifierValue($sharedModifierProjectTicket, $sharedModifierProjectTicketValue);
-
-                        }
-                    }
-
-                    // Handling phase actions. Because there is no phase webhook
-                    if ($phase) {
-
-                        $phaseTitle = $connectWiseService->generatePhaseName($ticket->project->id, $ticket->phase->id, $phase);
-
-                        $sharedModifierPhase = $bigCommerceService->getSharedModifierPhase();
-
-                        $modifierId = $connectWiseService->extractBigCommerceModifierId($phase);
-
-                        $sharedModifierPhaseValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierPhase, $modifierId) : null;
-
-                        if ($phase->status->name == 'Closed') {
-
-                            if ($sharedModifierPhaseValue) {
-                                $bigCommerceService->removeSharedModifierValue($sharedModifierPhase->id, $sharedModifierPhaseValue->id);
-                            }
-
-                            $phase = $connectWiseService->setBigCommerceModifierId($phase, '');
-
-                            $connectWiseService->updatePhase($phase);
-
-                        } else {
-
-                            if (!$sharedModifierPhaseValue) {
-                                $modifierValue = $bigCommerceService->addSharedModifierValueIfNotExists($bigCommerceService->getSharedModifierPhase(), $phaseTitle);
-
-                                $phase = $connectWiseService->setBigCommerceModifierId($phase, $modifierValue->id);
-
-                                $connectWiseService->updatePhase($phase);
-
-                            } elseif ($sharedModifierPhaseValue->label != $phaseTitle) {
-                                $sharedModifierPhaseValue->label = $phaseTitle;
-
-                                $bigCommerceService->updateSharedModifierValue($sharedModifierPhase, $sharedModifierPhaseValue);
-                            }
-
-                        }
-                    }
-
-                    break;
-
-                case ConnectWiseService::ACTION_DELETED:
-
-                    $ticketTitle = $connectWiseService->generateProjectTicketName($entity['project']['id'], $id, $ticket['summary'], $ticket['phase']['id'] ?? null);
-
-                    $sharedModifierProjectTicket = $bigCommerceService->getSharedModifierProjectTicket();
-
-                    $sharedModifierProjectTicketValue = $bigCommerceService->getSharedValueByTitle($sharedModifierProjectTicket, $ticketTitle);
-
-                    if ($sharedModifierProjectTicketValue) {
-                        $bigCommerceService->removeSharedModifierValue($sharedModifierProjectTicket->id, $sharedModifierProjectTicketValue->id);
-                    }
-
-                    break;
-            }
-
-        } elseif (@$entity['company']) {
-            $ticket = $connectWiseService->ticket($id);
-
-            switch ($action) {
-                case ConnectWiseService::ACTION_ADDED:
-                case ConnectWiseService::ACTION_UPDATED:
-
-                    $sharedModifierServiceTicket = $bigCommerceService->getSharedModifierServiceTicket();
-
-                    $modifierId = $connectWiseService->extractBigCommerceModifierId($ticket);
-
-                    $sharedModifierServiceTicketValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierServiceTicket, $modifierId) : null;
-
-                    $ticketTitle = $connectWiseService->generateServiceTicketName($ticket->company->id, $ticket->id, $ticket->summary);
-
-                    if ($ticket->status->name == '>Closed') {
-
-                        if ($sharedModifierServiceTicketValue) {
-                            $bigCommerceService->removeSharedModifierValue($sharedModifierServiceTicket->id, $sharedModifierServiceTicketValue->id);
-                        }
-
-                        $ticket = $connectWiseService->setBigCommerceModifierId($ticket, '');
-
-                        $connectWiseService->updateTicket($ticket);
-
-                        break;
-
-                    }
-
-                    if (!$sharedModifierServiceTicketValue) {
-
-                        $modifierValue = $bigCommerceService->addSharedModifierValueIfNotExists($sharedModifierServiceTicket, $ticketTitle);
-
-                        $ticket = $connectWiseService->setBigCommerceModifierId($ticket, $modifierValue->id);
-
-                        $connectWiseService->updateTicket($ticket);
-
-                    } elseif ($sharedModifierServiceTicketValue->label != $ticketTitle) {
-
-                        $sharedModifierServiceTicketValue->label = $ticketTitle;
-
-                        $bigCommerceService->updateSharedModifierValue($sharedModifierServiceTicket, $sharedModifierServiceTicketValue);
-
-                    }
-
-                    break;
-
-                case ConnectWiseService::ACTION_DELETED:
-
-                    $ticketTitle = $connectWiseService->generateServiceTicketName($entity['company']['id'], $id, $ticket['summary']);
-
-                    $sharedModifierServiceTicket = $bigCommerceService->getSharedModifierServiceTicket();
-
-                    $sharedModifierServiceTicketValue = $bigCommerceService->getSharedValueByTitle($sharedModifierServiceTicket, $ticketTitle);
-
-                    if ($sharedModifierServiceTicketValue) {
-                        $bigCommerceService->removeSharedModifierValue($sharedModifierServiceTicket->id, $sharedModifierServiceTicketValue->id);
-                    }
-
-                    break;
-            }
-        }
-    }
-
-    public function company(Request $request, BigCommerceService $bigCommerceService, ConnectWiseService $connectWiseService)
-    {
-        $action = $request->get('Action');
-        $entity = $request->get('Entity');
-        $id = $request->get('ID');
-
-        $company = $connectWiseService->company($id);
-
-        switch ($action) {
-            case ConnectWiseService::ACTION_ADDED:
-            case ConnectWiseService::ACTION_UPDATED:
-
-                $sharedModifierCompany = $bigCommerceService->getSharedModifierCompany();
-
-                $modifierId = $connectWiseService->extractBigCommerceModifierId($company);
-
-                $sharedModifierCompanyValue = $modifierId ? $bigCommerceService->getSharedValueById($sharedModifierCompany, $modifierId) : null;
-
-                $generatedCompanyName = $connectWiseService->generateCompanyName($company->id, $company->name);
-
-                if ($company->status->name != 'Active') {
-
-                    if ($sharedModifierCompanyValue) {
-                        $bigCommerceService->removeSharedModifierValue($sharedModifierCompany->id, $sharedModifierCompanyValue->id);
-                    }
-
-                    $company = $connectWiseService->setBigCommerceModifierId($company, '');
-
-                    $connectWiseService->updateCompany($company);
-
-                } else {
-
-                    if (!$sharedModifierCompanyValue) {
-
-                        $modifierValue = $bigCommerceService->addSharedModifierValueIfNotExists($bigCommerceService->getSharedModifierCompany(), $generatedCompanyName);
-
-                        $company = $connectWiseService->setBigCommerceModifierId($company, $modifierValue->id);
-
-                        $connectWiseService->updateCompany($company);
-
-                    }  elseif ($sharedModifierCompanyValue->label != $generatedCompanyName) {
-
-                        $sharedModifierCompanyValue->label = $generatedCompanyName;
-
-                        $bigCommerceService->updateSharedModifierValue($sharedModifierCompany, $sharedModifierCompanyValue);
-
-                    }
-                }
-
-                break;
-
-            case ConnectWiseService::ACTION_DELETED:
-
-                $companyTitle = $connectWiseService->generateCompanyName($entity['company']['id'], $entity['company']['name']);
-
-                $sharedModifierCompany = $bigCommerceService->getSharedModifierCompany();
-
-                $sharedModifierServiceCompany = $bigCommerceService->getSharedValueByTitle($sharedModifierCompany, $companyTitle);
-
-                if ($sharedModifierServiceCompany) {
-                    $bigCommerceService->removeSharedModifierValue($sharedModifierCompany->id, $sharedModifierServiceCompany->id);
-                }
-
-                break;
-        }
-
-        return response()->json(['message' => 'Successful!']);
-    }
-
     public function purchaseOrder(Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service, BigCommerceService $bigCommerceService)
     {
         $action = $request->get('Action');
@@ -623,5 +313,83 @@ class ConnectWiseController extends Controller
             default:
                 return response()->json(['message' => 'No action needed']);
         }
+    }
+
+    public function projects(ConnectWiseService $connectWiseService)
+    {
+        return response()->json($connectWiseService->getProjects(1, 'status/name != "Cancelled"', 'id,name,company'));
+    }
+
+    public function phases(Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'projectId' => ['required', 'integer']
+        ]);
+
+        $phases = collect($connectWiseService->getProjectPhases($request->get('projectId'), 'id,description,parentPhase'));
+
+        $phases = $phases->map(function ($phase) use ($phases) {
+
+            $phase->title = $phase->description;
+
+            if (@$phase->parentPhase) {
+
+                $phase->title = "{$phase->parentPhase->name} -> {$phase->title}";
+
+                $parent = $phases->where('id', $phase->parentPhase->id)->first();
+
+                if ($parent && @$parent->parentPhase) {
+                    $phase->parentPhase->parentPhase = $parent->parentPhase;
+
+                    $phase->title = "{$phase->parentPhase->parentPhase->name} -> {$phase->title}";
+
+                    $parent1 = $phases->where('id', $parent->parentPhase->id)->first();
+
+                    if ($parent1 && @$parent1->parentPhase) {
+                        $phase->parentPhase->parentPhase->parentPhase = $parent1->parentPhase;
+
+                        $phase->title = "{$phase->parentPhase->parentPhase->parentPhase->name} -> {$phase->title}";
+
+                    }
+                }
+            }
+
+            return $phase;
+        });
+
+        return response()->json($phases->sortBy('title')->values());
+    }
+
+    public function projectTickets(Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'projectId' => ['required', 'integer'],
+            'phaseId' => ['nullable', 'integer']
+        ]);
+
+        $projectId = $request->get('projectId');
+        $phaseId = $request->get('phaseId', "null");
+
+        $conditions = "project/id={$projectId} and phase/id={$phaseId}";
+
+        return $connectWiseService->getProjectTickets(1, $conditions, 'id,summary,status,closedFlag');
+    }
+
+    public function companies(ConnectWiseService $connectWiseService)
+    {
+        return response()->json($connectWiseService->getCompanies(1, 'status/name != "Cancelled" and deletedFlag=false', null, 'id,name,company', 1000));
+    }
+
+    public function serviceTickets(Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'companyId' => ['required', 'integer']
+        ]);
+
+        $companyId = $request->get('companyId');
+
+        $conditions = "company/id={$companyId} and status/name in ('New','Waiting Products','In-Progress') and closedFlag=false";
+
+        return $connectWiseService->getServiceTickets(1, $conditions, 'id,summary');
     }
 }

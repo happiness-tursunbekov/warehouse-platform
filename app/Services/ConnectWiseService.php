@@ -171,6 +171,25 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
+    public function getCompanies($page=null, $conditions=null, $customFieldConditions=null, $fields=null, $pageSize=25)
+    {
+//        try {
+            $response = $this->http->get('company/companies', [
+                'query' => [
+                    'page' => $page,
+                    'clientId' => $this->clientId,
+                    'conditions' => $conditions,
+                    'fields' => $fields,
+                    'pageSize' => $pageSize,
+                    'customFieldConditions' => $customFieldConditions
+                ],
+            ]);
+//        } catch (GuzzleException $e) {
+//            return [];
+//        }
+        return json_decode($response->getBody()->getContents());
+    }
+
     public function getCatalogItemByIdentifier($identifier)
     {
         try {
@@ -814,7 +833,7 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function getProjects($page=null, $conditions=null)
+    public function getProjects($page=null, $conditions=null, $fields=null)
     {
         try {
             $response = $this->http->get('project/projects', [
@@ -822,7 +841,8 @@ class ConnectWiseService
                     'page' => $page,
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
-                    'pageSize' => 1000
+                    'pageSize' => 1000,
+                    'fields' => $fields
                 ],
             ]);
         } catch (GuzzleException $e) {
@@ -841,7 +861,7 @@ class ConnectWiseService
                 ],
             ]);
         } catch (GuzzleException $e) {
-            return [];
+            return null;
         }
         return json_decode($response->getBody()->getContents());
     }
@@ -945,6 +965,43 @@ class ConnectWiseService
 
         $response = $this->http->get($url . "/tickets/{$ticketId}?clientId={$this->clientId}");
 
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getProjectTickets($page=null, $conditions=null, $fields=null, $orderBy=null)
+    {
+        try {
+            $response = $this->http->get('project/tickets', [
+                'query' => [
+                    'page' => $page,
+                    'clientId' => $this->clientId,
+                    'conditions' => $conditions,
+                    'orderBy' => $orderBy,
+                    'fields' => $fields
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getServiceTickets($page=null, $conditions=null, $fields=null, $orderBy=null)
+    {
+        try {
+            $response = $this->http->get('service/tickets', [
+                'query' => [
+                    'page' => $page,
+                    'clientId' => $this->clientId,
+                    'conditions' => $conditions,
+                    'orderBy' => $orderBy,
+                    'fields' => $fields,
+                    'pageSize' => 1000
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return [];
+        }
         return json_decode($response->getBody()->getContents());
     }
 
@@ -1800,9 +1857,11 @@ class ConnectWiseService
         return Str::upper($catalogItemIdentifier) . '-PROJECT';
     }
 
-    public function generateProjectName($projectId, $projectName)
+    public function generateProjectName($projectId, $projectName, \stdClass $project=null)
     {
-        return "#{$projectId} - {$projectName}";
+        $project = $project ?: $this->getProject($projectId);
+
+        return "#{$projectId} - {$projectName}" . ($project ? " ({$project->company->name})" : "");
     }
 
     public function generateCompanyName($companyId, $companyName)
@@ -1841,6 +1900,19 @@ class ConnectWiseService
         $response = $this->http->get("project/projects/{$projectId}/phases/{$phaseId}", [
             'query' => [
                 'clientId' => $this->clientId
+            ],
+        ]);
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getProjectPhases($projectId, $fields=null)
+    {
+        $response = $this->http->get("project/projects/{$projectId}/phases", [
+            'query' => [
+                'clientId' => $this->clientId,
+                'pageSize' => 1000,
+                'fields' => $fields
             ],
         ]);
 
