@@ -74,9 +74,9 @@ class IntegrationMiddleware
                     'key' => ['required', 'string'],
                 ]);
 
-                if (config('bc.access_key') != $request->get('key')) {
-                    return \response()->json(['key' => 'Incorrect Key'], 422);
-                }
+//                if (config('bc.access_key') != $request->get('key')) {
+//                    return \response()->json(['key' => 'Incorrect Key'], 422);
+//                }
 
                 $request->merge([
                     'key' => ''
