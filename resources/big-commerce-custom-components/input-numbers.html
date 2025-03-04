@@ -1,0 +1,346 @@
+{{#if display_name '===' 'Project'}}
+<style>
+    #project-loader {
+        display: none;
+    }
+    .lds-ellipsis,
+    .lds-ellipsis div {
+        box-sizing: border-box;
+    }
+    .lds-ellipsis {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 10px;
+    }
+    .lds-ellipsis div {
+        position: absolute;
+        width: 13.33333px;
+        height: 13.33333px;
+        border-radius: 50%;
+        background: currentColor;
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    .lds-ellipsis div:nth-child(1) {
+        left: 8px;
+        animation: lds-ellipsis1 0.6s infinite;
+    }
+    .lds-ellipsis div:nth-child(2) {
+        left: 8px;
+        animation: lds-ellipsis2 0.6s infinite;
+    }
+    .lds-ellipsis div:nth-child(3) {
+        left: 32px;
+        animation: lds-ellipsis2 0.6s infinite;
+    }
+    .lds-ellipsis div:nth-child(4) {
+        left: 56px;
+        animation: lds-ellipsis3 0.6s infinite;
+    }
+    @keyframes lds-ellipsis1 {
+        0% {
+            transform: scale(0);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    @keyframes lds-ellipsis3 {
+        0% {
+            transform: scale(1);
+        }
+        100% {
+            transform: scale(0);
+        }
+    }
+    @keyframes lds-ellipsis2 {
+        0% {
+            transform: translate(0, 0);
+        }
+        100% {
+            transform: translate(24px, 0);
+        }
+    }
+</style>
+{{/if}}
+
+<div
+    class="form-field{{#or (if display_name '===' 'Project') (if display_name '===' 'Phase') (if display_name '===' 'Company') (if display_name '===' 'Project Ticket') (if display_name '===' 'Service Ticket')}} {{strReplace display_name ' ' ''}}Container{{/or}}"
+    data-product-attribute="input-number"
+    {{#or (if display_name '===' 'Phase') (if display_name '===' 'Project Ticket') (if display_name '===' 'Company') (if display_name '===' 'Service Ticket')}}style="display: none"{{/or}}
+>
+<label class="form-label form-label--alternate form-label--inlineSmall" for="attribute_number_{{id}}">
+    {{ this.display_name }}:
+
+    {{#or (if required) (if display_name '===' 'Project') (if display_name '===' 'Phase') (if display_name '===' 'Company') (if display_name '===' 'Service Ticket') (if display_name '===' 'Project Ticket')}}
+    <small>{{lang 'common.required'}}</small>
+    {{/or}}
+
+    {{#if display_name '===' 'Project'}}
+    <div id="project-loader">
+        <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
+    </div>
+    {{/if}}
+
+</label>
+
+{{#or (if display_name '===' 'Project') (if display_name '===' 'Company')}}
+<div style="display: flex; justify-content: space-around">
+    <input class="form-input form-input--small" type="text" id="{{strReplace display_name ' ' ''}}-search-input" name="{{strReplace display_name ' ' ''}}-search" placeholder="Search..."/>
+</div>
+{{/or}}
+{{#or (if display_name '===' 'Project') (if display_name '===' 'Phase') (if display_name '===' 'Company') (if display_name '===' 'Project Ticket') (if display_name '===' 'Service Ticket') (if display_name '===' 'Bundle')}}
+<input class="form-input input-{{strReplace display_name ' ' ''}}" type="number" id="attribute_number_{{id}}" {{#unless this.integer_only}}step="any"{{/unless}} name="attribute[{{this.id}}]" value="{{this.prefill}}" style="display:none">
+<select style="max-width: 100%" class="form-select form-select--small" name="cw-{{strReplace display_name ' ' ''}}" id="cw-{{strReplace display_name ' ' ''}}" {{#or (if required) (if display_name '===' 'Project')}}required{{/or}}>
+<option value="">{{lang 'products.choose_options'}}</option>
+</select>
+{{else}}
+<input class="form-input" type="number" id="attribute_number_{{id}}" {{#unless this.integer_only}}step="any"{{/unless}} name="attribute[{{this.id}}]" value="{{this.prefill}}" {{#if required}}required{{/if}}>
+{{/or}}
+</div>
+
+{{#if display_name '===' 'Project'}}
+
+{{#partial "scripts"}}
+<script>
+    const projectScript = async () => {
+        const elLoader = document.getElementById('project-loader')
+        const showLoader = () => {
+            elLoader.style.display = 'inline-block'
+        }
+        const hideLoader = () => {
+            elLoader.style.display = 'none'
+        }
+        const baseUri = 'https://localhost/api/'
+        const fetchApi = async (endpoint,config) => {
+            showLoader()
+            const res = await fetch(baseUri + endpoint, config).then(res => res.json())
+            hideLoader()
+            return res
+        }
+        let searchTimer;
+        const createNewOption = (value, text) => {
+            const option = document.createElement('option')
+            option.value = value
+            option.text = text
+            return option
+        }
+        const elCompanyContainer = document.getElementsByClassName('CompanyContainer')[0]
+        const elPhaseContainer = document.getElementsByClassName('PhaseContainer')[0]
+        const elProjectTicketContainer = document.getElementsByClassName('ProjectTicketContainer')[0]
+        const elServiceTicketContainer = document.getElementsByClassName('ServiceTicketContainer')[0]
+        const projectSearchInput = document.getElementById('Project-search-input')
+        const companySearchInput = document.getElementById('Company-search-input')
+        const elProject = document.getElementById('cw-Project')
+        const elPhase = document.getElementById('cw-Phase')
+        const elProjectTicket = document.getElementById('cw-ProjectTicket')
+        const elServiceTicket = document.getElementById('cw-ServiceTicket')
+        const elProjectTicketNoTicketOption = createNewOption('0', 'No ticket')
+        const elCompany = document.getElementById('cw-Company')
+        const elProjectInput = document.getElementsByClassName('input-Project')[0]
+        const elCompanyInput = document.getElementsByClassName('input-Company')[0]
+        const elPhaseInput = document.getElementsByClassName('input-Phase')[0]
+        const elProjectTicketInput = document.getElementsByClassName('input-ProjectTicket')[0]
+        const elServiceTicketInput = document.getElementsByClassName('input-ServiceTicket')[0]
+        const projects = await fetchApi('binyod/projects')
+        let companies = []
+        const generateProjectTitle = project => {
+            return `#${project.id} - ${project.name} (${project.company.name})`
+        }
+        const removeAllProjectOptions = () => {
+            Array.from(elProject.options).filter(option => !["choose options", "no project"].includes(option.text.toLowerCase())).map(option => option.remove())
+        }
+
+        const removeAllCompanyOptions = () => {
+            Array.from(elCompany.options).filter(option => option.text.toLowerCase() !== "choose options").map(option => option.remove())
+        }
+
+        const resetProjectFieldOptions = () => {
+            const value = elProject.value
+            removeAllProjectOptions()
+            projects.map(project => elProject.add(createNewOption(project.id, generateProjectTitle(project))))
+            elProject.value = value
+        }
+
+        const resetCompanyFieldOptions = () => {
+            const value = elCompany.value
+            removeAllCompanyOptions()
+            companies.map(company => elCompany.add(createNewOption(company.id, company.name)))
+            elCompany.value = value
+        }
+
+        const fetchPhases = async projectId => {
+            const phases = await fetchApi(`binyod/phases?projectId=${projectId}`)
+
+            Array.from(elPhase.options).filter(option => !["choose options", "no phase"].includes(option.text.toLowerCase())).map(option => option.remove())
+
+            phases.map(option => elPhase.add(createNewOption(option.id, option.title)))
+        }
+
+        const fetchProjectTickets = async (projectId, phaseId) => {
+            let url = `binyod/project-tickets?projectId=${projectId}`
+
+            if (phaseId) {
+                url += `&phaseId=${phaseId}`
+            }
+
+            Array.from(elProjectTicket.options).filter(option => !["choose options", "no ticket"].includes(option.text.toLowerCase())).map(option => option.remove())
+
+            if (!projectId || projectId === '0') {
+                return false
+            }
+
+            const projectTickets = await fetchApi(url)
+
+
+            projectTickets.map(option => {
+                const newOption = createNewOption(option.id, `#${option.summary} (Status: ${option.status.name})`)
+
+                if (['Closed', '>Closed', 'Resolved'].includes(option.status.name)) {
+                    newOption.disabled = true
+                }
+
+                elProjectTicket.add(newOption)
+            })
+        }
+
+        const fetchServiceTickets = async (companyId) => {
+            Array.from(elServiceTicket.options).filter(option => option.text.toLowerCase() !== "choose options").map(option => option.remove())
+
+            if (!companyId) {
+                return false
+            }
+
+            const serviceTickets = await fetchApi(`binyod/service-tickets?companyId=${companyId}`)
+
+            serviceTickets.map(option => elServiceTicket.add(createNewOption(option.id, `${option.id} - ${option.summary}`)))
+        }
+
+        elProject.add(createNewOption('0', 'No project'))
+        elPhase.add(createNewOption('0', 'No phase'))
+        elProjectTicket.add(elProjectTicketNoTicketOption)
+        resetProjectFieldOptions()
+
+        projectSearchInput.oninput = e => {
+            if (searchTimer) {
+                clearTimeout(searchTimer)
+            }
+            searchTimer = setTimeout(() => {
+                const searchVal = e.target.value.toLowerCase()
+                if (searchVal) {
+                    removeAllProjectOptions()
+                    searchTimer = null
+                    const options = projects.filter(project => {
+                        return generateProjectTitle(project).toLowerCase().includes(searchVal)
+                    })
+                    options.map(option => elProject.add(createNewOption(option.id, generateProjectTitle(option))))
+                    if (options.length === 1) {
+                        elProject.value = `${options[0].id}`
+                        elProject.dispatchEvent(new Event('change'))
+                    }
+                } else {
+                    resetProjectFieldOptions()
+                }
+            }, 500)
+        }
+
+        companySearchInput.oninput = e => {
+            if (searchTimer) {
+                clearTimeout(searchTimer)
+            }
+            searchTimer = setTimeout(() => {
+                const searchVal = e.target.value.toLowerCase()
+                if (searchVal) {
+                    removeAllCompanyOptions()
+                    searchTimer = null
+                    const options = companies.filter(company => {
+                        return company.name.toLowerCase().includes(searchVal)
+                    })
+                    options.map(option => elCompany.add(createNewOption(option.id, option.name)))
+                    if (options.length === 1) {
+                        elCompany.value = `${options[0].id}`
+                        elCompany.dispatchEvent(new Event('change'))
+                    }
+                } else {
+                    resetCompanyFieldOptions()
+                }
+            }, 500)
+        }
+
+        elProject.onchange = async e => {
+            const projectId = e.target.value
+            elProjectInput.value = projectId
+
+            if (projectId === '0') {
+                if (companies.length === 0) {
+                    companies = await fetchApi('binyod/companies')
+                    resetCompanyFieldOptions()
+                }
+                elCompanyContainer.style.display=''
+                elServiceTicketContainer.style.display=''
+                elPhaseContainer.style.display='none'
+                elProjectTicketContainer.style.display='none'
+                elPhase.value = ''
+                elPhase.dispatchEvent(new Event('change'))
+                elProjectTicket.value = ''
+                elProjectTicket.dispatchEvent(new Event('change'))
+                elPhase.required = false
+                elProjectTicket.required = false
+                elCompany.required = true
+                elServiceTicket.required = true
+            } else {
+                elCompany.value = ''
+                elCompany.dispatchEvent(new Event('change'))
+                elServiceTicket.value = ''
+                elServiceTicket.dispatchEvent(new Event('change'))
+                elCompanyContainer.style.display='none'
+                elServiceTicketContainer.style.display='none'
+                elCompany.required = false
+                elServiceTicket.required = false
+
+
+                if (projectId) {
+                    elPhaseContainer.style.display=''
+                    elProjectTicketContainer.style.display=''
+                    elPhase.required = true
+                    elProjectTicket.required = true
+
+                    await fetchPhases(projectId)
+                } else {
+                    elPhaseContainer.style.display='none'
+                    elProjectTicketContainer.style.display='none'
+                }
+            }
+        }
+
+        elPhase.onchange = async e => {
+            const phaseId = e.target.value === '0' ? '' : e.target.value
+            elPhaseInput.value = phaseId
+
+            elProjectTicketNoTicketOption.disabled = phaseId ? true : false
+
+            await fetchProjectTickets(elProject.value, phaseId)
+        }
+
+        elProjectTicket.onchange = e => {
+            elProjectTicketInput.value = e.target.value
+        }
+
+        elCompany.onchange = async e => {
+            e.target.value
+            elCompanyInput.value = e.target.value
+
+            await fetchServiceTickets(e.target.value)
+        }
+
+        elServiceTicket.onchange = e => {
+            elServiceTicketInput.value = e.target.value
+        }
+    }
+
+    setTimeout(async () => {
+        await projectScript()
+    }, 100)
+</script>
+{{/partial}}
+{{/if}}

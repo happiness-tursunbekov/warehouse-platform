@@ -92,8 +92,7 @@ class ConnectWiseController extends Controller
         $entity = $request->get('Entity');
         $id = $request->get('ID');
 
-        // TODO: remove
-        return false;
+        return response()->json(['message' => 'Service is temporarily inactive'], 200);
 
         /** @var PurchaseOrder $po */
         $po = PurchaseOrder::find($id);
@@ -195,12 +194,6 @@ class ConnectWiseController extends Controller
                             // Checking if pick/unpick quantity matches available quantity before processing to sync
                             $results = collect($connectWiseService->getProductsByTicketInfo($ticket->Item_ID, $ticket->PM_Project_RecID, $ticket->SR_Service_RecID))
                                 ->map(function ($product) use ($unpicking, $picking, $bigCommerceService, $cin7Service, &$quantity, $connectWiseService, $po) {
-
-                                    if (!@$product->project) {
-                                        // TODO: Handle sales order product
-                                        // Skipping for now
-                                        return false;
-                                    }
 
                                     if (!$quantity) {
                                         return false;

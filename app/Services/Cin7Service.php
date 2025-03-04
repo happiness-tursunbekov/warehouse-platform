@@ -156,7 +156,7 @@ class Cin7Service
     /**
      * @throws GuzzleException
      */
-    public function createProductFamily($sku, $name, $categoryName, $uomName, $customerDescription, $price=0, $products=[], $option3Name=null, $defaultLocation=self::INVENTORY_AZAD_MAY)
+    public function createProductFamily($sku, $name, $categoryName, $uomName, $customerDescription, $price=0, $products=[], $defaultLocation=self::INVENTORY_AZAD_MAY)
     {
         // Handling duplicated names
         $i = 0;
@@ -171,9 +171,9 @@ class Cin7Service
                         "UOM" => $uomName,
                         "ShortDescription" => $name,
                         "Description" => $customerDescription,
-                        "Option1Name" => "Project",
+                        "Option1Name" => "Project/Company",
                         "Option2Name" => "Phase",
-                        "Option3Name" => $option3Name,
+                        "Option3Name" => "Ticket",
                         "CostingMethod" => "FIFO",
                         "PriceTier1" => $price,
                         "Products" => $products
@@ -441,7 +441,7 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function generateFamilyProduct($familyId, $newProductSKU, $newProductProjectName, $newProductPhaseName=null, \stdClass $productFamily=null)
+    public function generateFamilyProduct($familyId, $newProductSKU, $newProductProjectOrCompanyName, $newProductPhaseName=null, $newProductTicketName=null, \stdClass $productFamily=null)
     {
         $pf = $productFamily ?: $this->productFamily($familyId);
 
@@ -466,8 +466,9 @@ class Cin7Service
                 [
                     'ID' => $product->ID,
                     'SKU' => $product->SKU,
-                    'Option1' => $newProductProjectName,
-                    'Option2' => $newProductPhaseName
+                    'Option1' => $newProductProjectOrCompanyName,
+                    'Option2' => $newProductPhaseName,
+                    'Option3' => $newProductTicketName
                 ]
             ]
         ]);

@@ -1750,6 +1750,15 @@ class ConnectWiseService
         $cin7Product = $cin7ProductId ? $this->cin7Service->product($cin7ProductId) : null;
 
         if (!$cin7Product) {
+
+            $ticketName = !@$product->project
+                ? $this->generateServiceTicketName($product->company->id, $product->ticket->id, $product->ticket->summary)
+                : $this->generateProjectTicketName($product->project->id, $product->ticket->id, $product->ticket->summary, $product->phase->id ?? null);
+
+            $projectOrCompanyName = @$product->project
+                ? $this->generateProjectName($product->project->id, $product->project->name, $product->company->name)
+                : $this->generateCompanyName($product->company->id, $product->company->name);
+
             $cin7Product = $this->cin7Service->generateFamilyProduct(
                 $productFamily->ID,
                 $this->generateProductSku(
@@ -1758,8 +1767,9 @@ class ConnectWiseService
                         $product->ticket->id ?? null,
                         $product->company->id ?? null
                 ),
-                $this->generateProjectName($product->project->id, $product->project->name),
+                $projectOrCompanyName,
                 $this->generatePhaseName($product->project->id, @$product->phase->id ?? null),
+                $ticketName,
                 $productFamily
             );
         }
@@ -1771,8 +1781,7 @@ class ConnectWiseService
             ]);
         }
 
-//        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
-        $adjustment = null;
+        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
 
         if ($onBigCommerceAsWell) {
             $this->publishVariantOnBigCommerce($product, $quantity, $catalogItem);
@@ -1820,8 +1829,8 @@ class ConnectWiseService
         $cin7ProductSku = $this->generateProductSku(
             $bigCommerceProduct->sku,
             $product->project->id ?? null,
-                $product->ticket->id ?? null,
-                $product->company->id ?? null
+            $product->ticket->id ?? null,
+            $product->company->id ?? null
         );
 
         $bigCommerceProductVariant = $this->bigCommerceService->getProductVariantBySku($bigCommerceProduct->id, $cin7ProductSku);
@@ -1830,8 +1839,11 @@ class ConnectWiseService
             $bigCommerceProductVariant = $this->bigCommerceService->createProductVariantProject(
                 $bigCommerceProduct->id,
                 $cin7ProductSku,
-                $this->generateProjectName($product->project->id, $product->project->name),
-                $this->generatePhaseName($product->project->id, @$product->phase->id ?? null)
+                @$product->project ? $this->generateProjectName($product->project->id, $product->project->name, $product->company->name) : null,
+                @$product->phase ? $this->generatePhaseName($product->project->id, $product->phase->id) : null,
+                @$product->project && $product->ticket ? $this->generateProjectTicketName($product->project->id, $product->ticket->id, $product->ticket->summary) : null,
+                !@$product->project ? $this->generateCompanyName($product->company->id, $product->company->id) : null,
+                !@$product->project ? $this->generateServiceTicketName($product->company->id, $product->ticket->id, $product->ticket->summary) : null,
             );
         }
 
@@ -1857,11 +1869,11 @@ class ConnectWiseService
         return Str::upper($catalogItemIdentifier) . '-PROJECT';
     }
 
-    public function generateProjectName($projectId, $projectName, \stdClass $project=null)
+    public function generateProjectName($projectId, $projectName, $companyName=null)
     {
-        $project = $project ?: $this->getProject($projectId);
+        $companyName = $companyName ?: $this->getProject($projectId)->company->name;
 
-        return "#{$projectId} - {$projectName}" . ($project ? " ({$project->company->name})" : "");
+        return "#{$projectId} - {$projectName} ({$companyName})";
     }
 
     public function generateCompanyName($companyId, $companyName)
@@ -1881,9 +1893,9 @@ class ConnectWiseService
         return "#{$projectId}: " . ($phaseId ? "#{$phaseId}: " : "") . "#{$ticketId} - {$ticketSummary}";
     }
 
-    public function generateServiceTicketName($companyId, $ticketId, $ticketName)
+    public function generateServiceTicketName($companyId, $ticketId, $ticketSummary)
     {
-        return "#{$companyId}: #{$ticketId} - {$ticketName}";
+        return "#{$companyId}: #{$ticketId} - {$ticketSummary}";
     }
 
     public function getProductsByTicketInfo($catalogItemIdentifier, $projectId, $ticketId)

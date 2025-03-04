@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Integration\BigCommerceController;
 use App\Http\Controllers\Integration\Cin7Controller;
 use App\Http\Controllers\Integration\ConnectWiseController;
 use App\Http\Controllers\OrderController;
@@ -41,6 +42,14 @@ Route::prefix('/integration')->group(function () {
     ], function () {
         Route::prefix('cin7')->group(function () {
             Route::post('sale-shipment-authorized', [Cin7Controller::class, 'saleShipmentAuthorized']);
+        });
+    });
+
+    Route::group([
+        'middleware' => 'integration:big-commerce'
+    ], function () {
+        Route::prefix('big-commerce')->group(function () {
+            Route::post('product-created', [BigCommerceController::class, 'productCreated']);
         });
     });
 

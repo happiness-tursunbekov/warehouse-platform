@@ -10,6 +10,12 @@ class BigCommerceService
 {
     const NO_PHASE_LABEL = 'No phase';
 
+    const PRODUCT_OPTION_PROJECT = 'Project';
+    const PRODUCT_OPTION_COMPANY = 'Company';
+    const PRODUCT_OPTION_PHASE = 'Phase';
+    const PRODUCT_OPTION_PROJECT_TICKET = 'Project Ticket';
+    const PRODUCT_OPTION_SERVICE_TICKET = 'Service Ticket';
+
     private Client $http;
     private Client $httpV2;
     public function __construct()
@@ -67,28 +73,67 @@ class BigCommerceService
         return $this->getProductVariants($id, 1, 1, $sku)->data[0] ?? null;
     }
 
-    public function createProductVariantProject($productId, $variantSku, $optionProjectLabel, $optionPhaseLabel=null)
+    public function createProductVariantProject(
+        $productId,
+        $variantSku,
+        $optionProjectLabel=null,
+        $optionPhaseLabel=null,
+        $optionProjectTicketLabel=null,
+        $optionCompanyLabel=null,
+        $optionServiceTicketLabel=null
+    )
     {
         $optionPhaseLabel = $optionPhaseLabel ?: self::NO_PHASE_LABEL;
 
         $productOptions = $this->getProductOptions($productId);
 
-        $optionProject = $this->getProductOptionOrModifierProject($productOptions);
-        $optionPhase = $this->getProductOptionOrModifierPhase($productOptions);
+        $optionProject = $this->getProductOptionOrModifierByName($productOptions, self::PRODUCT_OPTION_PROJECT);
+        $optionPhase = $this->getProductOptionOrModifierByName($productOptions, self::PRODUCT_OPTION_PHASE);
+        $optionProjectTicket = $this->getProductOptionOrModifierByName($productOptions, self::PRODUCT_OPTION_PROJECT_TICKET);
+        $optionCompany = $this->getProductOptionOrModifierByName($productOptions, self::PRODUCT_OPTION_COMPANY);
+        $optionServiceTicket = $this->getProductOptionOrModifierByName($productOptions, self::PRODUCT_OPTION_SERVICE_TICKET);
+
+        $optionValues = [];
+
+        if ($optionProjectLabel) {
+            $optionValues[] = [
+                "option_id" => $optionProject->id,
+                "label" => $optionProjectLabel
+            ];
+        }
+
+        if ($optionPhaseLabel) {
+            $optionValues[] = [
+                "option_id" => $optionPhase->id,
+                "label" => $optionPhaseLabel
+            ];
+        }
+
+        if ($optionProjectTicketLabel) {
+            $optionValues[] = [
+                "option_id" => $optionProjectTicket->id,
+                "label" => $optionProjectTicketLabel
+            ];
+        }
+
+        if ($optionCompanyLabel) {
+            $optionValues[] = [
+                "option_id" => $optionCompany->id,
+                "label" => $optionCompanyLabel
+            ];
+        }
+
+        if ($optionServiceTicketLabel) {
+            $optionValues[] = [
+                "option_id" => $optionServiceTicket->id,
+                "label" => $optionServiceTicketLabel
+            ];
+        }
 
         $request = $this->http->post("catalog/products/{$productId}/variants", [
             'json' => [
                 "sku" => $variantSku,
-                "option_values" => [
-                    [
-                        "option_id" => $optionProject->id,
-                        "id" => $this->getSharedValueByTitle($optionProject, $optionProjectLabel)->id
-                    ],
-                    [
-                        "option_id" => $optionPhase->id,
-                        "id" => $this->getSharedValueByTitle($optionPhase, $optionPhaseLabel)->id
-                    ],
-                ]
+                "option_values" => $optionValues
             ]
         ]);
 
@@ -122,14 +167,9 @@ class BigCommerceService
         return json_decode($result->getBody()->getContents())->data;
     }
 
-    public function getProductOptionOrModifierProject(array $productOptions)
+    public function getProductOptionOrModifierByName(array $productOptions, string $name)
     {
-        return collect($productOptions)->filter(fn($value) => $value->name == 'Project')->first();
-    }
-
-    public function getProductOptionOrModifierPhase(array $productOptions)
-    {
-        return collect($productOptions)->filter(fn($value) => $value->name == 'Phase')->first();
+        return collect($productOptions)->filter(fn($value) => $value->name == $name)->first();
     }
 
     public function updateProductOption($productId, \stdClass $option)
@@ -270,9 +310,11 @@ class BigCommerceService
 
         $product = json_decode($request->getBody()->getContents())->data;
 
-        // Adding shared values to the product
-        $this->addProductSharedOption($product->id, $this->getSharedOptionProject());
-        $this->addProductSharedOption($product->id, $this->getSharedOptionPhase());
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_PROJECT, self::PRODUCT_OPTION_PROJECT);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_PHASE, self::PRODUCT_OPTION_PHASE);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_PROJECT_TICKET, self::PRODUCT_OPTION_PROJECT_TICKET);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_COMPANY, self::PRODUCT_OPTION_COMPANY);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_SERVICE_TICKET, self::PRODUCT_OPTION_SERVICE_TICKET);
 
         $this->http->put('catalog/products/channel-assignments', [
             'json' => [
@@ -286,13 +328,17 @@ class BigCommerceService
         return $product;
     }
 
-    public function createProductOption($productId, $display_name, array $option_values, $type="dropdown")
+    public function createProductOption($productId, $display_name, $initial_value_label, $type="dropdown")
     {
         $request = $this->http->post("catalog/products/{$productId}/options", [
             'json' => [
                 "type" => $type,
                 "display_name" => $display_name,
-                "option_values" => $option_values
+                "option_values" => [
+                    [
+                        'label' => $initial_value_label
+                    ]
+                ]
             ]
         ]);
 
