@@ -50,6 +50,8 @@ Route::prefix('/integration')->group(function () {
     ], function () {
         Route::prefix('big-commerce')->group(function () {
             Route::post('product-created', [BigCommerceController::class, 'productCreated']);
+            Route::get('product-created', [BigCommerceController::class, 'productCreated']);
+            Route::put('product-created', [BigCommerceController::class, 'productCreated']);
         });
     });
 
