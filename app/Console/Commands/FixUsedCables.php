@@ -39,6 +39,30 @@ class FixUsedCables extends Command
     }
 }
 
+//collect($bigCommerceService->getProducts(1, 250)->data)->map(function ($product) use ($bigCommerceService) {
+//    collect($bigCommerceService->getProductModifiers($product->id))
+//        ->map(function ($modifier, $index) use ($product, $bigCommerceService) {
+//            try {
+//                $bigCommerceService->updateProductModifier($product->id, [
+//                    'id' => $modifier->id,
+//                    'sort_order' => $index,
+//                    'shared_option_id' => $modifier->shared_option_id ?? null
+//                ]);
+//            } catch (\Exception $e) {
+//                if (Str::contains($e->getMessage(), '429 Too')) {
+//                    sleep(5);
+//
+//                    $bigCommerceService->updateProductModifier($product->id, [
+//                        'id' => $modifier->id,
+//                        'sort_order' => $index
+//                    ]);
+//                } else {
+//                    throw $e;
+//                }
+//            }
+//        });
+//});
+
 //$cwItem = $connectWiseService->getCatalogItems(1, "identifier='SF300-48PP-RF'")[0];
 //
 //dd($cin7Service->createProduct(

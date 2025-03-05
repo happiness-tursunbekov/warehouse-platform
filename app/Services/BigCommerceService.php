@@ -168,6 +168,21 @@ class BigCommerceService
         return json_decode($result->getBody()->getContents())->data;
     }
 
+    public function getProductModifiers($productId, $page=null, $limit=null)
+    {
+        try {
+            $result = $this->http->get("catalog/products/{$productId}/modifiers", [
+                'query' => [
+                    'page' => $page,
+                    'limit' => $limit
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            return new \stdClass();
+        }
+        return json_decode($result->getBody()->getContents())->data;
+    }
+
     public function getProductOptionOrModifierByName(array $productOptions, string $name)
     {
         return collect($productOptions)->filter(fn($value) => $value->name == $name)->first();
@@ -177,6 +192,14 @@ class BigCommerceService
     {
         $result = $this->http->put("catalog/products/{$productId}/options/{$option->id}", [
             'json' => $option,
+        ]);
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function updateProductModifier($productId, \stdClass|array $modifier)
+    {
+        $result = $this->http->put("catalog/products/{$productId}/modifiers/{$modifier['id']}", [
+            'json' => $modifier,
         ]);
         return json_decode($result->getBody()->getContents());
     }
@@ -348,7 +371,8 @@ class BigCommerceService
         $json = [
             "type" => $type,
             "display_name" => $display_name,
-            "required" => false
+            "required" => false,
+            "sort_order" => 0
         ];
 
         if ($initial_value_label) {
