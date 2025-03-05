@@ -37,6 +37,10 @@ class ConnectWiseController extends Controller
                             $bigCommerceService->removeSharedModifierValue($sharedModifierBundle->id, $modifierValueId);
                         }
 
+                        $catalogItem = $connectWiseService->setBigCommerceModifierId($catalogItem, '');
+
+                        $connectWiseService->updateCatalogItem($catalogItem);
+
                         break;
                     }
 

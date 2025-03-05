@@ -35,28 +35,7 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $sharedModifierBundle = $bigCommerceService->getSharedModifierByName(BigCommerceService::PRODUCT_OPTION_BUNDLE);
 
-        collect($connectWiseService->getCatalogItems(1, 'productClass = "Bundle" and inactiveFlag=false', pageSize: 1000))
-            ->filter(fn($item) => !!Str::numbers($item->customerDescription[0]))
-            ->map(function ($catalogItem) use ($sharedModifierBundle, $connectWiseService, $bigCommerceService) {
-
-                $modifierValue = $bigCommerceService->getSharedValueByTitle($sharedModifierBundle, $catalogItem->identifier);
-
-                if ($modifierValue) {
-                    $modifierValue->label = $catalogItem->identifier;
-
-                    $bigCommerceService->updateSharedModifierValue($sharedModifierBundle, $modifierValue);
-                } else {
-                    $modifierValue = $bigCommerceService->addSharedModifierValue($sharedModifierBundle, $catalogItem->identifier);
-                }
-
-                $catalogItem = $connectWiseService->setBigCommerceModifierId($catalogItem, $modifierValue->id);
-
-                $connectWiseService->updateCatalogItem($catalogItem);
-
-                return true;
-            });
     }
 }
 
