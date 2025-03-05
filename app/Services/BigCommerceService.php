@@ -15,6 +15,7 @@ class BigCommerceService
     const PRODUCT_OPTION_PHASE = 'Phase';
     const PRODUCT_OPTION_PROJECT_TICKET = 'Project Ticket';
     const PRODUCT_OPTION_SERVICE_TICKET = 'Service Ticket';
+    const PRODUCT_OPTION_BUNDLE = 'Bundle';
 
     private Client $http;
     private Client $httpV2;
@@ -182,12 +183,9 @@ class BigCommerceService
 
     public function getProduct($id)
     {
-        try {
-            $result = $this->http->get('catalog/products/' . $id);
-        } catch (GuzzleException $e) {
-            return [];
-        }
-        return json_decode($result->getBody()->getContents());
+        $result = $this->http->get('catalog/products/' . $id);
+
+        return json_decode($result->getBody()->getContents())->data;
     }
 
     public function getProductBySku($sku)
@@ -345,6 +343,29 @@ class BigCommerceService
         return json_decode($request->getBody()->getContents())->data;
     }
 
+    public function createProductModifier($productId, $display_name, $type="numbers_only_text", $initial_value_label=null)
+    {
+        $json = [
+            "type" => $type,
+            "display_name" => $display_name,
+            "required" => false
+        ];
+
+        if ($initial_value_label) {
+            $json['option_values'] = [
+                [
+                    'label' => $initial_value_label
+                ]
+            ];
+        }
+
+        $request = $this->http->post("catalog/products/{$productId}/modifiers", [
+            'json' => $json
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data;
+    }
+
     public function addProductSharedOption($productId, $sharedOption)
     {
         $optionValues = [new \stdClass()];
@@ -356,6 +377,26 @@ class BigCommerceService
                 "type" => $sharedOption->type,
                 "display_name" => $sharedOption->name,
                 "shared_option_id" => $sharedOption->id,
+                "required" => false,
+                "config" => new \stdClass(),
+                "option_values" => $optionValues
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data;
+    }
+
+    public function addProductSharedModifier($productId, $sharedModifier)
+    {
+        $optionValues = [new \stdClass()];
+
+        $optionValues[0]->id = 0;
+
+        $request = $this->http->post("catalog/products/{$productId}/modifiers", [
+            'json' => [
+                "type" => $sharedModifier->type,
+                "display_name" => $sharedModifier->name,
+                "shared_option_id" => $sharedModifier->id,
                 "required" => false,
                 "config" => new \stdClass(),
                 "option_values" => $optionValues
@@ -429,7 +470,7 @@ class BigCommerceService
                 "items" => [
                     [
                         "location_id" => 1,
-                        "variant_id" => $product->data->base_variant_id,
+                        "variant_id" => $product->base_variant_id,
                         "quantity" => $qty
                     ]
                 ]
