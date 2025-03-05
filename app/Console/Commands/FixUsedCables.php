@@ -35,28 +35,28 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $page = 1;
-        while (true) {
+        $sharedModifierBundle = $bigCommerceService->getSharedModifierByName(BigCommerceService::PRODUCT_OPTION_BUNDLE);
 
-            $f = collect($cin7Service->productFamilies($page, 1000)->ProductFamilies);
-            sleep(1);
-            $f->map(function ($pf) use ($cin7Service) {
+        collect($connectWiseService->getCatalogItems(1, 'productClass = "Bundle" and inactiveFlag=false', pageSize: 1000))
+            ->filter(fn($item) => !!Str::numbers($item->customerDescription[0]))
+            ->map(function ($catalogItem) use ($sharedModifierBundle, $connectWiseService, $bigCommerceService) {
 
-                $cin7Service->updateProductFamily([
-                    'ID' => $pf->ID,
-                    "Option1Name" => "Project/Company",
-                    "Option2Name" => "Phase",
-                    "Option3Name" => "Ticket",
-                ]);
-                sleep(1);
+                $modifierValue = $bigCommerceService->getSharedValueByTitle($sharedModifierBundle, $catalogItem->identifier);
+
+                if ($modifierValue) {
+                    $modifierValue->label = $catalogItem->identifier;
+
+                    $bigCommerceService->updateSharedModifierValue($sharedModifierBundle, $modifierValue);
+                } else {
+                    $modifierValue = $bigCommerceService->addSharedModifierValue($sharedModifierBundle, $catalogItem->identifier);
+                }
+
+                $catalogItem = $connectWiseService->setBigCommerceModifierId($catalogItem, $modifierValue->id);
+
+                $connectWiseService->updateCatalogItem($catalogItem);
+
+                return true;
             });
-
-            if ($f->count() < 1000) {
-                break;
-            }
-
-            $page++;
-        }
     }
 }
 

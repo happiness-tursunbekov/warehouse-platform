@@ -1938,17 +1938,17 @@ class ConnectWiseService
         return $field->value ?? null;
     }
 
-    public function extractBigCommerceOptionId(\stdClass $company)
+    public function extractBigCommerceOptionId(\stdClass $record)
     {
-        return $this->extractCustomFieldValueByName($company, 'BigCommerce Option ID');
+        return $this->extractCustomFieldValueByName($record, 'BigCommerce Option ID');
     }
 
-    public function extractBigCommerceModifierId(\stdClass $company)
+    public function extractBigCommerceModifierId(\stdClass $record)
     {
-        return $this->extractCustomFieldValueByName($company, 'BigCommerce Modifier ID');
+        return $this->extractCustomFieldValueByName($record, 'BigCommerce Modifier ID');
     }
 
-    public function setBigCommerceModifierId(\stdClass $record, string $value)
+    public function setBigCommerceModifierId(\stdClass $record, string|int $value)
     {
         return $this->setCustomFieldValue($record, 'BigCommerce Modifier ID', $value);
     }

@@ -26,6 +26,42 @@ class ConnectWiseController extends Controller
             case ConnectWiseService::ACTION_UPDATED:
                 $catalogItem = $connectWiseService->getCatalogItem($id);
 
+                if ($catalogItem->productClass == 'Bundle') {
+
+                    $sharedModifierBundle = $bigCommerceService->getSharedModifierByName(BigCommerceService::PRODUCT_OPTION_BUNDLE);
+
+                    $modifierValueId = $connectWiseService->extractBigCommerceModifierId($catalogItem);
+
+                    if ($catalogItem->inactiveFlag) {
+                        if ($modifierValueId) {
+                            $bigCommerceService->removeSharedModifierValue($sharedModifierBundle->id, $modifierValueId);
+                        }
+
+                        break;
+                    }
+
+                    if ($modifierValueId) {
+
+                        $modifierValue = $bigCommerceService->getSharedValueById($sharedModifierBundle, $modifierValueId);
+
+                        if ($modifierValue) {
+                            $modifierValue->label = $catalogItem->identifier;
+
+                            $bigCommerceService->updateSharedModifierValue($sharedModifierBundle, $modifierValue);
+
+                            break;
+                        }
+                    }
+
+                    $modifierValue = $bigCommerceService->addSharedModifierValue($sharedModifierBundle, $catalogItem->identifier);
+
+                    $catalogItem = $connectWiseService->setBigCommerceModifierId($catalogItem, $modifierValue->id);
+
+                    $connectWiseService->updateCatalogItem($catalogItem);
+
+                    break;
+                }
+
                 if ($catalogItem->inactiveFlag && ($cin7ProductFamilyId = $connectWiseService->extractCin7ProductFamilyId($catalogItem))) {
 
                     $cin7ProductFamily = $cin7Service->productFamily($cin7ProductFamilyId);
