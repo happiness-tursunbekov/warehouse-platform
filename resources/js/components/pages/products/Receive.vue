@@ -128,7 +128,11 @@
         </div>
     </file-upload-modal>
     <modal v-model:show="poReportModal" modal-title="Report">
-        <embed v-if="poReportLink" :src="poReportLink" style="min-width: 400px;min-height: 400px"/>
+        <div v-if="poReportLink">
+            <iframe ref="poReport" :src="poReportLink" style="min-width: 400px;min-height: 400px"/>
+            <br/>
+            <button type="button" class="btn btn-sm btn-primary" @click.prevent="printPoReport">Print</button>
+        </div>
     </modal>
 </template>
 
@@ -305,6 +309,10 @@ export default {
                 this.poReportLink = URL.createObjectURL(res.data)
                 this.poReportModal = true
             })
+        },
+
+        printPoReport() {
+            this.$refs.poReport.contentWindow.print()
         }
     }
 }
