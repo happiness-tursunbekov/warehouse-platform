@@ -129,9 +129,9 @@
     </file-upload-modal>
     <modal v-model:show="poReportModal" modal-title="Report">
         <div v-if="poReportLink">
-            <iframe ref="poReport" :src="poReportLink" style="min-width: 400px;min-height: 400px"/>
+            <embed ref="poReport" :src="poReportLink" style="min-width: 400px;min-height: 400px"/>
             <br/>
-            <button type="button" class="btn btn-sm btn-primary" @click.prevent="printPoReport">Print</button>
+            <a target="_blank" :href="poReportLink" class="btn btn-sm btn-primary">Full Screen</a>
         </div>
     </modal>
 </template>
