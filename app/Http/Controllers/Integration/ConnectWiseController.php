@@ -132,7 +132,7 @@ class ConnectWiseController extends Controller
         $entity = $request->get('Entity');
         $id = $request->get('ID');
 
-        return response()->json(['message' => 'Service is temporarily inactive'], 200);
+        return response()->json(['message' => 'Service temporarily unavailable!']);
 
         /** @var PurchaseOrder $po */
         $po = PurchaseOrder::find($id);

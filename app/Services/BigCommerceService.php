@@ -8,7 +8,10 @@ use Illuminate\Support\Str;
 
 class BigCommerceService
 {
+    const NO_PROJECT_LABEL = 'No project';
     const NO_PHASE_LABEL = 'No phase';
+    const NO_TICKET_LABEL = 'No ticket';
+    const NO_COMPANY_LABEL = 'No company';
 
     const PRODUCT_OPTION_PROJECT = 'Project';
     const PRODUCT_OPTION_COMPANY = 'Company';
@@ -84,8 +87,6 @@ class BigCommerceService
         $optionServiceTicketLabel=null
     )
     {
-        $optionPhaseLabel = $optionPhaseLabel ?: self::NO_PHASE_LABEL;
-
         $productOptions = $this->getProductOptions($productId);
 
         $optionProject = $this->getProductOptionOrModifierByName($productOptions, self::PRODUCT_OPTION_PROJECT);
@@ -94,47 +95,37 @@ class BigCommerceService
         $optionCompany = $this->getProductOptionOrModifierByName($productOptions, self::PRODUCT_OPTION_COMPANY);
         $optionServiceTicket = $this->getProductOptionOrModifierByName($productOptions, self::PRODUCT_OPTION_SERVICE_TICKET);
 
-        $optionValues = [];
-
-        if ($optionProjectLabel) {
-            $optionValues[] = [
-                "option_id" => $optionProject->id,
-                "label" => $optionProjectLabel
-            ];
-        }
-
-        if ($optionPhaseLabel) {
-            $optionValues[] = [
-                "option_id" => $optionPhase->id,
-                "label" => $optionPhaseLabel
-            ];
-        }
-
-        if ($optionProjectTicketLabel) {
-            $optionValues[] = [
-                "option_id" => $optionProjectTicket->id,
-                "label" => $optionProjectTicketLabel
-            ];
-        }
-
-        if ($optionCompanyLabel) {
-            $optionValues[] = [
-                "option_id" => $optionCompany->id,
-                "label" => $optionCompanyLabel
-            ];
-        }
-
-        if ($optionServiceTicketLabel) {
-            $optionValues[] = [
-                "option_id" => $optionServiceTicket->id,
-                "label" => $optionServiceTicketLabel
-            ];
-        }
+        $optionProjectValue = $this->getOrCreateProductOptionValueByLabel($optionProject, $optionProjectLabel ?: self::NO_PROJECT_LABEL);
+        $optionPhaseValue = $this->getOrCreateProductOptionValueByLabel($optionPhase, $optionPhaseLabel ?: self::NO_PHASE_LABEL);
+        $optionProjectTicketValue = $this->getOrCreateProductOptionValueByLabel($optionProjectTicket, $optionProjectTicketLabel ?: self::NO_TICKET_LABEL);
+        $optionCompanyValue = $this->getOrCreateProductOptionValueByLabel($optionCompany, $optionCompanyLabel ?: self::NO_COMPANY_LABEL);
+        $optionServiceTicketValue = $this->getOrCreateProductOptionValueByLabel($optionServiceTicket, $optionServiceTicketLabel ?: self::NO_TICKET_LABEL);
 
         $request = $this->http->post("catalog/products/{$productId}/variants", [
             'json' => [
                 "sku" => $variantSku,
-                "option_values" => $optionValues
+                "option_values" => [
+                    [
+                        "option_id" => $optionProject->id,
+                        "id" => $optionProjectValue->id
+                    ],
+                    [
+                        "option_id" => $optionPhase->id,
+                        "id" => $optionPhaseValue->id
+                    ],
+                    [
+                        "option_id" => $optionProjectTicket->id,
+                        "id" => $optionProjectTicketValue->id
+                    ],
+                    [
+                        "option_id" => $optionCompany->id,
+                        "id" => $optionCompanyValue->id
+                    ],
+                    [
+                        "option_id" => $optionServiceTicket->id,
+                        "id" => $optionServiceTicketValue->id
+                    ]
+                ]
             ]
         ]);
 
@@ -185,7 +176,22 @@ class BigCommerceService
 
     public function getProductOptionOrModifierByName(array $productOptions, string $name)
     {
-        return collect($productOptions)->filter(fn($value) => $value->name == $name)->first();
+        return collect($productOptions)->filter(fn($value) => $value->display_name == $name)->first();
+    }
+
+    public function getProductOptionValueOrModifierValueByLabel(\stdClass $optionOrModifier, string $label)
+    {
+        return collect($optionOrModifier->option_values)->filter(fn($value) => $value->label == $label)->first();
+    }
+
+    public function getOrCreateProductOptionValueByLabel(\stdClass $option, string $label)
+    {
+        $value = $this->getProductOptionValueOrModifierValueByLabel($option, $label);
+
+        if (!$value) {
+            $value = $this->createProductOptionValue($option->product_id, $option->id, $label);
+        }
+        return $value;
     }
 
     public function updateProductOption($productId, \stdClass $option)
@@ -331,11 +337,11 @@ class BigCommerceService
 
         $product = json_decode($request->getBody()->getContents())->data;
 
-        $this->createProductOption($product->id, self::PRODUCT_OPTION_PROJECT, self::PRODUCT_OPTION_PROJECT);
-        $this->createProductOption($product->id, self::PRODUCT_OPTION_PHASE, self::PRODUCT_OPTION_PHASE);
-        $this->createProductOption($product->id, self::PRODUCT_OPTION_PROJECT_TICKET, self::PRODUCT_OPTION_PROJECT_TICKET);
-        $this->createProductOption($product->id, self::PRODUCT_OPTION_COMPANY, self::PRODUCT_OPTION_COMPANY);
-        $this->createProductOption($product->id, self::PRODUCT_OPTION_SERVICE_TICKET, self::PRODUCT_OPTION_SERVICE_TICKET);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_PROJECT, self::NO_PROJECT_LABEL);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_PHASE, self::NO_PHASE_LABEL);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_PROJECT_TICKET, self::NO_TICKET_LABEL);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_COMPANY, self::NO_COMPANY_LABEL, true);
+        $this->createProductOption($product->id, self::PRODUCT_OPTION_SERVICE_TICKET, self::NO_TICKET_LABEL, true);
 
         $this->http->put('catalog/products/channel-assignments', [
             'json' => [
@@ -349,7 +355,7 @@ class BigCommerceService
         return $product;
     }
 
-    public function createProductOption($productId, $display_name, $initial_value_label, $type="dropdown")
+    public function createProductOption($productId, $display_name, $initial_value_label, $isInitialValueDefault=false, $type="dropdown")
     {
         $request = $this->http->post("catalog/products/{$productId}/options", [
             'json' => [
@@ -357,9 +363,23 @@ class BigCommerceService
                 "display_name" => $display_name,
                 "option_values" => [
                     [
-                        'label' => $initial_value_label
+                        'label' => $initial_value_label,
+                        'is_default' => $isInitialValueDefault
                     ]
                 ]
+            ]
+        ]);
+
+        return json_decode($request->getBody()->getContents())->data;
+    }
+
+    public function createProductOptionValue($productId, $optionId, $label, $isDefault=false)
+    {
+        $request = $this->http->post("catalog/products/{$productId}/options/{$optionId}/values", [
+            'json' => [
+                'is_default' => $isDefault,
+                'label' => $label,
+                'sort_order' => 0
             ]
         ]);
 

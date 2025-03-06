@@ -22,7 +22,7 @@ class ConnectWiseService
 
     private Client $http;
     private string $clientId;
-    private string $systemIO = 'https://na.myconnectwise.net/v2024_1/services/system_io';
+    private string $systemIO;
 
     private Cin7Service $cin7Service;
     private BigCommerceService $bigCommerceService;
@@ -35,8 +35,31 @@ class ConnectWiseService
             'base_uri' => config('cw.base_uri'),
         ]);
 
+        $this->systemIO = config('cw.internal_api_uri');
+
         $this->cin7Service = new Cin7Service();
         $this->bigCommerceService = new BigCommerceService();
+    }
+
+    private function internalApiRequest(string $endpointUrl, array $payload, string $payloadClassName, string $payloadProject)
+    {
+        $actionMessage = [
+            "payload" => json_encode($payload),
+            "payloadClassName" => $payloadClassName,
+            "project" => $payloadProject
+        ];
+
+        $query = [
+            "actionMessage" => json_encode($actionMessage),
+            "clientTimezoneOffset" => "-360",
+            "clientTimezoneName" => "Central+Standard+Time",
+            "clientId" => $this->clientId
+        ];
+
+        $response = $this->http->post(
+            "{$this->systemIO}{$endpointUrl}?" . http_build_query($query));
+
+        return json_decode($response->getBody()->getContents());
     }
 
     private function payloadHandler(array $payload, string $payloadClassName, string $payloadProject)
@@ -631,28 +654,26 @@ class ConnectWiseService
      */
     private function addOrUpdatePickShip(\stdClass $pickShipDetail) : void
     {
-        $details = [
-            "IV_Product_RecID" => $pickShipDetail->productItem->id,
-            "quantity_Picked" => $pickShipDetail->pickedQuantity,
-            "quantity_Shipped" => $pickShipDetail->shippedQuantity,
-            "warehouse_Bin_RecID" => $pickShipDetail->warehouse->id
+        $payload = [
+            "productDetail" => [
+                "IV_Product_RecID" => $pickShipDetail->productItem->id,
+                "quantity_Picked" => $pickShipDetail->pickedQuantity,
+                "quantity_Shipped" => $pickShipDetail->shippedQuantity,
+                "warehouse_Bin_RecID" => $pickShipDetail->warehouse->id
+            ]
         ];
 
         if ($pickShipDetail->id) {
-            $details['IV_Product_Detail_RecID'] = $pickShipDetail->id;
-            $details['line_Number'] = $pickShipDetail->lineNumber;
+            $payload['productDetail']['IV_Product_Detail_RecID'] = $pickShipDetail->id;
+            $payload['productDetail']['line_Number'] = $pickShipDetail->lineNumber;
         }
 
-        $response = $this->http->post(
-            "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
-                "productDetail" => $details
-            ],
-                "SavePickingAndShippingAction",
-                "ProcurementCommon"
-            )
+        $response = $this->internalApiRequest(
+            "actionprocessor/Procurement/SavePickingAndShippingAction.rails",
+            $payload,
+            "SavePickingAndShippingAction",
+            "ProcurementCommon"
         );
-
-        $response = json_decode($response->getBody()->getContents());
 
         if (!$response->data->isSuccess) {
             throw new \Exception(json_encode($response->data->error));
@@ -687,7 +708,7 @@ class ConnectWiseService
 
             // Fixes ConnectWise api bug
             $this->http->post(
-                "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
+                "{$this->systemIO}actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
                     "productDetail" => [
                         "IV_Product_RecID" => $id,
                         "quantity_Picked" => $response->pickedQuantity,
@@ -704,7 +725,7 @@ class ConnectWiseService
 
             if (Str::contains($errBody, 'only on an opportunity') || Str::contains($errBody, 'unexpected database error')) {
                 $response1 = $this->http->post(
-                    "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
+                    "{$this->systemIO}actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
                         "productDetail" => [
                             "IV_Product_RecID" => $id,
                             "quantity_Picked" => $pickShip->pickedQuantity,
@@ -728,7 +749,7 @@ class ConnectWiseService
 
                     // Force upship
                     $response2 = $this->http->post(
-                        "{$this->systemIO}/actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
+                        "{$this->systemIO}actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
                             "productDetail" => [
                                 "IV_Product_Detail_RecID" => $origPickShip->id,
                                 "IV_Product_RecID" => $id,
@@ -1432,7 +1453,7 @@ class ConnectWiseService
     public function getPoReport($poId)
     {
         try {
-            $response = $this->http->get("{$this->systemIO}/reports/reportingservices/ReportPdfView.rails?reportLink=%2fbinyod%2fProcurement%2fPurchaseOrder_Button&reportOnly=true&rp=recordid%3D{$poId}%26Language%3Den-US%26&clientId={$this->clientId}");
+            $response = $this->http->get("{$this->systemIO}reports/reportingservices/ReportPdfView.rails?reportLink=%2fbinyod%2fProcurement%2fPurchaseOrder_Button&reportOnly=true&rp=recordid%3D{$poId}%26Language%3Den-US%26&clientId={$this->clientId}");
         } catch (GuzzleException $e) {
             return '';
         }
@@ -1485,7 +1506,7 @@ class ConnectWiseService
             "fromProjectRecID" => $fromProjectRecID, // Project ID
         ];
 
-        $response = $this->http->post("{$this->systemIO}/actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
+        $response = $this->http->post("{$this->systemIO}actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
 
         return $response->getBody()->getContents();
     }
@@ -1532,12 +1553,12 @@ class ConnectWiseService
             ]
         ];
 
-        $response = $this->http->post(
-            "{$this->systemIO}/actionprocessor/System/GetMultilineDataAction_purchaseordersalesandserviceinformationlist.rails?"
-            . $this->payloadHandler($payload, "GetMultilineDataAction", "SystemCommon")
+        $response = $this->internalApiRequest(
+            'actionprocessor/System/GetMultilineDataAction_purchaseordersalesandserviceinformationlist.rails',
+            $payload,
+            "GetMultilineDataAction",
+            "SystemCommon"
         );
-
-        $response = json_decode($response->getBody()->getContents());
 
         if (!$response->success || !$response->data->isSuccess) {
             throw new \Exception(json_encode($response->error ?: $response->data->error));
@@ -1583,12 +1604,12 @@ class ConnectWiseService
             ]
         ];
 
-        $response = $this->http->post(
-            "{$this->systemIO}/actionprocessor/System/GetMultilineDataAction_ProductPurchaseOrderList.rails?"
-            . $this->payloadHandler($payload, "GetMultilineDataAction", "SystemCommon")
+        $response = $this->internalApiRequest(
+            'actionprocessor/System/GetMultilineDataAction_ProductPurchaseOrderList.rails',
+            $payload,
+            "GetMultilineDataAction",
+            "SystemCommon"
         );
-
-        $response = json_decode($response->getBody()->getContents());
 
         if (!$response->success || !$response->data->isSuccess) {
             throw new \Exception(json_encode($response->error ?: $response->data->error));
@@ -1768,7 +1789,7 @@ class ConnectWiseService
                         $product->company->id ?? null
                 ),
                 $projectOrCompanyName,
-                $this->generatePhaseName($product->project->id, @$product->phase->id ?? null),
+                $this->generatePhaseName($product->project->id, $product->phase->id ?? null),
                 $ticketName,
                 $productFamily
             );
@@ -1781,13 +1802,13 @@ class ConnectWiseService
             ]);
         }
 
-        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
+//        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
 
         if ($onBigCommerceAsWell) {
             $this->publishVariantOnBigCommerce($product, $quantity, $catalogItem);
         }
 
-        return $adjustment;
+        return $adjustment ?? null;
     }
 
     public function publishProductOnBigCommerce($catalogItemId, $catalogItem=null)
@@ -1841,7 +1862,9 @@ class ConnectWiseService
                 $cin7ProductSku,
                 @$product->project ? $this->generateProjectName($product->project->id, $product->project->name, $product->company->name) : null,
                 @$product->phase ? $this->generatePhaseName($product->project->id, $product->phase->id) : null,
-                @$product->project && $product->ticket ? $this->generateProjectTicketName($product->project->id, $product->ticket->id, $product->ticket->summary) : null,
+                @$product->project && @$product->ticket
+                    ? $this->generateProjectTicketName($product->project->id, $product->ticket->id, $product->ticket->summary, $product->phase->id ?? null)
+                    : null,
                 !@$product->project ? $this->generateCompanyName($product->company->id, $product->company->id) : null,
                 !@$product->project ? $this->generateServiceTicketName($product->company->id, $product->ticket->id, $product->ticket->summary) : null,
             );
