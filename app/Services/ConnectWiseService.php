@@ -194,22 +194,14 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function getCompanies($page=null, $conditions=null, $customFieldConditions=null, $fields=null, $pageSize=25)
+    public function getCompany($id)
     {
-//        try {
-            $response = $this->http->get('company/companies', [
-                'query' => [
-                    'page' => $page,
-                    'clientId' => $this->clientId,
-                    'conditions' => $conditions,
-                    'fields' => $fields,
-                    'pageSize' => $pageSize,
-                    'customFieldConditions' => $customFieldConditions
-                ],
-            ]);
-//        } catch (GuzzleException $e) {
-//            return [];
-//        }
+        $response = $this->http->get("company/companies/{$id}", [
+            'query' => [
+                'clientId' => $this->clientId,
+            ],
+        ]);
+
         return json_decode($response->getBody()->getContents());
     }
 
@@ -889,17 +881,33 @@ class ConnectWiseService
 
     public function getSystemDepartments($page=null, $conditions=null)
     {
-        try {
-            $response = $this->http->get('system/departments', [
-                'query' => [
-                    'page' => $page,
-                    'clientId' => $this->clientId,
-                    'conditions' => $conditions,
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return [];
-        }
+        $response = $this->http->get('system/departments', [
+            'query' => [
+                'page' => $page,
+                'clientId' => $this->clientId,
+                'conditions' => $conditions,
+            ],
+        ]);
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getSystemInfoDepartments($page=null, $conditions=null)
+    {
+        $response = $this->http->get('system/info/departments', [
+            'query' => [
+                'page' => $page,
+                'clientId' => $this->clientId,
+                'conditions' => $conditions,
+            ],
+        ]);
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function updateSystemDepartment(\stdClass|array $department)
+    {
+        $response = $this->http->put("system/departments/{$department->id}?clientId={$this->clientId}", [
+            'json' => $department
+        ]);
         return json_decode($response->getBody()->getContents());
     }
 
@@ -991,19 +999,25 @@ class ConnectWiseService
 
     public function getProjectTickets($page=null, $conditions=null, $fields=null, $orderBy=null)
     {
-        try {
-            $response = $this->http->get('project/tickets', [
-                'query' => [
-                    'page' => $page,
-                    'clientId' => $this->clientId,
-                    'conditions' => $conditions,
-                    'orderBy' => $orderBy,
-                    'fields' => $fields
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return [];
-        }
+        $response = $this->http->get('project/tickets', [
+            'query' => [
+                'page' => $page,
+                'clientId' => $this->clientId,
+                'conditions' => $conditions,
+                'orderBy' => $orderBy,
+                'fields' => $fields
+            ],
+        ]);
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getProjectTicket($id)
+    {
+        $response = $this->http->get("project/tickets/{$id}", [
+            'query' => [
+                'clientId' => $this->clientId
+            ],
+        ]);
         return json_decode($response->getBody()->getContents());
     }
 
@@ -1023,6 +1037,16 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return [];
         }
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getServiceTicket($id)
+    {
+        $response = $this->http->get("service/tickets/{$id}", [
+            'query' => [
+                'clientId' => $this->clientId
+            ],
+        ]);
         return json_decode($response->getBody()->getContents());
     }
 
@@ -1468,49 +1492,6 @@ class ConnectWiseService
         return response()->file($temp)->deleteFileAfterSend();
     }
 
-    public function createAzadMayPO($projectId, array $bcOrderItems)
-    {
-        // TODO: handle BigCommerce order items
-        $fromProjectRecID = $projectId;
-
-        $productIdsStr = implode(',', $bcOrderItems);
-
-        $products = collect($this->getProducts(null, "id in ({$productIdsStr})", 1000));
-
-        $payload = [
-            "purchasingData" => [
-                "vendorRecID" => 19945,
-                "warehouseRecID" => 1,
-                "demandProductList" => [
-                    $products->map(function (\stdClass $product) {
-                        return [
-                            "warehouseBinRecID" => 1,
-                            "warehouseRecID" => 1,
-                            "dropShipFlag" => false,
-                            "specialOrderFlag" => false,
-                            "currentCost" => $product->cost,
-                            "ivItemRecID" => $product->catalogItem->id,
-                            "ivProductRecID" => $product->id,
-                            "ivUomRecID" => 1,
-                            "purchasingQuantity" => $product->quantity,
-                            "toOrderQuantity" => $product->quantity,
-                            "description" => $product->description,
-                            "internalNotes" => "",
-                            "itemDescription" => $product->description,
-                            "vendorSku" => "",
-                        ];
-                    }),
-                ],
-            ],
-            "fromSrServiceRecID" => 899, // Ticket ID
-            "fromProjectRecID" => $fromProjectRecID, // Project ID
-        ];
-
-        $response = $this->http->post("{$this->systemIO}actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
-
-        return $response->getBody()->getContents();
-    }
-
     /**
      * @throws GuzzleException|\Exception
      */
@@ -1802,13 +1783,13 @@ class ConnectWiseService
             ]);
         }
 
-//        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
+        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
 
         if ($onBigCommerceAsWell) {
             $this->publishVariantOnBigCommerce($product, $quantity, $catalogItem);
         }
 
-        return $adjustment ?? null;
+        return $adjustment;
     }
 
     public function publishProductOnBigCommerce($catalogItemId, $catalogItem=null)
@@ -1921,7 +1902,7 @@ class ConnectWiseService
         return "#{$companyId}: #{$ticketId} - {$ticketSummary}";
     }
 
-    public function getProductsByTicketInfo($catalogItemIdentifier, $projectId, $ticketId)
+    public function getProductsByTicketInfo($catalogItemIdentifier, $ticketId, $projectId=null)
     {
         $conditions = "catalogItem/identifier='{$catalogItemIdentifier}' and cancelledFlag=false";
 
@@ -1996,5 +1977,347 @@ class ConnectWiseService
         $record->customFields = $customFields->sortBy('id')->values()->toArray();
 
         return $record;
+    }
+
+    public function createProduct(
+        \stdClass $catalogItem,
+        \stdClass $ticket=null,
+        \stdClass $project=null,
+        \stdClass $phase=null,
+        \stdClass $company=null,
+        \stdClass $opportunity=null,
+        $price=0,
+        $cost=0,
+        $quantity=1,
+        $billable="Billable"
+    )
+    {
+        $json = [
+            "id" => 0,
+            "catalogItem" => [
+                "id" => $catalogItem->id,
+                "identifier" => $catalogItem->identifier
+            ],
+            "description" => $catalogItem->customerDescription,
+            "quantity" => $quantity,
+            "price" => $price,
+            "cost" => $cost,
+            "billableOption" => $billable,
+            "locationId" => 11,
+            "location" => [
+                "id" => 11,
+                "name" => "Houston"
+            ],
+            "businessUnitId" => 2,
+            "businessUnit" => [
+                "id" => 2,
+                "name" => "Sales"
+            ],
+            "taxableFlag" => true,
+            "dropshipFlag" => false,
+            "specialOrderFlag" => false,
+            "phaseProductFlag" => false,
+            "cancelledFlag" => false,
+            "customerDescription" => $catalogItem->identifier,
+            "internalNotes" => "",
+            "productSuppliedFlag" => false,
+            "subContractorAmountLimit" => 0,
+            "ticket" => [
+                "id" => $ticket->id ?? 0,
+                "summary" => $ticket->summary ?? 'string'
+            ],
+            "project" => [
+                "id" => $project->id ?? 0,
+                "name" => $project->name ?? 'string'
+            ],
+            "phase" => [
+                "id" => $phase->id ?? 0,
+                "name" => $phase->name ?? 'string'
+            ],
+            "opportunity" => [
+                "id" => $opportunity->id ?? 0,
+                "name" => $opportunity->name ?? 0
+            ],
+            "warehouseId" => 1,
+            "warehouseIdObject" => [
+                "id" => 1,
+                "name" => "Warehouse",
+                "lockedFlag" => false
+            ],
+            "warehouseBinId" => 1,
+            "warehouseBinIdObject" => [
+                "id" => 1,
+                "name" => "Default Bin"
+            ],
+            "calculatedPriceFlag" => false,
+            "calculatedCostFlag" => false,
+            "warehouse" => "Warehouse",
+            "warehouseBin" => "Default Bin",
+            "taxCode" => [
+                "id" => 1,
+                "name" => "Exempt"
+            ],
+            "company" => [
+                "id" => $company->id,
+                "identifier" => $company->identifier,
+                "name" => $company->name
+            ],
+            "needToPurchaseFlag" => false,
+            "minimumStockFlag" => false,
+            "poApprovedFlag" => true
+        ];
+
+        $response = $this->http->post("procurement/products?clientId={$this->clientId}", [
+            'json' => $json
+        ]);
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function createProductComponent(int $bundleId, \stdClass $catalogItem, int $quantity, float $price)
+    {
+        $json = [
+            "id" => 0,
+            "quantity" => $quantity,
+            "catalogItem" => [
+                "id" => $catalogItem->id,
+                "identifier" => $catalogItem->identifier
+            ],
+            "hidePriceFlag" => false,
+            "hideItemIdentifierFlag" => false,
+            "hideDescriptionFlag" => false,
+            "hideQuantityFlag" => false,
+            "hideExtendedPriceFlag" => false,
+            "price" => $price,
+            "cost" => $price
+        ];
+
+        $response = $this->http->post("procurement/products/{$bundleId}/components?clientId={$this->clientId}", [
+            'json' => $json
+        ]);
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function createCatalogItem($identifier, $description, \stdClass $category, $cost, $price, string $uomName="Pcs", $productClass="Inventory", $type="1. Hardware", $customerDescription=null)
+    {
+        $json = [
+            "id" => 0,
+            "identifier" => $identifier,
+            "description" => $description,
+            "inactiveFlag" => false,
+            "subcategory" => [
+                "id" => 0,
+                "name" => "Others"
+            ],
+            "type" => [
+                "id" => 0,
+                "name" => $type ?: "1. Hardware"
+            ],
+            "productClass" => $productClass ?: "Inventory",
+            "serializedFlag" => false,
+            "serializedCostFlag" => false,
+            "phaseProductFlag" => false,
+            "unitOfMeasure" => [
+                "id" => 0,
+                "name" => $uomName
+            ],
+            "minStockLevel" => 0,
+            "price" => $price,
+            "cost" => $cost,
+            "taxableFlag" => true,
+            "dropShipFlag" => false,
+            "specialOrderFlag" => false,
+            "customerDescription" => $customerDescription,
+            "recurringFlag" => false,
+            "recurringOneTimeFlag" => false,
+            "calculatedPriceFlag" => false,
+            "calculatedCostFlag" => false,
+            "category" => [
+                "id" => $category->id,
+                "name" => $category->name
+            ],
+            "markupFlag" => false,
+            "autoUpdateUnitCostFlag" => false,
+            "autoUpdateUnitPriceFlag" => false
+        ];
+
+        $response = $this->http->post("procurement/catalog?clientId={$this->clientId}", [
+            'json' => $json
+        ]);
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getOpportunity($id)
+    {
+        $response = $this->http->get("sales/opportunities/{$id}?clientId={$this->clientId}");
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function getInvoice($id)
+    {
+        $response = $this->http->get("finance/invoices/{$id}?clientId={$this->clientId}");
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function createAzadMayPO(Collection $bcOrderItems)
+    {
+        $products = $bcOrderItems->map(function ($orderProduct) {
+
+            $options = collect($orderProduct->product_options);
+
+            $projectId = $options->where('display_name', 'Project')->first()->value;
+            $phaseId = $options->where('display_name', 'Phase')->first()->value;
+            $projectTicketId = $options->where('display_name', 'Project Ticket')->first()->value;
+            $companyId = $options->where('display_name', 'Company')->first()->value;
+            $serviceTicketId = $options->where('display_name', 'Service Ticket')->first()->value;
+            $bundleIdentifier = $options->where('display_name', 'Bundle')->first()->display_value ?? null;
+
+            $project = $projectId ? $this->getProject($projectId) : null;
+            $phase = $phaseId ? $this->getProjectPhase($projectId, $phaseId) : null;
+            $company = $companyId ? $this->getCompany($companyId) : null;
+            $ticket = $projectTicketId ? $this->getProjectTicket($projectTicketId)
+                : ($serviceTicketId ? $this->getServiceTicket($serviceTicketId) : null);
+            $cost = $orderProduct->base_price;
+            $quantity = $orderProduct->quantity;
+
+            $conditions = "";
+
+            if ($project) {
+                $conditions .= " and project/id={$project->id}";
+            }
+
+            if ($phase) {
+                $conditions .= " and phase/id={$phase->id}";
+            }
+
+            if ($company) {
+                $conditions .= " and company/id={$company->id}";
+            }
+
+            if ($ticket) {
+                $conditions .= " and ticket/id={$ticket->id}";
+
+                $bundle = $this->getProducts(1, "catalogItem/_info/typeId=12{$conditions}")[0] ?? null;
+            } else {
+                $conditions .= " and ticket/id=null";
+                $bundle = $bundleIdentifier ? $this->getProducts(1, "catalogItem/_info/typeId=12 and catalogItem/identifier='{$bundleIdentifier}'{$conditions}")[0] ?? null : null;
+            }
+
+            $billed = (@$bundle->invoice && $this->getInvoice($bundle->invoice->id)->status->isClosed)
+                || (($cwProducts = collect($this->getProducts(1, "cancelledFlag=false{$conditions}"))) && $cwProducts->filter(fn($cwProduct) => !@$cwProduct->invoice)->count() == 0);
+
+            if (
+                !$bundle
+                && !$billed
+                && $bundleIdentifier
+                && ($catalogItemBundle = ($this->getCatalogItems(1, "identifier='{$bundleIdentifier}' and type/id=12")[0] ?? null))
+            ) {
+                $bundle = $this->createProduct(
+                    $catalogItemBundle,
+                    $ticket,
+                    $project,
+                    $phase,
+                    $company ?: $project->company,
+                    $ticket->opportunity ?? $project->opportunity
+                );
+
+            }
+
+            $catalogItem = $this->getCatalogItemByIdentifier($orderProduct->sku);
+
+            if (!$catalogItem) {
+                $product = $this->bigCommerceService->getProduct($orderProduct->product_id);
+
+                $cin7Product = $this->cin7Service->productBySku($orderProduct->sku);
+
+                $bgCategories = $this->bigCommerceService->getCategories(1, 100, categoryIdIn: implode(',', $product->categories));
+
+                $category = $this->getCategories(1, 'name in ("' . collect($bgCategories)->pluck('name')->join('","') . '")')[0] ?? null;
+
+                if (!$category) {
+                    $category = $this->getCategories(1, 'name contains "Default Category"')[0];
+                }
+
+                $catalogItem = $this->createCatalogItem(
+                    $product->sku,
+                    $product->name,
+                    $category,
+                    $cost,
+                    $cost,
+                    $cin7Product->UOM,
+                    $product->type == 'physical' ? 'Inventory' : 'Non-Inventory',
+                    $product->type == 'physical' ? '1. Hardware' : '8. Other Charge',
+                    (Str::numbers($category->name[0]) ? "{$category->name} - ": '') . $product->name
+                );
+
+            }
+
+            if ($bundle && !$billed) {
+                return $this->getProduct($this->createProductComponent($bundle->id, $catalogItem, $quantity, $cost)->productItem->id);
+            }
+
+            return $this->createProduct(
+                $catalogItem,
+                $ticket,
+                $project,
+                $phase,
+                $company ?: $project->company,
+                $ticket->opportunity ?? $project->opportunity,
+                $cost,
+                $cost,
+                $quantity,
+                $billed ? 'DoNotBill' : 'Billable'
+            );
+        });
+
+        return $products;
+    }
+
+    public function createPurchaseOrderFromProductsForSingleProjectOrServiceTicket(Collection $products, int $vendorId)
+    {
+        $product = $products->first();
+
+        $payload = [
+            "purchasingData" => [
+                "vendorRecID" => $vendorId,
+                "warehouseRecID" => 1,
+                "demandProductList" => [
+                    $products->map(function (\stdClass $product) {
+                        return [
+                            "warehouseBinRecID" => 1,
+                            "warehouseRecID" => 1,
+                            "dropShipFlag" => false,
+                            "specialOrderFlag" => false,
+                            "currentCost" => $product->cost,
+                            "ivItemRecID" => $product->catalogItem->id,
+                            "ivProductRecID" => $product->id,
+                            "ivUomRecID" => 1,
+                            "purchasingQuantity" => $product->quantity,
+                            "toOrderQuantity" => $product->quantity,
+                            "description" => $product->description,
+                            "internalNotes" => "",
+                            "itemDescription" => $product->description,
+                            "vendorSku" => "",
+                        ];
+                    }),
+                ],
+            ]
+        ];
+
+        if (@$product->project) {
+            $payload["fromProjectRecID"] = $product->project->id; // Project ID
+        } else {
+            $payload["fromSrServiceRecID"] = $product->ticket->id; // Ticket ID
+        }
+
+
+
+        $response = $this->http->post("{$this->systemIO}actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
+
+        return $response->getBody()->getContents();
     }
 }

@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 class Cin7Controller extends Controller
 {
-    public function saleShipmentAuthorized(Request $request, Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
+    public function saleShipmentAuthorized(Request $request, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
         $request->validate([
             'SaleTaskID' => ['required', 'string'],
@@ -22,36 +22,51 @@ class Cin7Controller extends Controller
             'CustomerReference' => ['nullable', 'string']
         ]);
 
-        // TODO: Remove
-        return response()->json(['message' => 'Service temporarily inactive']);
+        return response(['message' => 'temporarily inactive']);
 
         $bigCommerceOrderId = $request->get('CustomerReference');
 
-        $bigCommerceOrder = null;
-
-        if (!$bigCommerceOrderId || !($bigCommerceOrder = $bigCommerceService->getOrder($bigCommerceOrderId)) ) {
+        if (!$bigCommerceOrderId || !($bigCommerceOrder = $bigCommerceService->getOrder($bigCommerceOrderId)) || $bigCommerceOrder->channel_id != 1) {
             return null;
         }
 
-        return array_map(function ($item) use ($connectWiseService, $cin7Service) {
+        $bigCommerceOrderProducts = collect($bigCommerceService->getOrderProducts($bigCommerceOrder->id));
 
-            if (!Str::contains($item->SKU, 'PROJECT') && !Str::contains($item->SKU, 'TICKET')) {
-                // If product type is not a project
-                // TODO: handle Azad May Product
-                return false;
-            }
+        // Handling Azad May products
 
-            $skuParts = array_reverse(explode('-', $item->SKU));
+        $azadMayProducts = $bigCommerceOrderProducts->filter(fn($item) => !Str::contains($item->sku, '-PROJECT'));
+
+        if ($azadMayProducts->count() > 0) {
+
+            $customer = $bigCommerceService->getCustomer($bigCommerceOrder->customer_id);
+
+            dd($customer);
+
+            $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts);
+
+            $cwProducts->map(function ($cwProduct) use ($connectWiseService) {
+                $connectWiseService->pickProduct($cwProduct->id, $cwProduct->quantity);
+                $connectWiseService->shipProduct($cwProduct->id, $cwProduct->quantity);
+            });
+        }
+
+        return response()->json(['Message Handling Azad May Products']);
+
+        // Shipping project products
+
+        $bigCommerceOrderProducts->filter(fn($item) => Str::contains($item->sku, '-PROJECT'))->map(function ($item) use ($connectWiseService) {
+
+            $skuParts = array_reverse(explode('-', $item->sku));
 
             $ticketId = $skuParts[1] != 'PROJECT' ? $skuParts[0] : null;
 
             $projectId = $skuParts[1] == 'PROJECT' ? $skuParts[0] : ($skuParts[3] == 'PROJECT' ? $skuParts[2] : null);
 
-            $catalogItemIdentifier = explode('-PROJECT', $item->SKU)[0];
+            $catalogItemIdentifier = explode('-PROJECT', $item->sku)[0];
 
             $shipQuantity = $item->Quantity;
 
-            array_map(function ($product) use ($cin7Service, &$shipQuantity, $connectWiseService) {
+            array_map(function ($product) use (&$shipQuantity, $connectWiseService) {
 
                 if ($shipQuantity == 0) {
                     return false;
@@ -84,10 +99,10 @@ class Cin7Controller extends Controller
 
                 return $product;
 
-            }, $connectWiseService->getProductsByTicketInfo($catalogItemIdentifier, $projectId, $ticketId));
+            }, $connectWiseService->getProductsByTicketInfo($catalogItemIdentifier, $ticketId, $projectId));
 
             return $item;
 
-        }, $cin7Service->saleOrder($request->get('SaleTaskID'))->Lines);
+        });
     }
 }

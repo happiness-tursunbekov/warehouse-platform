@@ -132,6 +132,8 @@ class ConnectWiseController extends Controller
         $entity = $request->get('Entity');
         $id = $request->get('ID');
 
+        // TODO: Remove line below on production
+
         return response()->json(['message' => 'Service temporarily unavailable!']);
 
         /** @var PurchaseOrder $po */
@@ -345,6 +347,19 @@ class ConnectWiseController extends Controller
 
             default:
                 return response()->json(['message' => 'No action needed']);
+        }
+    }
+
+    public function member(Request $request, BigCommerceService $bigCommerceService, ConnectWiseService $connectWiseService)
+    {
+//        $action = $request->get('Action');
+        $entity = $request->get('Entity');
+//        $id = $request->get('ID');
+
+        $customerGroup = $bigCommerceService->getCustomerGroups(1, 1, "#{$entity['defaultDepartment']['id']} -")[0] ?? null;
+
+        if (!$customerGroup) {
+            $bigCommerceService->createCustomerGroup("#{$entity['defaultDepartment']['id']} - {$entity['defaultDepartment']['name']}");
         }
     }
 
