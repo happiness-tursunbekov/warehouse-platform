@@ -88,8 +88,7 @@ class Cin7Controller extends Controller
             $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts, $departmentId);
 
             $cwProducts->map(function ($cwProduct) use ($connectWiseService) {
-                $connectWiseService->pickProduct($cwProduct->id, $cwProduct->quantity);
-                $connectWiseService->shipProduct($cwProduct->id, $cwProduct->quantity);
+                $connectWiseService->pickAndShipProduct($cwProduct->id, $cwProduct->quantity);
             });
         }
 

@@ -572,10 +572,23 @@ class ConnectWiseService
         $pickShip->id = 0;
         $pickShip->quantity = (int)$quantity;
         $pickShip->warehouseBin->id = 1;
-        $pickShip->warehouseBin->name = 'Default Bin';
-        $pickShip->warehouseBin->_info->warehouseBin_href = 'https:\/\/api-na.myconnectwise.net\/v4_6_release\/apis\/3.0\/\/procurement\/warehouseBins\/1';
 
         $this->addOrUpdatePickShip($pickShip);
+    }
+
+    /**
+     * @throws GuzzleException
+     */
+    public function pickAndShipProduct($id, $quantity)
+    {
+        $pickShip = $this->getProductPickingShippingDetails($id)[0];
+        $pickShip->pickedQuantity = (int)$quantity;
+        $pickShip->shippedQuantity = (int)$quantity;
+        $pickShip->id = 0;
+        $pickShip->quantity = (int)$quantity;
+        $pickShip->warehouseBin->id = 1;
+
+        return $this->addOrUpdatePickShip($pickShip);
     }
 
     /**
@@ -646,10 +659,10 @@ class ConnectWiseService
                 return $pickShip;
             })
             ->filter(fn($pickShip) => !!$pickShip)
-            ->map(function ($pickShip) use ($dynamicQty) {
+            ->map(function ($pickShip) use ($dynamicQty, $id) {
 
                 if ($dynamicQty > 0) {
-                    throw new \Exception('Shipping quantity cannot be greater than picked quantity');
+                    throw new \Exception('Shipping quantity cannot be greater than picked quantity, productId:' . $id);
                 }
 
                 $this->addOrUpdatePickShip($pickShip);
@@ -657,14 +670,14 @@ class ConnectWiseService
         ;
 
         if ($dynamicQty == $quantity) {
-            throw new \Exception('Shipping quantity cannot be greater than picked quantity');
+            throw new \Exception('Shipping quantity cannot be greater than picked quantity, productId:' . $id);
         }
     }
 
     /**
      * @throws GuzzleException|\Exception
      */
-    private function addOrUpdatePickShip(\stdClass $pickShipDetail) : void
+    private function addOrUpdatePickShip(\stdClass $pickShipDetail)
     {
         $payload = [
             "productDetail" => [
@@ -690,6 +703,8 @@ class ConnectWiseService
         if (!$response->data->isSuccess) {
             throw new \Exception(json_encode($response->data->error));
         }
+
+        return $response;
     }
 
     public function productPickShip($id, $quantity, $used=false)
@@ -708,91 +723,12 @@ class ConnectWiseService
         $pickShip->id = 0;
         $pickShip->quantity = $quantity;
         $pickShip->warehouseBin->id = 1;
-        $pickShip->warehouseBin->name = 'Default Bin';
-        $pickShip->warehouseBin->_info->warehouseBin_href = 'https:\/\/api-na.myconnectwise.net\/v4_6_release\/apis\/3.0\/\/procurement\/warehouseBins\/1';
 
-        try {
-            $response = $this->http->post("procurement/products/{$id}/pickingShippingDetails?clientId=" . $this->clientId, [
-                'json' => $pickShip,
-            ]);
+        $this->pickAndShipProduct($id, $quantity);
 
-            $response = json_decode($response->getBody()->getContents());
+        $this->addToReport('ProductShipment', $pickShip, $quantity < 0 ? 'unshipped/returned' : 'shipped');
 
-            // Fixes ConnectWise api bug
-            $this->http->post(
-                "{$this->systemIO}actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
-                    "productDetail" => [
-                        "IV_Product_RecID" => $id,
-                        "quantity_Picked" => $response->pickedQuantity,
-                        "quantity_Shipped" => $response->shippedQuantity,
-                        "warehouse_Bin_RecID" => 1,
-                        "IV_Product_Detail_RecID" => $response->id
-                    ]
-                ],
-                    "SavePickingAndShippingAction",
-                    "ProcurementCommon"
-                ));
-        } catch (GuzzleException $e) {
-            $errBody = $e->getResponse()->getBody()->getContents();
-
-            if (Str::contains($errBody, 'only on an opportunity') || Str::contains($errBody, 'unexpected database error')) {
-                $response1 = $this->http->post(
-                    "{$this->systemIO}actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
-                        "productDetail" => [
-                            "IV_Product_RecID" => $id,
-                            "quantity_Picked" => $pickShip->pickedQuantity,
-                            "quantity_Shipped" => $pickShip->shippedQuantity,
-                            "warehouse_Bin_RecID" => 1
-                        ]
-                    ],
-                        "SavePickingAndShippingAction",
-                        "ProcurementCommon"
-                    ));
-
-                $response1 = json_decode($response1->getBody()->getContents());
-
-                if ($response1->data->isSuccess) {
-                    $this->addToReport('ProductShipment', $pickShip, $quantity < 0 ? 'unshipped/returned' : 'shipped');
-
-                    return $response1;
-                }
-
-                if ($quantity < 0) {
-
-                    // Force unship
-                    $response2 = $this->http->post(
-                        "{$this->systemIO}actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
-                            "productDetail" => [
-                                "IV_Product_Detail_RecID" => $origPickShip->id,
-                                "IV_Product_RecID" => $id,
-                                "line_Number" => 1,
-                                "warehouse_Bin_RecID" => 1,
-                                "quantity_Picked" => $origPickShip->pickedQuantity + $quantity,
-                                "quantity_Shipped" => $origPickShip->shippedQuantity + $quantity,
-                            ]
-                        ],
-                            "SavePickingAndShippingAction",
-                            "ProcurementCommon"
-                        ));
-
-                    $response2 = json_decode($response2->getBody()->getContents());
-
-                    if ($response2->data->isSuccess) {
-
-                        $this->addToReport('ProductShipment', $pickShip, 'unshipped/returned');
-
-                        return $pickShip;
-                    }
-                }
-
-            }
-
-            return response()->json(['code' => 'ERROR', 'message' => $errBody], 500);
-        }
-
-        $this->addToReport('ProductShipment', $response, $quantity < 0 ? 'unshipped/returned' : 'shipped');
-
-        return $response;
+        return $pickShip;
     }
 
     /**
