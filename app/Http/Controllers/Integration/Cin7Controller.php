@@ -13,12 +13,41 @@ use Illuminate\Support\Str;
 
 class Cin7Controller extends Controller
 {
-    public function availableStockLevelChanged(Request $request, BigCommerceService $bigCommerceService)
+    public function availableStockLevelChanged(Request $request, ConnectWiseService $connectWiseService)
     {
-        WebhookLog::create([
-            'type' => 'Stock/AvailableStockLevelChanged',
-            'data' => $request->post()
-        ]);
+        return response()->json(['message' => 'Service temporarily unavailable']);
+
+        $stock = collect($request->post());
+
+        $productSku = $stock->first()['SKU'] ?? null;
+
+        if (!$productSku) {
+            return response()->json(['message' => 'No action']);
+        }
+
+        $available = $stock->pluck('Available')->sum();
+
+        if (Str::contains($productSku, '-PROJECT')) {
+            return response()->json(['message' => 'No action']);
+        }
+
+        $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
+
+        if (!$catalogItem) {
+            return response()->json(['message' => 'No action']);
+        }
+
+        $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id)->count;
+
+        if ($onHand == $available) {
+            return response()->json(['message' => 'No action']);
+        }
+
+        $quantity = $available - $onHand;
+
+        $connectWiseService->catalogItemAdjust($catalogItem, $quantity);
+
+        return response()->json(['message' => 'Product adjusted successfully!']);
     }
 
     public function saleShipmentAuthorized(Request $request, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
