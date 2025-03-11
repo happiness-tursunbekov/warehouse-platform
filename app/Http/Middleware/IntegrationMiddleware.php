@@ -62,10 +62,6 @@ class IntegrationMiddleware
                     return \response()->json(['key' => 'Incorrect Key'], 422);
                 }
 
-                $request->merge([
-                    'key' => ''
-                ]);
-
                 break;
 
             case 'big-commerce':
