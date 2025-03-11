@@ -437,7 +437,7 @@ class ConnectWiseService
 
         $this->updatePoItems($poId);
 
-        return $this->preparePoItem($poId, $response);
+        return $response;
     }
 
     /**
