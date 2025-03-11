@@ -254,7 +254,11 @@ class ProductController extends Controller
                     $pickShip = collect($connectWiseService->getProductPickingShippingDetails($product->id));
 
                     $product->shippedQuantity = $pickShip->map(function ($ps) {
-                        return $ps->pickedQuantity ?: $ps->shippedQuantity;
+                        return $ps->shippedQuantity;
+                    })->sum();
+
+                    $product->pickedQuantity = $pickShip->map(function ($ps) {
+                        return $ps->pickedQuantity;
                     })->sum();
 
                     return $product;

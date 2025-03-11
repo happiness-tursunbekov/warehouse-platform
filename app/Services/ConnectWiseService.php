@@ -272,7 +272,7 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function purchaseOrders($page=null, $conditions=null, $fields=null, $orderBy=null)
+    public function purchaseOrders($page=null, $conditions=null, $fields=null, $orderBy=null, $pageSize=1000)
     {
         try {
             $response = $this->http->get('procurement/purchaseorders', [
@@ -281,7 +281,7 @@ class ConnectWiseService
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
                     'fields' => $fields,
-                    'pageSize' => 1000,
+                    'pageSize' => $pageSize,
                     'orderBy' => $orderBy
                 ],
             ]);
@@ -325,7 +325,7 @@ class ConnectWiseService
         }, $this->purchaseOrderItemsOriginal($id, $page, $conditions, $fields));
     }
 
-    public function purchaseOrderItemsOriginal($id, $page=null, $conditions=null, $fields=null)
+    public function purchaseOrderItemsOriginal($id, $page=null, $conditions=null, $fields=null, $pageSize=1000)
     {
         try {
             $response = $this->http->get("procurement/purchaseorders/{$id}/lineitems", [
@@ -333,7 +333,7 @@ class ConnectWiseService
                     'page' => $page,
                     'clientId' => $this->clientId,
                     'conditions' => $conditions,
-                    'pageSize' => 1000,
+                    'pageSize' => $pageSize,
                     'fields' => $fields
                 ],
             ]);
@@ -1858,11 +1858,17 @@ class ConnectWiseService
         return "#{$companyId}: #{$ticketId} - {$ticketSummary}";
     }
 
-    public function getProductsByTicketInfo($catalogItemIdentifier, $ticketId, $projectId=null)
+    public function getProductsByTicketInfo(\stdClass $ticket)
     {
-        $conditions = "catalogItem/identifier='{$catalogItemIdentifier}' and cancelledFlag=false";
+        $conditions = "catalogItem/identifier='{$ticket->Item_ID}' and cancelledFlag=false";
 
-        $conditions .= $ticketId ? " and ticket/id={$ticketId}" : " and project/id={$projectId}";
+        if ($ticket->SR_Service_RecID) {
+            $conditions .= " and ticket/id={$ticket->SR_Service_RecID}";
+        } elseif ($ticket->PM_Project_RecID) {
+            $conditions .= " and project/id={$ticket->PM_Project_RecID}";
+        } else {
+            $conditions .= " and salesOrder/id={$ticket->Order_Header_RecID}";
+        }
 
         return $this->getProducts(null, $conditions, 1000);
     }

@@ -132,8 +132,6 @@ class ConnectWiseController extends Controller
         $entity = $request->get('Entity');
         $id = $request->get('ID');
 
-        return response()->json(['message' => 'Service temporarily unavailable']);
-
         /** @var PurchaseOrder $po */
         $po = PurchaseOrder::find($id);
 
@@ -229,13 +227,18 @@ class ConnectWiseController extends Controller
                             // SR_Service_RecID: Ticket ID
                             $ticket = $connectWiseService->getPurchaseOrderItemTicketInfo($po->id, $poItem->id)[0];
 
+                            if (!$ticket) {
+                                return false;
+                            }
+
                             $quantity = $poItem->quantity;
 
-                            // Checking if pick/unpick quantity matches available quantity before processing to sync
-                            $results = collect($connectWiseService->getProductsByTicketInfo($ticket->Item_ID, $ticket->PM_Project_RecID, $ticket->SR_Service_RecID))
-                                ->map(function ($product) use ($unpicking, $picking, $bigCommerceService, $cin7Service, &$quantity, $connectWiseService, $po) {
+                            $products = collect($connectWiseService->getProductsByTicketInfo($ticket));
 
-                                    if (!$quantity) {
+                            // Checking if pick/unpick quantity matches available quantity before processing to sync
+                            $results = $products->map(function ($product) use ($unpicking, $picking, $bigCommerceService, $cin7Service, &$quantity, $connectWiseService, $po) {
+
+                                    if ($quantity == 0) {
                                         return false;
                                     }
 
@@ -257,7 +260,7 @@ class ConnectWiseController extends Controller
 
                                         $result = [
                                             'product' => $product,
-                                            'quantity' => $quantity
+                                            'quantity' => min($quantity, $pickAvailableQuantity)
                                         ];
 
                                         $quantity = $quantity <= $pickAvailableQuantity ? 0 : $quantity - $pickAvailableQuantity;
@@ -295,11 +298,11 @@ class ConnectWiseController extends Controller
                                     if ($picking) {
                                         $connectWiseService->pickProduct($result['product']->id, $result['quantity']);
 
-                                        $cin7Adjustment = $connectWiseService->publishProductOnCin7($result['product'], $result['quantity'], true, $item->cin7AdjustmentId);
-
-                                        if ($cin7Adjustment) {
-                                            $item->fill(['cin7AdjustmentId' => $cin7Adjustment->TaskID])->save();
-                                        }
+//                                        $cin7Adjustment = $connectWiseService->publishProductOnCin7($result['product'], $result['quantity'], true, $item->cin7AdjustmentId);
+//
+//                                        if ($cin7Adjustment) {
+//                                            $item->fill(['cin7AdjustmentId' => $cin7Adjustment->TaskID])->save();
+//                                        }
 
                                         return $result['product'];
                                     }
@@ -307,18 +310,18 @@ class ConnectWiseController extends Controller
                                     // If unpicking
                                     $connectWiseService->unpickProduct($result['product']->id, $result['quantity']);
 
-                                    if ($item->cin7AdjustmentId) {
-                                        $cin7Service->undoStockAdjustment($item->cin7AdjustmentId);
-                                    }
-                                    $connectWiseService->stockTakeOnBigCommerce(
-                                        $connectWiseService->generateProductSku(
-                                            $connectWiseService->generateProductFamilySku($result['product']->catalogItem->identifier),
-                                            $result['product']->project->id ?? null,
-                                            $result['product']->ticket->id ?? null,
-                                            $result['product']->company->id ?? null,
-                                        ),
-                                        $result['quantity']
-                                    );
+//                                    if ($item->cin7AdjustmentId) {
+//                                        $cin7Service->undoStockAdjustment($item->cin7AdjustmentId);
+//                                    }
+//                                    $connectWiseService->stockTakeOnBigCommerce(
+//                                        $connectWiseService->generateProductSku(
+//                                            $connectWiseService->generateProductFamilySku($result['product']->catalogItem->identifier),
+//                                            $result['product']->project->id ?? null,
+//                                            $result['product']->ticket->id ?? null,
+//                                            $result['product']->company->id ?? null,
+//                                        ),
+//                                        $result['quantity']
+//                                    );
 
                                     return $result['product'];
                                 });

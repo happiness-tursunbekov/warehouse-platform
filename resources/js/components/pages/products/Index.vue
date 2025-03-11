@@ -117,6 +117,7 @@
                         <th>Company</th>
                         <th>Phase</th>
                         <th>Quantity</th>
+                        <th>Picked Quantity</th>
                         <th>Shipped Quantity</th>
                         <th>Action</th>
                     </tr>
@@ -127,6 +128,7 @@
                         <td>{{ product.company.name }}</td>
                         <td>{{ product.phase ? product.phase.name : '' }}</td>
                         <td>{{ product.quantity }}</td>
+                        <td>{{ product.pickedQuantity }}</td>
                         <td>{{ product.shippedQuantity }}</td>
                         <td>
                             <div class="dropdown">

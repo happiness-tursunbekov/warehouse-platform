@@ -29,55 +29,57 @@ class Download extends Command
      */
     public function handle(ConnectWiseService $connectWiseService, \App\Services\BigCommerceService $bigCommerceService)
     {
-        $page = 1;
-        while (true) {
+        dd($connectWiseService->getProduct(10074));
 
-            $items = $connectWiseService->getCatalogItems($page, 'inactiveFlag=false', '', null, 1000);
-            array_map(function ($item) use ($page, $connectWiseService, $bigCommerceService) {
-
-                $bcProductId = $connectWiseService->getBigCommerceProductId($item);
-
-                if (!$bcProductId) return false;
-
-                $path = Str::replace(' ', '', "/cw-items/{$item->category->id}/{$item->id}_{$item->identifier}.jpg");
-                try {
-                    if (!Storage::exists($path)) {
-                        $path = Str::replace('/cw', '/cw2', $path);
-                        if (!Storage::exists($path)) {
-                            $path = Str::replace('/cw2', '/egg', $path);
-                            if (!Storage::exists($path)) {
-                                return false;
-                            }
-                        }
-                    }
-                    if (Storage::size($path) == 6722) return false;
-
-                    $dItems = $connectWiseService->getCatalogItems($page, "inactiveFlag=false and description='{$item->description}' and id!={$item->id}", '', null, 1000);
-
-                    if (count($dItems) === 0) return false;
-
-                    array_map(function ($dItem) use ($connectWiseService, $bigCommerceService, $path){
-                        $bcProductId = $connectWiseService->getBigCommerceProductId($dItem);
-
-                        if (!$bcProductId) return false;
-
-                        $connectWiseService->systemDocumentUploadTemp(Storage::get($path), 'ProductSetup', $dItem->id, "{$dItem->id}_{$dItem->identifier}.jpg", 'Product image');
-                        $bigCommerceService->uploadProductImage($bcProductId, Storage::get($path), "{$dItem->id}_{$dItem->identifier}.jpg");
-
-                        echo $dItem->identifier . "\n";
-                    }, $dItems);
-                } catch (\Exception $e) {
-                    return false;
-                }
-
-
-            }, $items);
-
-            if (count($items) < 1000)
-                break;
-
-            $page++;
-        }
+//        $page = 1;
+//        while (true) {
+//
+//            $items = $connectWiseService->getCatalogItems($page, 'inactiveFlag=false', '', null, 1000);
+//            array_map(function ($item) use ($page, $connectWiseService, $bigCommerceService) {
+//
+//                $bcProductId = $connectWiseService->getBigCommerceProductId($item);
+//
+//                if (!$bcProductId) return false;
+//
+//                $path = Str::replace(' ', '', "/cw-items/{$item->category->id}/{$item->id}_{$item->identifier}.jpg");
+//                try {
+//                    if (!Storage::exists($path)) {
+//                        $path = Str::replace('/cw', '/cw2', $path);
+//                        if (!Storage::exists($path)) {
+//                            $path = Str::replace('/cw2', '/egg', $path);
+//                            if (!Storage::exists($path)) {
+//                                return false;
+//                            }
+//                        }
+//                    }
+//                    if (Storage::size($path) == 6722) return false;
+//
+//                    $dItems = $connectWiseService->getCatalogItems($page, "inactiveFlag=false and description='{$item->description}' and id!={$item->id}", '', null, 1000);
+//
+//                    if (count($dItems) === 0) return false;
+//
+//                    array_map(function ($dItem) use ($connectWiseService, $bigCommerceService, $path){
+//                        $bcProductId = $connectWiseService->getBigCommerceProductId($dItem);
+//
+//                        if (!$bcProductId) return false;
+//
+//                        $connectWiseService->systemDocumentUploadTemp(Storage::get($path), 'ProductSetup', $dItem->id, "{$dItem->id}_{$dItem->identifier}.jpg", 'Product image');
+//                        $bigCommerceService->uploadProductImage($bcProductId, Storage::get($path), "{$dItem->id}_{$dItem->identifier}.jpg");
+//
+//                        echo $dItem->identifier . "\n";
+//                    }, $dItems);
+//                } catch (\Exception $e) {
+//                    return false;
+//                }
+//
+//
+//            }, $items);
+//
+//            if (count($items) < 1000)
+//                break;
+//
+//            $page++;
+//        }
     }
 
     private function searfor($text, $searchfor)
