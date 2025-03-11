@@ -17,7 +17,7 @@ class Cin7Controller extends Controller
     {
         WebhookLog::create([
             'type' => 'Stock/AvailableStockLevelChanged',
-            'data' => $request->all()
+            'data' => $request->post()
         ]);
     }
 
