@@ -295,17 +295,20 @@ class BigCommerceService
 
     public function getCustomerGroups($page=1, $limit=250, string $nameLike=null)
     {
-        try {
-            $result = $this->httpV2->get('customer_groups', [
-                'query' => [
-                    'page' => $page,
-                    'limit' => $limit,
-                    'name:like' => $nameLike
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return  [];
-        }
+        $result = $this->httpV2->get('customer_groups', [
+            'query' => [
+                'page' => $page,
+                'limit' => $limit,
+                'name:like' => $nameLike
+            ]
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function getCustomerGroup($id)
+    {
+        $result = $this->httpV2->get("customer_groups/{$id}");
 
         return json_decode($result->getBody()->getContents());
     }

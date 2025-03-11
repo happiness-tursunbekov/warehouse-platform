@@ -13,6 +13,14 @@ use Illuminate\Support\Str;
 
 class Cin7Controller extends Controller
 {
+    public function availableStockLevelChanged(Request $request, BigCommerceService $bigCommerceService)
+    {
+        WebhookLog::create([
+            'type' => 'Stock/AvailableStockLevelChanged',
+            'data' => $request->all()
+        ]);
+    }
+
     public function saleShipmentAuthorized(Request $request, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
         $request->validate([
@@ -22,7 +30,7 @@ class Cin7Controller extends Controller
             'CustomerReference' => ['nullable', 'string']
         ]);
 
-        return response(['message' => 'temporarily inactive']);
+        return response()->json(['message' => 'Service temporarily unavailable']);
 
         $bigCommerceOrderId = $request->get('CustomerReference');
 
@@ -40,17 +48,21 @@ class Cin7Controller extends Controller
 
             $customer = $bigCommerceService->getCustomer($bigCommerceOrder->customer_id);
 
-            dd($customer);
+            if (
+                !$customer->customer_group_id
+                || !($group = $bigCommerceService->getCustomerGroup($customer->customer_group_id))
+                || !($departmentId = Str::numbers(explode('-', $group->name)[0]))
+            ) {
+                $departmentId = $connectWiseService->getSystemDepartments(1, 'name contains "*Team A*"')[0]->id;
+            }
 
-            $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts);
+            $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts, $departmentId);
 
             $cwProducts->map(function ($cwProduct) use ($connectWiseService) {
                 $connectWiseService->pickProduct($cwProduct->id, $cwProduct->quantity);
                 $connectWiseService->shipProduct($cwProduct->id, $cwProduct->quantity);
             });
         }
-
-        return response()->json(['Message Handling Azad May Products']);
 
         // Shipping project products
 

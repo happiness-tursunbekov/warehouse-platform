@@ -132,9 +132,7 @@ class ConnectWiseController extends Controller
         $entity = $request->get('Entity');
         $id = $request->get('ID');
 
-        // TODO: Remove line below on production
-
-        return response()->json(['message' => 'Service temporarily unavailable!']);
+        return response()->json(['message' => 'Service temporarily unavailable']);
 
         /** @var PurchaseOrder $po */
         $po = PurchaseOrder::find($id);
@@ -295,12 +293,7 @@ class ConnectWiseController extends Controller
                             $results->filter(fn($results) => !!$results)
                                 ->map(function (array $result) use ($item, $cin7Service, $connectWiseService, $picking) {
                                     if ($picking) {
-                                        try {
-                                            $connectWiseService->pickProduct($result['product']->id, $result['quantity']);
-                                        } catch (\Exception) {
-                                            // TODO: Will need to log errors
-                                            return false;
-                                        }
+                                        $connectWiseService->pickProduct($result['product']->id, $result['quantity']);
 
                                         $cin7Adjustment = $connectWiseService->publishProductOnCin7($result['product'], $result['quantity'], true, $item->cin7AdjustmentId);
 
@@ -312,12 +305,7 @@ class ConnectWiseController extends Controller
                                     }
 
                                     // If unpicking
-                                    try {
-                                        $connectWiseService->unpickProduct($result['product']->id, $result['quantity']);
-                                    } catch (\Exception) {
-                                        // TODO: Will need to log errors
-                                        return false;
-                                    }
+                                    $connectWiseService->unpickProduct($result['product']->id, $result['quantity']);
 
                                     if ($item->cin7AdjustmentId) {
                                         $cin7Service->undoStockAdjustment($item->cin7AdjustmentId);
@@ -350,7 +338,7 @@ class ConnectWiseController extends Controller
         }
     }
 
-    public function member(Request $request, BigCommerceService $bigCommerceService, ConnectWiseService $connectWiseService)
+    public function member(Request $request, BigCommerceService $bigCommerceService)
     {
 //        $action = $request->get('Action');
         $entity = $request->get('Entity');

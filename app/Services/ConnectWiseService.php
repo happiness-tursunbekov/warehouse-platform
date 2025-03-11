@@ -20,6 +20,10 @@ class ConnectWiseService
 
     const RECORD_TYPE_PRODUCT_SETUP = 'ProductSetup';
 
+    const AZAD_MAY_ID = 19945;
+
+    const LOCATION_HOUSTON = 11;
+
     private Client $http;
     private string $clientId;
     private string $systemIO;
@@ -297,9 +301,17 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function company(int $id)
+    public function getCompanies($page=1, $conditions=null, $fields=null, $pageSize=100)
     {
-        $response = $this->http->get("company/companies/{$id}?clientId={$this->clientId}");
+        $response = $this->http->get("company/companies?clientId={$this->clientId}", [
+            'query' => [
+                'page' => $page,
+                'clientId' => $this->clientId,
+                'conditions' => $conditions,
+                'pageSize' => $pageSize,
+                'fields' => $fields
+            ],
+        ]);
 
         return json_decode($response->getBody()->getContents());
     }
@@ -403,7 +415,7 @@ class ConnectWiseService
     /**
      * @throws GuzzleException
      */
-    public function purchaseOrderItemReceive(int $itemId, $quantity)
+    public function purchaseOrderItemReceiveUsingCache(int $itemId, $quantity)
     {
         try {
             $item = $this->getOpenPoItems()->where('id', $itemId)->first();
@@ -421,16 +433,26 @@ class ConnectWiseService
             $putItem->receivedStatus = 'PartiallyReceiveCloneRest';
         }
 
-        $putItem->receivedQuantity = $quantity;
-        $putItem->closedFlag = true;
-        $response = $this->http->put("procurement/purchaseorders/{$poId}/lineitems/{$item->id}", [
+        $response = $this->purchaseOrderItemReceive($poId, $putItem, $quantity);
+
+        $this->updatePoItems($poId);
+
+        return $this->preparePoItem($poId, $response);
+    }
+
+    /**
+     * @throws GuzzleException
+     */
+    public function purchaseOrderItemReceive(int $poId, \stdClass $lineItem, $quantity)
+    {
+        $lineItem->receivedQuantity = $quantity;
+        $lineItem->closedFlag = true;
+        $response = $this->http->put("procurement/purchaseorders/{$poId}/lineitems/{$lineItem->id}", [
             'query' => [
                 'clientId' => $this->clientId
             ],
-            'json' => $putItem
+            'json' => $lineItem
         ]);
-
-        $this->updatePoItems($poId);
 
         $response = json_decode($response->getBody()->getContents());
 
@@ -473,19 +495,15 @@ class ConnectWiseService
 
     public function getProducts($page=null, $conditions=null, $pageSize=null, $customFieldConditions=null)
     {
-//        try {
-            $response = $this->http->get('procurement/products', [
-                'query' => [
-                    'page' => $page,
-                    'clientId' => $this->clientId,
-                    'conditions' => $conditions,
-                    'pageSize' => $pageSize,
-                    'customFieldConditions' => $customFieldConditions
-                ],
-            ]);
-//        } catch (GuzzleException $e) {
-//            return [];
-//        }
+        $response = $this->http->get('procurement/products', [
+            'query' => [
+                'page' => $page,
+                'clientId' => $this->clientId,
+                'conditions' => $conditions,
+                'pageSize' => $pageSize,
+                'customFieldConditions' => $customFieldConditions
+            ],
+        ]);
         return json_decode($response->getBody()->getContents());
     }
 
@@ -605,7 +623,9 @@ class ConnectWiseService
     {
         $dynamicQty = $quantity;
 
-        collect($this->getProductPickingShippingDetails($id, null, 'lineNumber != 0'))
+        $pickingShippingDetails = $this->getProductPickingShippingDetails($id, null, 'lineNumber != 0');
+
+        collect($pickingShippingDetails)
             ->filter(fn($pickShip) => $pickShip->shippedQuantity < $pickShip->pickedQuantity)
             ->map(function ($pickShip) use (&$dynamicQty) {
 
@@ -739,7 +759,7 @@ class ConnectWiseService
 
                 if ($quantity < 0) {
 
-                    // Force upship
+                    // Force unship
                     $response2 = $this->http->post(
                         "{$this->systemIO}actionprocessor/Procurement/SavePickingAndShippingAction.rails?" . $this->payloadHandler([
                             "productDetail" => [
@@ -2163,7 +2183,7 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function createAzadMayPO(Collection $bcOrderItems)
+    public function createAzadMayPO(Collection $bcOrderItems, int $departmentId)
     {
         $products = $bcOrderItems->map(function ($orderProduct) {
 
@@ -2274,7 +2294,67 @@ class ConnectWiseService
             );
         });
 
+        $purchaseOrder = $this->createPurchaseOrder(self::AZAD_MAY_ID, $departmentId);
+
+        $projects = $products->filter(fn($product) => !!@$product->project)->unique('project.id');
+        $serviceTickets = $products->filter(fn($product) => !@$product->project)->unique('ticket.id');
+
+        $purchaseOrder->poNumber = $purchaseOrder->poNumber
+            .= ($projects->count() > 0 ? ("-PROJECT-#" . $projects->pluck('project.id')->join('-#')) : "")
+            . ($serviceTickets->count() > 0 ? ("-SERVICE-TICKET-#" . $serviceTickets->pluck('ticket.id')->join('-#')) : "")
+        ;
+
+        $this->updatePurchaseOrder($purchaseOrder);
+
+        $this->addProductsToPurchaseOrder($purchaseOrder->id, $products);
+
+        collect($this->purchaseOrderItemsOriginal($purchaseOrder->id))->map(function ($poItem) use ($purchaseOrder) {
+            $this->purchaseOrderItemReceive($purchaseOrder->id, $poItem, $poItem->quantity);
+        });
+
         return $products;
+    }
+
+    public function addProductsToPurchaseOrder(int $purchaseOrderId, Collection $products)
+    {
+        $payload = [
+            "purchaseHeaderRecID" => $purchaseOrderId,
+            "demandProductList" => $products->map(function ($product) {
+                return [
+                    "warehouseRecID" => 1,
+                    "warehouseBinRecID" => 1,
+                    "dropShipFlag" => false,
+                    "specialOrderFlag" => false,
+                    "currentCost" => $product->cost,
+                    "customerAddressRecID" => 0,
+                    "customerContactRecID" => 0,
+                    "customerRecID" => 0,
+                    "ivItemRecID" => $product->catalogItem->id,
+                    "ivProductRecID" => $product->id,
+                    "ivUomRecID" => $product->unitOfMeasure->id,
+                    "ownerLevelRecID" => self::LOCATION_HOUSTON,
+                    "purchasingQuantity" => $product->quantity,
+                    "toOrderQuantity" => $product->quantity,
+                    "description" => $product->customerDescription,
+                    "internalNotes" => "",
+                    "itemDescription" => $product->description,
+                    "vendorSku" => ""
+                ];
+            })
+        ];
+
+        $response = $this->internalApiRequest(
+            'actionprocessor/Procurement/AddProductsToPurchaseOrderAction.rails',
+            $payload,
+            'AddProductsToPurchaseOrderAction',
+            'ProcurementCommon'
+        );
+
+        if (!$response->data->isSuccess) {
+            throw new \Exception(json_encode($response->data->error));
+        }
+
+        return $response;
     }
 
     public function createPurchaseOrderFromProductsForSingleProjectOrServiceTicket(Collection $products, int $vendorId)
@@ -2314,10 +2394,47 @@ class ConnectWiseService
             $payload["fromSrServiceRecID"] = $product->ticket->id; // Ticket ID
         }
 
-
-
         $response = $this->http->post("{$this->systemIO}actionprocessor/Procurement/CreatePurchaseOrderWithProductsAction.rails?" . $this->payloadHandler($payload, "CreatePurchaseOrderWithProductsAction", "ProcurementCommon"));
 
         return $response->getBody()->getContents();
+    }
+
+    public function createPurchaseOrder(int $vendorId, int $departmentId)
+    {
+
+        $json = [
+            'id' => 0,
+            "businessUnitId" => $departmentId,
+            "vendorCompany" => [
+                "id" => $vendorId,
+                "name" => ""
+            ],
+            "warehouse" => [
+                "id" => 1,
+                "name" => ""
+            ],
+            "locationId" => self::LOCATION_HOUSTON,
+            "terms" => [
+                "id" => 3
+            ],
+            "status" => [
+                "id" => 1
+            ]
+        ];
+
+        $response = $this->http->post("procurement/purchaseorders?clientId={$this->clientId}", [
+            'json' => $json
+        ]);
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function updatePurchaseOrder(\stdClass $purchaseOrder)
+    {
+        $response = $this->http->put("procurement/purchaseorders/{$purchaseOrder->id}?clientId={$this->clientId}", [
+            'json' => $purchaseOrder
+        ]);
+
+        return json_decode($response->getBody()->getContents());
     }
 }

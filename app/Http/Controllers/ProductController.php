@@ -121,7 +121,7 @@ class ProductController extends Controller
         $quantity = $request->get('quantity');
 
         try {
-            $item = $connectWiseService->purchaseOrderItemReceive($id, $quantity);
+            $item = $connectWiseService->purchaseOrderItemReceiveUsingCache($id, $quantity);
         } catch (GuzzleException $e) {
             return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())->errors[0]->message]);
         }

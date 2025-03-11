@@ -43,6 +43,7 @@ Route::prefix('/integration')->group(function () {
     ], function () {
         Route::prefix('cin7')->group(function () {
             Route::post('sale-shipment-authorized', [Cin7Controller::class, 'saleShipmentAuthorized']);
+            Route::post('available-stock-level-changed', [Cin7Controller::class, 'availableStockLevelChanged']);
         });
     });
 

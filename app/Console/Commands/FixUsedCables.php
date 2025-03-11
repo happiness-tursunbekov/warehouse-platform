@@ -35,6 +35,7 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+        //
     }
 }
 
