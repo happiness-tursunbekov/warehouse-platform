@@ -12,7 +12,7 @@ class PoPickItems extends Command
      *
      * @var string
      */
-    protected $signature = 'app:po-pick-items {--poId}';
+    protected $signature = 'app:po-pick-items {poId} {--from}';
 
     /**
      * The console command description.
@@ -26,86 +26,102 @@ class PoPickItems extends Command
      */
     public function handle(ConnectWiseService $connectWiseService)
     {
-        $poId = $this->option('poId');
+        $poId = $this->argument('poId');
+        $from = $this->option('from');
 
-        $po = $connectWiseService->purchaseOrder($poId);
+        $from = $from ? '>=' : '=';
 
-        echo "$po->poNumber\n";
+        $page=1;
 
-        collect($connectWiseService->purchaseOrderItemsOriginal($po->id, 1, 'receivedStatus="FullyReceived"'))->map(function ($poItem) use ($po, $connectWiseService) {
+        while (true) {
+            $pos = collect($connectWiseService->purchaseOrders($page, "id {$from} {$poId} and status/name!='Cancelled'", null, 'id'));
 
-            $ticket = @$connectWiseService->getPurchaseOrderItemTicketInfo($po->id, $poItem->id)[0];
+            $pos->map(function ($po) use ($connectWiseService) {
 
-            if (!$ticket) {
-                return false;
-            }
+                echo "$po->poNumber\n";
 
-            $quantity = $poItem->quantity;
+                collect($connectWiseService->purchaseOrderItemsOriginal($po->id, 1, 'receivedStatus="FullyReceived"'))->map(function ($poItem) use ($po, $connectWiseService) {
 
-            $onHand = $connectWiseService->getCatalogItemOnHand($connectWiseService->getCatalogItemByIdentifier($ticket->Item_ID)->id)->count;
+                    $ticket = @$connectWiseService->getPurchaseOrderItemTicketInfo($po->id, $poItem->id)[0];
 
-            if ($onHand == 0) {
-                return false;
-            }
-
-            if ($quantity > $onHand) {
-                $quantity = $onHand;
-            }
-
-            $products = $connectWiseService->getProductsByTicketInfo($ticket);
-
-            sleep(1);
-
-            // Checking if pick/unpick quantity matches available quantity before processing to sync
-            $results = collect($products)
-                ->map(function ($product) use (&$quantity, $connectWiseService, $po) {
-
-                    if ($quantity == 0) {
+                    if (!$ticket) {
                         return false;
                     }
 
-                    if (@$product->invoice && $connectWiseService->getInvoice($product->invoice->id)->status->isClosed) {
+                    $quantity = $poItem->quantity;
+
+                    $onHand = $connectWiseService->getCatalogItemOnHand($connectWiseService->getCatalogItemByIdentifier($ticket->Item_ID)->id)->count;
+
+                    if ($onHand == 0) {
                         return false;
                     }
 
-                    $productPoItems = collect($connectWiseService->getProductPoItems($product->id))->where('ID', $po->id);
-
-                    if (!$productPoItems->count()) {
-                        return false;
+                    if ($quantity > $onHand) {
+                        $quantity = $onHand;
                     }
 
-                    $productPickAndShips = collect($connectWiseService->getProductPickingShippingDetails($product->id));
+                    $products = $connectWiseService->getProductsByTicketInfo($ticket);
 
-                    $pickAvailableQuantity = $product->quantity - $productPickAndShips->pluck('pickedQuantity')->sum();
+                    sleep(1);
 
-                    if ($pickAvailableQuantity == 0 || $product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
-                        return false;
-                    }
+                    // Checking if pick/unpick quantity matches available quantity before processing to sync
+                    $results = collect($products)
+                        ->map(function ($product) use (&$quantity, $connectWiseService, $po) {
 
-                    $result = [
-                        'product' => $product,
-                        'quantity' => min($quantity,$pickAvailableQuantity)
-                    ];
+                            if ($quantity == 0) {
+                                return false;
+                            }
 
-                    $quantity = $quantity <= $pickAvailableQuantity ? 0 : $quantity - $pickAvailableQuantity;
+                            if (@$product->invoice && $connectWiseService->getInvoice($product->invoice->id)->status->isClosed) {
+                                return false;
+                            }
 
-                    return $result;
+                            $productPoItems = collect($connectWiseService->getProductPoItems($product->id))->where('ID', $po->id);
+
+                            if (!$productPoItems->count()) {
+                                return false;
+                            }
+
+                            $productPickAndShips = collect($connectWiseService->getProductPickingShippingDetails($product->id));
+
+                            $pickAvailableQuantity = $product->quantity - $productPickAndShips->pluck('pickedQuantity')->sum();
+
+                            if ($pickAvailableQuantity == 0 || $product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
+                                return false;
+                            }
+
+                            $result = [
+                                'product' => $product,
+                                'quantity' => min($quantity,$pickAvailableQuantity)
+                            ];
+
+                            $quantity = $quantity <= $pickAvailableQuantity ? 0 : $quantity - $pickAvailableQuantity;
+
+                            return $result;
+                        });
+
+                    // Processing syncing
+                    $results->filter(fn($results) => !!$results)
+                        ->map(function (array $result) use ($connectWiseService) {
+                            try {
+                                $connectWiseService->pickProduct($result['product']->id, $result['quantity']);
+                            } catch (\Exception $e) {
+                                echo "Error: {$result['product']->id}: {$result['quantity']}";
+
+                                throw $e;
+                            }
+
+                            echo "{$result['product']->id}:{$result['quantity']}\n";
+                        });
+
                 });
+            });
 
-            // Processing syncing
-            $results->filter(fn($results) => !!$results)
-                ->map(function (array $result) use ($connectWiseService) {
-                    try {
-                        $connectWiseService->pickProduct($result['product']->id, $result['quantity']);
-                    } catch (\Exception $e) {
-                        echo "Error: {$result['product']->id}: {$result['quantity']}";
+            if ($pos->count() < 1000) {
+                break;
+            }
 
-                        throw $e;
-                    }
-
-                    echo "{$result['product']->id}:{$result['quantity']}\n";
-                });
-
-        });
+            $page++;
+        }
     }
 }
