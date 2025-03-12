@@ -185,19 +185,17 @@ class ConnectWiseController extends Controller
 
             case ConnectWiseService::ACTION_UPDATED:
 
-                collect($connectWiseService->purchaseOrderItemsOriginal($po->id))
+                $poItems = collect($connectWiseService->purchaseOrderItemsOriginal($po->id))
                     ->filter(function ($poItem) use (&$po) {
 
                         $item = $po->items->where('id', $poItem->id)->first();
 
                         if (!$item) {
-                            $po->items()->create([
+                            $item = $po->items()->create([
                                 'id' => $poItem->id,
-                                'receivedStatus' => $poItem->receivedStatus,
+                                'receivedStatus' => PurchaseOrderItem::RECEIVED_STATUS_WAITING,
                                 'catalogItemId' => $poItem->product->id
                             ]);
-
-                            return false;
                         }
 
                         if ($item->receivedStatus == $poItem->receivedStatus) {
@@ -210,93 +208,96 @@ class ConnectWiseController extends Controller
                         }
 
                         return true;
-                    })
-                    ->map(function ($poItem) use ($bigCommerceService, $cin7Service, $po, $connectWiseService) {
+                    });
 
-                        $item = $po->items->where('id', $poItem->id)->first();
+                $po->load('items');
 
-                        $picking = $item->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_WAITING
-                            && $poItem->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_FULLY_RECEIVED;
+                $poItems->map(function ($poItem) use ($bigCommerceService, $cin7Service, $po, $connectWiseService) {
 
-                        $unpicking = $item->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_FULLY_RECEIVED
-                            && $poItem->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_WAITING;
+                    $item = $po->items->where('id', $poItem->id)->first();
 
-                        if ($picking || $unpicking) {
+                    $picking = $item->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_WAITING
+                        && $poItem->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_FULLY_RECEIVED;
 
-                            // Item_ID: Catalog Item Identifier
-                            // SR_Service_RecID: Ticket ID
-                            $ticket = $connectWiseService->getPurchaseOrderItemTicketInfo($po->id, $poItem->id)[0];
+                    $unpicking = $item->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_FULLY_RECEIVED
+                        && $poItem->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_WAITING;
 
-                            if (!$ticket) {
+                    if ($picking || $unpicking) {
+
+                        // Item_ID: Catalog Item Identifier
+                        // SR_Service_RecID: Ticket ID
+                        $ticket = $connectWiseService->getPurchaseOrderItemTicketInfo($po->id, $poItem->id)[0];
+
+                        if (!$ticket) {
+                            return false;
+                        }
+
+                        $quantity = $poItem->quantity;
+
+                        $products = collect($connectWiseService->getProductsByTicketInfo($ticket));
+
+                        // Checking if pick/unpick quantity matches available quantity before processing to sync
+                        $results = $products->map(function ($product) use ($unpicking, $picking, $bigCommerceService, $cin7Service, &$quantity, $connectWiseService, $po) {
+
+                            if ($quantity == 0) {
                                 return false;
                             }
 
-                            $quantity = $poItem->quantity;
+                            $productPoItems = collect($connectWiseService->getProductPoItems($product->id))->where('ID', $po->id);
 
-                            $products = collect($connectWiseService->getProductsByTicketInfo($ticket));
-
-                            // Checking if pick/unpick quantity matches available quantity before processing to sync
-                            $results = $products->map(function ($product) use ($unpicking, $picking, $bigCommerceService, $cin7Service, &$quantity, $connectWiseService, $po) {
-
-                                    if ($quantity == 0) {
-                                        return false;
-                                    }
-
-                                    $productPoItems = collect($connectWiseService->getProductPoItems($product->id))->where('ID', $po->id);
-
-                                    if (!$productPoItems->count()) {
-                                        return false;
-                                    }
-
-                                    $productPickAndShips = collect($connectWiseService->getProductPickingShippingDetails($product->id));
-
-                                    if ($picking) {
-
-                                        $pickAvailableQuantity = $product->quantity - $productPickAndShips->pluck('pickedQuantity')->sum();
-
-                                        if ($product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
-                                            return false;
-                                        }
-
-                                        $result = [
-                                            'product' => $product,
-                                            'quantity' => min($quantity, $pickAvailableQuantity)
-                                        ];
-
-                                        $quantity = $quantity <= $pickAvailableQuantity ? 0 : $quantity - $pickAvailableQuantity;
-
-                                        return $result;
-
-                                    }
-
-                                    // If unpicking
-                                    $unpickAvailableQuantity = $productPickAndShips->pluck('pickedQuantity')->sum() - $productPickAndShips->pluck('shippedQuantity')->sum();
-
-                                    if (!$unpickAvailableQuantity) {
-                                        return false;
-                                    }
-
-                                    $result = [
-                                        'product' => $product,
-                                        'quantity' => $quantity
-                                    ];
-
-                                    $quantity = $quantity <= $unpickAvailableQuantity ? 0 : $quantity - $unpickAvailableQuantity;
-
-                                    return $result;
-                                })
-                            ;
-
-                            // Skipping in case pick/unpick quantity is greater than available quantity
-                            if ($quantity) {
+                            if (!$productPoItems->count()) {
                                 return false;
                             }
 
-                            // Processing syncing
-                            $results->filter(fn($results) => !!$results)
-                                ->map(function (array $result) use ($item, $cin7Service, $connectWiseService, $picking) {
-                                    if ($picking) {
-                                        $connectWiseService->pickProduct($result['product']->id, $result['quantity']);
+                            $productPickAndShips = collect($connectWiseService->getProductPickingShippingDetails($product->id));
+
+                            if ($picking) {
+
+                                $pickAvailableQuantity = $product->quantity - $productPickAndShips->pluck('pickedQuantity')->sum();
+
+                                if ($product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
+                                    return false;
+                                }
+
+                                $result = [
+                                    'product' => $product,
+                                    'quantity' => min($quantity, $pickAvailableQuantity)
+                                ];
+
+                                $quantity = $quantity <= $pickAvailableQuantity ? 0 : $quantity - $pickAvailableQuantity;
+
+                                return $result;
+
+                            }
+
+                            // If unpicking
+                            $unpickAvailableQuantity = $productPickAndShips->pluck('pickedQuantity')->sum() - $productPickAndShips->pluck('shippedQuantity')->sum();
+
+                            if (!$unpickAvailableQuantity) {
+                                return false;
+                            }
+
+                            $result = [
+                                'product' => $product,
+                                'quantity' => $quantity
+                            ];
+
+                            $quantity = $quantity <= $unpickAvailableQuantity ? 0 : $quantity - $unpickAvailableQuantity;
+
+                            return $result;
+                        })
+                        ;
+
+                        // Skipping in case pick/unpick quantity is greater than available quantity
+                        if ($quantity) {
+                            return false;
+                        }
+
+                        // Processing syncing
+                        $results->filter(fn($results) => !!$results)
+                            ->map(function (array $result) use ($item, $cin7Service, $connectWiseService, $picking) {
+                                if ($picking) {
+                                    $connectWiseService->pickProduct($result['product']->id, $result['quantity']);
 
 //                                        $cin7Adjustment = $connectWiseService->publishProductOnCin7($result['product'], $result['quantity'], true, $item->cin7AdjustmentId);
 //
@@ -304,11 +305,11 @@ class ConnectWiseController extends Controller
 //                                            $item->fill(['cin7AdjustmentId' => $cin7Adjustment->TaskID])->save();
 //                                        }
 
-                                        return $result['product'];
-                                    }
+                                    return $result['product'];
+                                }
 
-                                    // If unpicking
-                                    $connectWiseService->unpickProduct($result['product']->id, $result['quantity']);
+                                // If unpicking
+                                $connectWiseService->unpickProduct($result['product']->id, $result['quantity']);
 
 //                                    if ($item->cin7AdjustmentId) {
 //                                        $cin7Service->undoStockAdjustment($item->cin7AdjustmentId);
@@ -323,15 +324,15 @@ class ConnectWiseController extends Controller
 //                                        $result['quantity']
 //                                    );
 
-                                    return $result['product'];
-                                });
+                                return $result['product'];
+                            });
 
-                            $item->fill(['receivedStatus' => $poItem->receivedStatus])->save();
+                        $item->fill(['receivedStatus' => $poItem->receivedStatus])->save();
 
-                        }
+                    }
 
-                        return false;
-                    })
+                    return false;
+                })
                 ;
 
                 return response()->json(['message' => 'Updated successfully']);

@@ -38,7 +38,7 @@ class FixUsedCables extends Command
         $page=1;
 
         while (true) {
-            $pos = collect($connectWiseService->purchaseOrders($page, 'id > 743 and status/name!="Cancelled"', null, 'id'));
+            $pos = collect($connectWiseService->purchaseOrders($page, 'id > 950 and status/name!="Cancelled"', null, 'id'));
 
             $pos->map(function ($po) use ($connectWiseService) {
 
