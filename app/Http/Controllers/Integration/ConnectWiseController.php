@@ -132,6 +132,11 @@ class ConnectWiseController extends Controller
         $entity = $request->get('Entity');
         $id = $request->get('ID');
 
+        WebhookLog::create([
+            'type' => 'PurchaseOrder',
+            'data' => $request->all()
+        ]);
+
         /** @var PurchaseOrder $po */
         $po = PurchaseOrder::find($id);
 

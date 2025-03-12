@@ -15,6 +15,11 @@ class Cin7Controller extends Controller
 {
     public function availableStockLevelChanged(Request $request, ConnectWiseService $connectWiseService)
     {
+        WebhookLog::create([
+            'type' => 'Stock/AvailableStockLevelChanged',
+            'data' => $request->post()
+        ]);
+
         return response()->json(['message' => 'Service temporarily unavailable']);
 
         $stock = collect($request->post());
@@ -57,6 +62,11 @@ class Cin7Controller extends Controller
             'OrderNumber' => ['required', 'string'],
             'EventType' => ['required', 'string'],
             'CustomerReference' => ['nullable', 'string']
+        ]);
+
+        WebhookLog::create([
+            'type' => 'Sale/ShipmentAuthorized',
+            'data' => $request->post()
         ]);
 
         return response()->json(['message' => 'Service temporarily unavailable']);
