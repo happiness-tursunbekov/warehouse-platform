@@ -273,9 +273,13 @@ class BigCommerceService
 
     public function createCategories(array $values)
     {
-        $result = $this->http->post('catalog/trees/categories?channel_id:in=1', [
-            'json' => $values,
-        ]);
+        try {
+            $result = $this->http->post('catalog/trees/categories?channel_id:in=1', [
+                'json' => $values,
+            ]);
+        } catch (\Exception $e) {
+            dd($e->getResponse()->getBody()->getContents());
+        }
 
         return json_decode($result->getBody()->getContents());
     }

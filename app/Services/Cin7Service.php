@@ -64,15 +64,11 @@ class Cin7Service
 
     public function product($id)
     {
-        try {
-            $result = $this->http->get('product', [
-                'query' => [
-                    'ID' => $id
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return new \stdClass();
-        }
+        $result = $this->http->get('product', [
+            'query' => [
+                'ID' => $id
+            ],
+        ]);
         return json_decode($result->getBody()->getContents())->Products[0];
     }
 
@@ -200,7 +196,7 @@ class Cin7Service
         return json_decode($result->getBody()->getContents())->ProductFamilies[0];
     }
 
-    public function createProduct($sku, $name, $categoryName, $uomName, $description, $price, $weight=null, $barcode=null, $defaultLocation=self::INVENTORY_AZAD_MAY)
+    public function createProduct($sku, $name, $categoryName, $uomName, $description, $price, $weight=null, $barcode=null, $defaultLocation=self::INVENTORY_AZAD_MAY, $price2=null)
     {
 
         $result = $this->http->post('product', [
@@ -214,6 +210,7 @@ class Cin7Service
                 "Description" => $description,
                 "CostingMethod" => "FIFO",
                 "PriceTier1" => $price,
+                "PriceTier2" => $price2,
                 "Type" => "Stock",
                 "WeightUnits" => "lb",
                 "Weight" => $weight,
@@ -386,7 +383,7 @@ class Cin7Service
 
     public function productAvailability($productId)
     {
-        return$this->productAvailabilities($productId)->ProductAvailabilityList[0] ?? null;
+        return $this->productAvailabilities($productId)->ProductAvailabilityList[0] ?? null;
     }
 
     public function stockAdd($productId, $quantity, $inventory=self::INVENTORY_AZAD_MAY, $cost=0.0001, $adjustmentId=null)
@@ -405,7 +402,7 @@ class Cin7Service
                 "EffectiveDate" => date('Y-m-d'),
                 "StocktakeNumber" => "ST-00001",
                 "Status" => "COMPLETED",
-                "Account" => "2550",
+                "Account" => "255",
                 "Reference" => "",
                 "Lines" => $lines
             ]

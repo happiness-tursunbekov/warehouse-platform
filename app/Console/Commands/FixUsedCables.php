@@ -35,8 +35,11 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-
-
+//        $mergedQtyArr = cache()->get('mergedQtyArr');
+//        $mergedQtyArr1 = cache()->get('mergedQtyArr1');
+//        $mergedQtyArr2 = cache()->get('mergedQtyArr2')->where('ProductID', '!=', 'bad80f11-b3eb-4f55-9e4c-4e0ce88b8cdd')->where('UnitCost' , '>', 0) ?: collect();
+//
+//        $cin7Service->stockAdjustBulk($mergedQtyArr2->values());
     }
 }
 
