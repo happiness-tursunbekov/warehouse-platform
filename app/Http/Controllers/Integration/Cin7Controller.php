@@ -138,12 +138,7 @@ class Cin7Controller extends Controller
 
                 $shipAvailableQuantity = $product->quantity - $productPickAndShips->pluck('shippedQuantity')->sum();
 
-                try {
-                    $connectWiseService->shipProduct($product->id, $shipQuantity);
-                } catch (\Exception) {
-                    // TODO: Will need to log errors
-                    return false;
-                }
+                $connectWiseService->shipProduct($product->id, $shipQuantity);
 
                 $shipQuantity = $shipQuantity <= $shipAvailableQuantity ? 0 : $shipQuantity - $shipAvailableQuantity;
 

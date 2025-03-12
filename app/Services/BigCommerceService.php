@@ -266,7 +266,7 @@ class BigCommerceService
         return $this->createCategories([
             [
                 'name' => $name,
-                'tree_id' => 1
+                'parent_id' => 0
             ]
         ])->data[0];
     }
