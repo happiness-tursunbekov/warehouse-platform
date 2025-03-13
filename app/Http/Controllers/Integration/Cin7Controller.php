@@ -20,8 +20,6 @@ class Cin7Controller extends Controller
             'data' => $request->post()
         ]);
 
-        return response()->json(['message' => 'service temporarily unavailable!']);
-
         $stock = collect($request->post());
 
         $productSku = $stock->first()['SKU'] ?? null;
