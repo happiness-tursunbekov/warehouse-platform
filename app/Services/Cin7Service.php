@@ -338,6 +338,19 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
+    public function productAvailabilityBySku($sku)
+    {
+        $result = $this->http->get('ref/productavailability', [
+            'query' => [
+                'Page' => 1,
+                'Limit' => 1,
+                'Sku' => $sku
+            ],
+        ]);
+
+        return json_decode($result->getBody()->getContents())->ProductAvailabilityList[0] ?? null;
+    }
+
     public function undoStockAdjustment($id)
     {
         $this->http->delete('stockadjustment', [

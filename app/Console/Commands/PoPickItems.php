@@ -72,10 +72,6 @@ class PoPickItems extends Command
                                 return false;
                             }
 
-                            if (@$product->invoice && $connectWiseService->getInvoice($product->invoice->id)->status->isClosed) {
-                                return false;
-                            }
-
                             $productPoItems = collect($connectWiseService->getProductPoItems($product->id))->where('ID', $po->id);
 
                             if (!$productPoItems->count()) {

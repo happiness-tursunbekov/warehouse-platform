@@ -35,13 +35,77 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+        $mergedQtyArr1 = cache()->get('mergedQtyArr1');
+
+        dd($mergedQtyArr1->where('ProductID', 'ec05505c-e2b8-4ec3-a018-912f6ea9563d'));
+
+//        $mergedQtyArr1 = cache()->get('mergedQtyArr1');
+
+//        $mergedQtyArr2 = $mergedQtyArr2->map(function ($line) use ($cin7Service) {
+//
+//            $cin7Product = $cin7Service->productBySku($line['SKU']);
+//            sleep(1);
+//            if ($cin7Product) {
+//                $line['ProductID'] = $cin7Product->ID;
+//                unset($line['SKU']);
+//            }
+//
+//            return $line;
+//        });
+//
+//        cache()->put('mergedQtyArr2', $mergedQtyArr2);
+
+//        dd($mergedQtyArr1);
+//
+//        $cin7Service->stockAdjustBulk($mergedQtyArr2->whereNotNull('ProductID')->values());
+
+
+
+//        $mergedQtyArr1 = collect();
+//        $mergedQtyArr2 = collect();
+//
+//        cache()->get('cin7adjustment')->where('SKU', '!=', 'CP-8845-K9=.')->where('UnitCost', '>', 0)->map(function ($line) use ($cin7Service, &$mergedQtyArr1, &$mergedQtyArr2) {
+//            $stock = $cin7Service->productAvailabilityBySku($line['SKU']);
+//
+//            sleep(1);
+//
+//            if ($stock && $stock->OnHand > 0) {
+//                $mergedQtyArr1->push($line);
+//            } else {
+//                $mergedQtyArr2->push($line);
+//            }
+//        });
+//
+//        cache()->put('mergedQtyArr1', $mergedQtyArr1);
+//        cache()->put('mergedQtyArr2', $mergedQtyArr2);
+
+//        $cin7Service->stockAdjustBulk($cin7adjustment->where('UnitCost', '>', 0)->filter(fn($line) => $line)->values());
+
+//        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', pageSize: 1000))->map(function ($onHand) use ($connectWiseService, &$cin7adjustment) {
+//
+//            $catalogItem = $connectWiseService->getCatalogItem($onHand->catalogItem->id);
+//
+//            $cost = $catalogItem->cost * 0.9;
+//
+//            $cin7adjustment->push([
+//                "SKU" => $catalogItem->identifier,
+//                "Quantity" => $onHand->onHand,
+//                "UnitCost" => $cost,
+//                "Location" => Cin7Service::INVENTORY_AZAD_MAY
+//            ]);
+//        });
+//
+//        cache()->put('cin7adjustment', $cin7adjustment);
+
+
+    }
+}
+
 //        $mergedQtyArr = cache()->get('mergedQtyArr');
 //        $mergedQtyArr1 = cache()->get('mergedQtyArr1');
 //        $mergedQtyArr2 = cache()->get('mergedQtyArr2')->where('ProductID', '!=', 'bad80f11-b3eb-4f55-9e4c-4e0ce88b8cdd')->where('UnitCost' , '>', 0) ?: collect();
 //
 //        $cin7Service->stockAdjustBulk($mergedQtyArr2->values());
-    }
-}
 
 //$page = 1;
 //
