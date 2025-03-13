@@ -382,7 +382,20 @@ class ProductController extends Controller
         $productId = $request->get('productId');
         $quantity = $request->get('quantity');
 
-        return $connectWiseService->productPickShip($productId, $quantity);
+        return $connectWiseService->shipProduct($productId, $quantity);
+    }
+
+    public function pick(Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'productId' => ['required', 'integer'],
+            'quantity' => ['required', 'integer', 'min:1']
+        ]);
+
+        $productId = $request->get('productId');
+        $quantity = $request->get('quantity');
+
+        return $connectWiseService->pickProduct($productId, $quantity);
     }
 
     public function unship(Request $request, ConnectWiseService $connectWiseService)

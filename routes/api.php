@@ -78,6 +78,7 @@ Route::group([
             Route::post('add-barcode', [ProductController::class, 'addBarcode']);
             Route::options('ship', [ProductController::class, 'shipOptions']);
             Route::post('ship', [ProductController::class, 'ship']);
+            Route::post('pick', [ProductController::class, 'pick']);
             Route::post('upload-po-attachment', [ProductController::class, 'uploadPoAttachment']);
             Route::get('po-items', [ProductController::class, 'poItems']);
             Route::get('po-report', [ProductController::class, 'poReport']);

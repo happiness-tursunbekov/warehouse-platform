@@ -564,7 +564,7 @@ class ConnectWiseService
     /**
      * @throws GuzzleException
      */
-    public function pickProduct($id, $quantity) : void
+    public function pickProduct($id, $quantity)
     {
         $pickShip = $this->getProductPickingShippingDetails($id)[0];
         $pickShip->pickedQuantity = (int)$quantity;
@@ -574,6 +574,8 @@ class ConnectWiseService
         $pickShip->warehouseBin->id = 1;
 
         $this->addOrUpdatePickShip($pickShip);
+
+        return $pickShip;
     }
 
     /**
@@ -632,13 +634,13 @@ class ConnectWiseService
     /**
      * @throws \Exception|GuzzleException
      */
-    public function shipProduct($id, $quantity) : void
+    public function shipProduct($id, $quantity)
     {
         $dynamicQty = $quantity;
 
         $pickingShippingDetails = $this->getProductPickingShippingDetails($id, null, 'lineNumber != 0');
 
-        collect($pickingShippingDetails)
+        $pickShips = collect($pickingShippingDetails)
             ->filter(fn($pickShip) => $pickShip->shippedQuantity < $pickShip->pickedQuantity)
             ->map(function ($pickShip) use (&$dynamicQty) {
 
@@ -666,12 +668,16 @@ class ConnectWiseService
                 }
 
                 $this->addOrUpdatePickShip($pickShip);
+
+                return $pickShip;
             })
         ;
 
         if ($dynamicQty == $quantity) {
             throw new \Exception('Shipping quantity cannot be greater than picked quantity, productId:' . $id);
         }
+
+        return $pickShips;
     }
 
     /**
