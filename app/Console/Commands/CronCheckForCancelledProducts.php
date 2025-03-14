@@ -56,7 +56,7 @@ class CronCheckForCancelledProducts extends Command
                         $catalogItem->category->name,
                         $catalogItem->unitOfMeasure->name,
                         $catalogItem->customerDescription,
-                        $product->cost * 0.9
+                        $product->cost * 0.9 * 1.07
                     );
 
                     $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $cin7Product->ID, isProductFamily: false);
