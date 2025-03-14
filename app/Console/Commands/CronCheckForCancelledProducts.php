@@ -14,7 +14,7 @@ class CronCheckForCancelledProducts extends Command
      *
      * @var string
      */
-    protected $signature = 'app:cron-check-for-on-hand-changes';
+    protected $signature = 'app:cron-check-for-cancelled-products';
 
     /**
      * The console command description.
