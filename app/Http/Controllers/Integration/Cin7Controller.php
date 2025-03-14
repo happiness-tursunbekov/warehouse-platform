@@ -20,35 +20,37 @@ class Cin7Controller extends Controller
             'data' => $request->post()
         ]);
 
-        $stock = collect($request->post());
+        collect($request->post())->unique('ID')->map(function ($stock) use ($connectWiseService) {
+            $productSku = $stock['SKU'] ?? null;
 
-        $productSku = $stock->first()['SKU'] ?? null;
+            if (!$productSku) {
+                return response()->json(['message' => 'No action']);
+            }
 
-        if (!$productSku) {
-            return response()->json(['message' => 'No action']);
-        }
+            $available = $stock['Available'];
 
-        $available = $stock->pluck('Available')->sum();
+            if (Str::contains($productSku, '-PROJECT')) {
+                return response()->json(['message' => 'No action']);
+            }
 
-        if (Str::contains($productSku, '-PROJECT')) {
-            return response()->json(['message' => 'No action']);
-        }
+            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
 
-        $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
+            if (!$catalogItem) {
+                return response()->json(['message' => 'No action']);
+            }
 
-        if (!$catalogItem) {
-            return response()->json(['message' => 'No action']);
-        }
+            $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id)->count;
 
-        $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id)->count;
+            if ($onHand == $available) {
+                return response()->json(['message' => 'No action']);
+            }
 
-        if ($onHand == $available) {
-            return response()->json(['message' => 'No action']);
-        }
+            $quantity = $available - $onHand;
 
-        $quantity = $available - $onHand;
+            $connectWiseService->catalogItemAdjust($catalogItem, $quantity);
+        });
 
-        $connectWiseService->catalogItemAdjust($catalogItem, $quantity);
+
 
         return response()->json(['message' => 'Product adjusted successfully!']);
     }
