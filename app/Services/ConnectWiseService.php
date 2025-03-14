@@ -1232,6 +1232,10 @@ class ConnectWiseService
         return $project;
     }
 
+    public function catalogItemAdjustBulk(\stdClass $catalogItem, $qty) {
+
+    }
+
     public function catalogItemAdjust(\stdClass $catalogItem, $qty, $prefix="")
     {
         $adjustmentID = date('m/d/Y') . ' - ' . time() . $prefix;

@@ -48,18 +48,21 @@ class Cin7Service
 
     public function productBySku($sku)
     {
-        try {
-            $result = $this->http->get('product', [
-                'query' => [
-                    'Page' => 1,
-                    'Limit' => 1,
-                    'sku' => $sku
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return new \stdClass();
+        $result = $this->http->get('product', [
+            'query' => [
+                'Page' => 1,
+                'Limit' => 1,
+                'sku' => $sku
+            ],
+        ]);
+
+        $product = json_decode($result->getBody()->getContents())->Products[0] ?? null;
+
+        if (!$product || Str::lower($product->SKU) != Str::lower($sku)) {
+            return null;
         }
-        return json_decode($result->getBody()->getContents())->Products[0] ?? null;
+
+        return $product;
     }
 
     public function product($id)

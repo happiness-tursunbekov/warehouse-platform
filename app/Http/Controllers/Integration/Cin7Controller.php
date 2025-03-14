@@ -47,7 +47,7 @@ class Cin7Controller extends Controller
 
             $quantity = $available - $onHand;
 
-            $connectWiseService->catalogItemAdjust($catalogItem, $quantity);
+            $connectWiseService->catalogItemAdjust($catalogItem, $quantity, $catalogItem->id);
         });
 
 
