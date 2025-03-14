@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Console\Commands;
+
+use App\Services\Cin7Service;
+use App\Services\ConnectWiseService;
+use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
+
+class CronCheckForCancelledProducts extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'app:cron-check-for-on-hand-changes';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Command description';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
+    {
+        $now = Carbon::now();
+
+        $lastChecked = cache()->get('cancelled-products-last-checked-at') ?: $now->subMinutes(5);
+
+        $time = "[" .$lastChecked->toDateTimeLocalString() . "Z]";
+
+        collect($connectWiseService->getProducts(1, "cancelledFlag=true and _info/lastUpdated > {$time}", 1000))
+            ->map(function ($product) use ($connectWiseService, $cin7Service) {
+                $onHand = $connectWiseService->getCatalogItemOnHand($product->catalogItem->id)->count;
+
+                $cin7Stock = $cin7Service->productAvailabilityBySku($product->catalogItem->identifier);
+
+                sleep(1);
+
+                if ($cin7Stock && $onHand <= $cin7Stock->Available) {
+                    return false;
+                }
+
+                $cin7Product = $cin7Service->productBySku($product->catalogItem->identifier);
+
+                if (!$cin7Product) {
+                    $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
+                    $cin7Product = $cin7Service->createProduct(
+                        $catalogItem->identifier,
+                        $catalogItem->description,
+                        $catalogItem->category->name,
+                        $catalogItem->unitOfMeasure->name,
+                        $catalogItem->customerDescription,
+                        $product->cost * 0.9
+                    );
+
+                    $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $cin7Product->ID, isProductFamily: false);
+                }
+
+                $cin7Service->stockAdjust($cin7Product->ID, $onHand + ($cin7Stock->OnHand - $cin7Stock->Available));
+
+                return true;
+            });
+
+        cache()->put('cancelled-products-last-checked-at', $now);
+    }
+}

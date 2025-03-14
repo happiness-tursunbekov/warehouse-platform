@@ -35,9 +35,19 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $mergedQtyArr1 = cache()->get('mergedQtyArr1');
+        $stock = $cin7Service->getStockAdjustment('e73df7c8-a050-4669-b3c5-c8fb0bfa7d19');
 
-        dd($mergedQtyArr1->where('ProductID', 'ec05505c-e2b8-4ec3-a018-912f6ea9563d'));
+        $stock->Status = 'COMPLETED';
+        $stock->Lines = $stock->NewStockLines;
+
+        unset($stock->NewStockLines);
+
+        $cin7Service->updateStockAdjustment($stock);
+
+
+//        $mergedQtyArr1 = cache()->get('mergedQtyArr1');
+//
+//        dd($mergedQtyArr1->where('ProductID', 'ec05505c-e2b8-4ec3-a018-912f6ea9563d'));
 
 //        $mergedQtyArr1 = cache()->get('mergedQtyArr1');
 
@@ -100,6 +110,13 @@ class FixUsedCables extends Command
 
     }
 }
+
+//$ship = $connectWiseService->getProductPickingShippingDetails(13890)[0];
+//
+//$ship->pickedQuantity = 0;
+//$ship->shippedQuantity = 0;
+//
+//dd($connectWiseService->addOrUpdatePickShip($ship));
 
 //        $mergedQtyArr = cache()->get('mergedQtyArr');
 //        $mergedQtyArr1 = cache()->get('mergedQtyArr1');

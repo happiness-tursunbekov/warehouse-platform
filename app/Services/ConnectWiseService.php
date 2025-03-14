@@ -683,7 +683,7 @@ class ConnectWiseService
     /**
      * @throws GuzzleException|\Exception
      */
-    private function addOrUpdatePickShip(\stdClass $pickShipDetail)
+    public function addOrUpdatePickShip(\stdClass $pickShipDetail)
     {
         $payload = [
             "productDetail" => [
@@ -1639,7 +1639,7 @@ class ConnectWiseService
         return $productFamily;
     }
 
-    public function syncCatalogItemAttachmentsWithCin7($catalogItemId, $cin7ProductFamilyId, $toBigCommerceAsWell=false, $catalogItem=null) : bool
+    public function syncCatalogItemAttachmentsWithCin7($catalogItemId, $cin7ProductFamilyId, $toBigCommerceAsWell=false, $catalogItem=null, $isProductFamily=true) : bool
     {
         $attachments = collect($this->getAttachments(ConnectWiseService::RECORD_TYPE_PRODUCT_SETUP, $catalogItemId));
 
@@ -1647,7 +1647,7 @@ class ConnectWiseService
             return false;
         }
 
-        $cin7Attachments = collect($this->cin7Service->productFamilyAttachments($cin7ProductFamilyId));
+        $cin7Attachments = collect($isProductFamily ? $this->cin7Service->productFamilyAttachments($cin7ProductFamilyId) : $this->cin7Service->productAttachments($cin7ProductFamilyId));
 
         $bigCommerceProduct = null;
         $bigCommerceAttachments = null;
@@ -1675,17 +1675,25 @@ class ConnectWiseService
         }
 
         $cin7Attachments->filter(fn($cin7Attachment) => !$attachments->where('fileName', $cin7Attachment->FileName)->count())
-            ->map(fn($cin7Attachment) => $this->cin7Service->deleteProductFamilyAttachment($cin7Attachment->ID));
+            ->map(fn($cin7Attachment) => $isProductFamily ? $this->cin7Service->deleteProductFamilyAttachment($cin7Attachment->ID) : $this->cin7Service->deleteProductAttachment($cin7Attachment->ID));
 
         $attachments->filter(fn($attachment) => !$cin7Attachments->where('FileName', $attachment->fileName)->count())
-            ->map(function ($attachment, $index) use ($bigCommerceAttachments, $bigCommerceProduct, $toBigCommerceAsWell, $cin7ProductFamilyId) {
+            ->map(function ($attachment, $index) use ($isProductFamily, $bigCommerceAttachments, $bigCommerceProduct, $toBigCommerceAsWell, $cin7ProductFamilyId) {
                 $file = $this->downloadAttachment($attachment->id)->getFile()->getContent();
 
-                $this->cin7Service->uploadProductFamilyAttachment(
-                    $cin7ProductFamilyId,
-                    $attachment->fileName,
-                    base64_encode($file)
-                );
+                if ($isProductFamily) {
+                    $this->cin7Service->uploadProductFamilyAttachment(
+                        $cin7ProductFamilyId,
+                        $attachment->fileName,
+                        base64_encode($file)
+                    );
+                } else {
+                    $this->cin7Service->uploadProductAttachment(
+                        $cin7ProductFamilyId,
+                        $attachment->fileName,
+                        base64_encode($file)
+                    );
+                }
 
                 if ($toBigCommerceAsWell && $bigCommerceProduct) {
                     $this->bigCommerceService->uploadProductImage(

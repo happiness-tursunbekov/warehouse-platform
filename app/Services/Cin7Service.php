@@ -271,6 +271,19 @@ class Cin7Service
                 'ID' => $attachmentId
             ]
         ]);
+
+        return true;
+    }
+
+    public function deleteProductAttachment($attachmentId)
+    {
+        $this->http->delete('product/attachments', [
+            'json' => [
+                'ID' => $attachmentId
+            ]
+        ]);
+
+        return true;
     }
 
 
@@ -298,14 +311,14 @@ class Cin7Service
         })->first();
     }
 
-    public function uploadProductAttachment($id, $fileName, $base64)
+    public function uploadProductAttachment($id, $fileName, $base64, $isDefault=false)
     {
-
         $result = $this->http->post('product/attachments', [
             'json' => [
                 "ProductID" => $id,
                 "FileName" => $fileName,
-                "Content" => $base64
+                "Content" => $base64,
+                "IsDefault" => $isDefault
             ]
         ]);
         return json_decode($result->getBody()->getContents());
@@ -313,7 +326,6 @@ class Cin7Service
 
     public function uploadProductFamilyAttachment($id, $fileName, $base64, $isDefault=false)
     {
-
         $result = $this->http->post('productFamily/attachments', [
             'json' => [
                 "FamilyID" => $id,
@@ -358,6 +370,24 @@ class Cin7Service
                 "ID" => $id
             ]
         ]);
+    }
+
+    public function updateStockAdjustment(\stdClass $stockAdjustment)
+    {
+        $this->http->put('stockadjustment', [
+            'json' => $stockAdjustment
+        ]);
+    }
+
+    public function getStockAdjustment($id)
+    {
+        $response = $this->http->get('stockadjustment', [
+            'query' => [
+                "TaskID" => $id
+            ]
+        ]);
+
+        return json_decode($response->getBody()->getContents());
     }
 
     public function stockAdjust($productId, $quantity, $inventory=self::INVENTORY_AZAD_MAY, $cost=0.0001, $adjustmentId=null)
