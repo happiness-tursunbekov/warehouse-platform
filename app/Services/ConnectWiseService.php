@@ -1374,8 +1374,8 @@ class ConnectWiseService
             $num = (int)Str::numbers($uom);
 
             if ($num) {
-                $catalogItem->price = round($catalogItem->price / 3 * $num, 2);
-                $catalogItem->cost = round($catalogItem->cost / 3 * $num, 2);
+                $catalogItem->price = round($catalogItem->price / $num / 3, 2);
+                $catalogItem->cost = round($catalogItem->cost / $num / 3, 2);
             } else {
                 $catalogItem->price = round($catalogItem->price / 3, 2);
                 $catalogItem->cost = round($catalogItem->cost / 3, 2);
@@ -1384,11 +1384,15 @@ class ConnectWiseService
 
         if (Str::contains($uom, 'ft)') || Str::contains($uom, 'usedcable')) {
             $catalogItem->identifier = $catalogItem->identifier . Str::lower("({$qty}ft)");
-            $qty = 1;
             $catalogItem->unitOfMeasure = [
                 'id' => 22,
                 'name' => 'Box (Used cable)'
             ];
+
+            $catalogItem->price *= $qty;
+            $catalogItem->cost *= $qty;
+
+            $qty = 1;
         } else {
             $catalogItem->identifier = $catalogItem->identifier . "-RF";
         }
