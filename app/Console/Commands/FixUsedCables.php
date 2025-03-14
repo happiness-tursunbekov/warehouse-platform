@@ -35,63 +35,63 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $catalogItemIdentifiers = [
-            'Wensilon 8x1-1/2',
-            '2X2VG-HDTR61',
-            '2X2VG-HDTR62',
-            'V12H804001',
-            'SMS2B',
-            'SMART1500LCD',
-            'NYC-633',
-            '0023630',
-            '0023830',
-            '12101-701',
-            'B08HZJ627G',
-            'B08HZJ627G-RF',
-            'EMT400',
-            'M-46-v',
-            'M-46-FW',
-            'V-9022A-2',
-            'VIP78',
-            'B0072JVT02',
-            'SFP-10G-SR-S',
-            '12101-701',
-            '3312617902',
-            'D-CIJ3',
-            'LTB762',
-            'V-1246',
-            '6P4P24-BL-P-BER-AP-NS',
-            '129454',
-            'X003Y8Y5ST'
-        ];
-
-        $lines = collect($connectWiseService->getCatalogItems(1, 'identifier in ("' . implode('","', $catalogItemIdentifiers) . '")', pageSize: 1000))
-            ->map(function ($catalogItem) use ($cin7Service, $connectWiseService) {
-
-                $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
-
-                if (!$cin7Product) {
-                    $cin7Product = $cin7Service->createProduct(
-                        $catalogItem->identifier,
-                        $catalogItem->description,
-                        $catalogItem->category->name,
-                        $catalogItem->unitOfMeasure->name,
-                        $catalogItem->customerDescription,
-                        $catalogItem->cost * 0.9 * 1.07
-                    );
-                }
-
-                $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id)->count;
-
-                return [
-                    "ProductID" => $cin7Product->ID,
-                    "Quantity" => $onHand,
-                    "UnitCost" => $catalogItem->cost * 0.9,
-                    "Location" => Cin7Service::INVENTORY_AZAD_MAY
-                ];
-            })->toArray();
-
-        $cin7Service->stockAdjustBulk($lines);
+//        $catalogItemIdentifiers = [
+//            'Wensilon 8x1-1/2', //
+//            '2X2VG-HDTR61', //
+//            '2X2VG-HDTR62', //
+//            'V12H804001', //
+//            'SMS2B',
+//            'SMART1500LCD', //
+//            'NYC-633', //
+//            '0023630', //
+//            '0023830', //
+//            '12101-701',
+//            'B08HZJ627G', //
+//            'B08HZJ627G-RF', //
+//            'EMT400', //
+//            'M-46-v',
+//            'M-46-FW', //
+//            'V-9022A-2', //
+//            'VIP78', //
+//            'B0072JVT02', //
+//            'SFP-10G-SR-S', //
+//            '12101-701', //
+//            '3312617902', //
+//            'D-CIJ3', //
+//            'LTB762', //
+//            'V-1246', //
+//            '6P4P24-BL-P-BER-AP-NS', //
+//            '129454', //
+//            'X003Y8Y5ST' //
+//        ];
+//
+//        $lines = collect($connectWiseService->getCatalogItems(1, 'identifier in ("' . implode('","', $catalogItemIdentifiers) . '")', pageSize: 1000))
+//            ->map(function ($catalogItem) use ($cin7Service, $connectWiseService) {
+//
+//                $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
+//
+//                if (!$cin7Product) {
+//                    $cin7Product = $cin7Service->createProduct(
+//                        $catalogItem->identifier,
+//                        $catalogItem->description,
+//                        $catalogItem->category->name,
+//                        $catalogItem->unitOfMeasure->name,
+//                        $catalogItem->customerDescription,
+//                        $catalogItem->cost * 0.9 * 1.07
+//                    );
+//                }
+//
+//                $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id)->count;
+//
+//                return [
+//                    "ProductID" => $cin7Product->ID,
+//                    "Quantity" => $onHand,
+//                    "UnitCost" => $catalogItem->cost * 0.9,
+//                    "Location" => Cin7Service::INVENTORY_AZAD_MAY
+//                ];
+//            })->toArray();
+//
+//        $cin7Service->stockAdjustBulk($lines);
 
 //        $stock = $cin7Service->getStockAdjustment('e73df7c8-a050-4669-b3c5-c8fb0bfa7d19');
 //

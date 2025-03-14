@@ -1232,8 +1232,53 @@ class ConnectWiseService
         return $project;
     }
 
-    public function catalogItemAdjustBulk(\stdClass $catalogItem, $qty) {
+    public function catalogItemAdjustBulk(Collection $adjustmentDetails, string $reason="Quantity update") {
+        $adjustmentID = date('m/d/Y') . ' - ' . time();
 
+        $json = json_decode("
+        {
+            \"id\": 0,
+            \"identifier\": \"{$adjustmentID}\",
+            \"type\": {
+                \"id\": 1
+            },
+            \"reason\": \"{$reason}\",
+            \"closedFlag\": true
+        }
+        ");
+
+        $json->adjustmentDetails = $adjustmentDetails->values()->toArray();
+
+        try {
+            $response = $this->http->post('procurement/adjustments?clientId=' . $this->clientId, [
+                'json' => $json
+            ]);
+        } catch (GuzzleException $e) {
+            abort(500, $e->getResponse()->getBody()->getContents());
+        }
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function convertCatalogItemToAdjustmentDetail(\stdClass $catalogItem, $qty)
+    {
+        return json_decode("
+            {
+                \"id\": 0,
+                \"catalogItem\": {
+                    \"id\": {$catalogItem->id}
+                },
+                \"description\": \"Updating quantity\",
+                \"unitCost\": {$catalogItem->cost},
+                \"warehouse\": {
+                    \"id\": 1
+                },
+                \"warehouseBin\": {
+                    \"id\": 1
+                },
+                \"quantityAdjusted\": {$qty}
+            }
+        ");
     }
 
     public function catalogItemAdjust(\stdClass $catalogItem, $qty, $prefix="")
@@ -1329,8 +1374,8 @@ class ConnectWiseService
             $num = (int)Str::numbers($uom);
 
             if ($num) {
-                $catalogItem->price = round($catalogItem->price / $num / 3, 2);
-                $catalogItem->cost = round($catalogItem->cost / $num / 3, 2);
+                $catalogItem->price = round($catalogItem->price / 3 * $num, 2);
+                $catalogItem->cost = round($catalogItem->cost / 3 * $num, 2);
             } else {
                 $catalogItem->price = round($catalogItem->price / 3, 2);
                 $catalogItem->cost = round($catalogItem->cost / 3, 2);
@@ -1344,9 +1389,6 @@ class ConnectWiseService
                 'id' => 22,
                 'name' => 'Box (Used cable)'
             ];
-
-            $catalogItem->price *= $qty;
-            $catalogItem->cost *= $qty;
         } else {
             $catalogItem->identifier = $catalogItem->identifier . "-RF";
         }
