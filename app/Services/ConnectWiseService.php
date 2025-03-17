@@ -21,6 +21,9 @@ class ConnectWiseService
     const DEFAULT_WAREHOUSE = 1;
     const AZAD_MAY_WAREHOUSE = 2;
 
+    const DEFAULT_WAREHOUSE_DEFAULT_BIN = 1;
+    const AZAD_MAY_WAREHOUSE_DEFAULT_BIN = 31;
+
     const RECORD_TYPE_PRODUCT_SETUP = 'ProductSetup';
 
     const AZAD_MAY_ID = 19945;
@@ -1288,6 +1291,8 @@ class ConnectWiseService
     {
         $adjustmentID = date('m/d/Y') . ' - ' . time() . $prefix;
 
+        $defaultBinId = $warehouseId == self::DEFAULT_WAREHOUSE ? self::DEFAULT_WAREHOUSE_DEFAULT_BIN : self::AZAD_MAY_WAREHOUSE_DEFAULT_BIN;
+
         $adjustment = json_decode("
         {
             \"id\": 0,
@@ -1317,11 +1322,7 @@ class ConnectWiseService
                         \"id\": {$warehouseId}
                     },
                     \"warehouseBin\": {
-                        \"id\": 1,
-                        \"name\": \"Default Bin\",
-                        \"_info\": {
-                            \"warehouseBin_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/warehouseBins/1\"
-                        }
+                        \"id\": {$defaultBinId}
                     },
                     \"quantityAdjusted\": {$qty},
                     \"adjustment\": {
