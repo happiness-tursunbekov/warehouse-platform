@@ -35,6 +35,77 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+        dd($cin7Service->webhooks());
+
+//        $qty = cache()->get('quantities')->filter(fn($line) => $line['SKU'] != '00301349');
+
+//        $lines = cache()->get('lines');
+//
+//        $take = $lines->map(function ($line) {
+//
+//            $line['Quantity'] = 0;
+//
+//            return $line;
+//        });
+//
+//        $cin7Service->stockAdjustBulk($take->values()->toArray());
+//        $cin7Service->stockAdjustBulk($lines->values()->toArray());
+
+//        $qty->map(function ($line) use (&$lines, $cin7Service) {
+//            $product = $cin7Service->productBySku($line['SKU']);
+//            sleep(1);
+//            if (!$product) {
+//                return false;
+//            }
+//
+//            $line['ProductID'] = $product->ID;
+//
+//            unset($line['SKU']);
+//
+//            $lines->push($line);
+//        });
+//
+//        cache()->put('lines', $lines);
+
+//        $lines = $qty->map(function ($line) {
+//
+//            $line['Quantity'] = 0;
+//
+//            return $line;
+//        });
+//
+//        $cin7Service->stockAdjustBulk($lines->values()->toArray());
+//        $cin7Service->stockAdjustBulk($qty->values()->toArray());
+
+//        $productPrices = collect();
+//
+//        $stock = $cin7Service->getStockAdjustment('52652423-70cb-446c-bc7c-768cae1f783d');
+//
+//        $stock->Status = 'COMPLETED';
+//        $stock->Lines = array_map(function ($line) use ($connectWiseService, $cin7Service, &$productPrices) {
+//
+//            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($line->SKU);
+//
+//            try {
+//                $line->UnitCost = $catalogItem->cost * 0.9;
+//            } catch (\Exception) {
+//                abort(500, $line->SKU);
+//            }
+//
+//            $productPrices->push([
+//                'ID' => $line->ProductID,
+//                'PriceTier1' => $line->UnitCost * 1.07
+//            ]);
+//
+//            return $line;
+//        }, $stock->NewStockLines);
+//
+//        cache()->put('productPrices', $productPrices);
+//
+//        unset($stock->NewStockLines);
+//
+//        $cin7Service->updateStockAdjustment($stock);
+
 //        $catalogItemIdentifiers = [
 //            'Wensilon 8x1-1/2', //
 //            '2X2VG-HDTR61', //

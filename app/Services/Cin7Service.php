@@ -77,17 +77,14 @@ class Cin7Service
 
     public function productFamilies($page=1, $limit=100, $sku=null)
     {
-        try {
-            $result = $this->http->get('productFamily', [
-                'query' => [
-                    'Page' => $page,
-                    'Limit' => $limit,
-                    'Sku' => $sku
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return new \stdClass();
-        }
+        $result = $this->http->get('productFamily', [
+            'query' => [
+                'Page' => $page,
+                'Limit' => $limit,
+                'Sku' => $sku
+            ],
+        ]);
+
         return json_decode($result->getBody()->getContents());
     }
 
@@ -526,6 +523,13 @@ class Cin7Service
                 'SaleID' => $saleId
             ],
         ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function webhooks()
+    {
+        $result = $this->http->get('webhooks');
 
         return json_decode($result->getBody()->getContents());
     }

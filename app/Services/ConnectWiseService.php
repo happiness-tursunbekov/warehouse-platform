@@ -18,6 +18,9 @@ class ConnectWiseService
     const ACTION_UPDATED = 'updated';
     const ACTION_DELETED = 'deleted';
 
+    const DEFAULT_WAREHOUSE = 1;
+    const AZAD_MAY_WAREHOUSE = 2;
+
     const RECORD_TYPE_PRODUCT_SETUP = 'ProductSetup';
 
     const AZAD_MAY_ID = 19945;
@@ -1281,7 +1284,7 @@ class ConnectWiseService
         ");
     }
 
-    public function catalogItemAdjust(\stdClass $catalogItem, $qty, $prefix="")
+    public function catalogItemAdjust(\stdClass $catalogItem, $qty, $prefix="", $warehouseId=self::DEFAULT_WAREHOUSE)
     {
         $adjustmentID = date('m/d/Y') . ' - ' . time() . $prefix;
 
@@ -1319,11 +1322,7 @@ class ConnectWiseService
                         }
                     },
                     \"warehouseBin\": {
-                        \"id\": 1,
-                        \"name\": \"Default Bin\",
-                        \"_info\": {
-                            \"warehouseBin_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/warehouseBins/1\"
-                        }
+                        \"id\": {$warehouseId}
                     },
                     \"quantityAdjusted\": {$qty},
                     \"adjustment\": {
@@ -1932,6 +1931,21 @@ class ConnectWiseService
             $conditions .= " and project/id={$ticket->PM_Project_RecID}";
         } else {
             $conditions .= " and salesOrder/id={$ticket->Order_Header_RecID}";
+        }
+
+        return $this->getProducts(null, $conditions, 1000);
+    }
+
+    public function getProductsBy($identifier, $ticketId, $projectId, $salesOrderId=null)
+    {
+        $conditions = "catalogItem/identifier='{$identifier}' and cancelledFlag=false";
+
+        if ($ticketId) {
+            $conditions .= " and ticket/id={$ticketId}";
+        } elseif ($projectId) {
+            $conditions .= " and project/id={$projectId}";
+        } else {
+            $conditions .= " and salesOrder/id={$salesOrderId}";
         }
 
         return $this->getProducts(null, $conditions, 1000);

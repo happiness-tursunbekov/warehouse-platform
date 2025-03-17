@@ -47,10 +47,8 @@ class Cin7Controller extends Controller
 
             $quantity = $available - $onHand;
 
-            $connectWiseService->catalogItemAdjust($catalogItem, $quantity, $catalogItem->id);
+            $connectWiseService->catalogItemAdjust($catalogItem, $quantity, $catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE);
         });
-
-
 
         return response()->json(['message' => 'Product adjusted successfully!']);
     }
@@ -68,8 +66,6 @@ class Cin7Controller extends Controller
             'type' => 'Sale/ShipmentAuthorized',
             'data' => $request->post()
         ]);
-
-        return response()->json(['message' => 'Service temporarily unavailable']);
 
         $bigCommerceOrderId = $request->get('CustomerReference');
 
@@ -144,7 +140,7 @@ class Cin7Controller extends Controller
 
                 return $product;
 
-            }, $connectWiseService->getProductsByTicketInfo($catalogItemIdentifier, $ticketId, $projectId));
+            }, $connectWiseService->getProductsBy($catalogItemIdentifier, $ticketId, $projectId));
 
             return $item;
 
