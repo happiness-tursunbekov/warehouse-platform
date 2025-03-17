@@ -13,7 +13,7 @@
                         <th scope="col">Barcode</th>
                         <th scope="col">Description</th>
                         <th scope="col">Category</th>
-                        <th scope="col" class="text-nowrap">On Hand</th>
+                        <th scope="col" class="text-nowrap">On Hand (Azad May)</th>
                         <th scope="col">Photos</th>
                         <th scope="col">Price</th>
                         <th scope="col">Cost</th>

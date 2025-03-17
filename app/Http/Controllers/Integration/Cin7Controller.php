@@ -20,35 +20,40 @@ class Cin7Controller extends Controller
             'data' => $request->post()
         ]);
 
-        collect($request->post())->unique('ID')->map(function ($stock) use ($connectWiseService) {
-            $productSku = $stock['SKU'] ?? null;
+        $adjustmentDetails = collect($request->post())
+            ->unique('ID')
+            ->map(function ($stock) use ($connectWiseService) {
+                $productSku = $stock['SKU'] ?? null;
 
-            if (!$productSku) {
-                return response()->json(['message' => 'No action']);
-            }
+                if (!$productSku) {
+                    return false;
+                }
 
-            $available = $stock['Available'];
+                $available = $stock['Available'];
 
-            if (Str::contains($productSku, '-PROJECT')) {
-                return response()->json(['message' => 'No action']);
-            }
+                if (Str::contains($productSku, '-PROJECT')) {
+                    return false;
+                }
 
-            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
+                $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
 
-            if (!$catalogItem) {
-                return response()->json(['message' => 'No action']);
-            }
+                if (!$catalogItem) {
+                    return false;
+                }
 
-            $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id)->count;
+                $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id)->count;
 
-            if ($onHand == $available) {
-                return response()->json(['message' => 'No action']);
-            }
+                if ($onHand == $available) {
+                    return false;
+                }
 
-            $quantity = $available - $onHand;
+                $quantity = $available - $onHand;
 
-            $connectWiseService->catalogItemAdjust($catalogItem, $quantity, $catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE);
-        });
+                return $connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, $quantity, ConnectWiseService::AZAD_MAY_WAREHOUSE);
+            })
+            ->filter(fn($detail) => !!$detail);
+
+        $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Azad May Available Quantity Changed');
 
         return response()->json(['message' => 'Product adjusted successfully!']);
     }

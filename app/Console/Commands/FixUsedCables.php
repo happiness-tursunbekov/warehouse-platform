@@ -37,14 +37,37 @@ class FixUsedCables extends Command
     {
         $onHands = cache()->get('onHands') ?: collect();
 
-        $adjustmentDetails = $onHands->map(function ($onHand) use ($connectWiseService) {
+        $start = false;
+
+        $onHands->map(function ($onHand) use ($cin7Service, $connectWiseService, &$start) {
+
+            if ($onHand->catalogItem->identifier == 'LIC-ENT-3YR (Do not use)') {
+                $start = true;
+            }
+
+            if (!$start) {
+                return false;
+            }
 
             $catalogItem = $connectWiseService->getCatalogItem($onHand->catalogItem->id);
 
-            return $connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, $onHand->onHand, 2);
-        });
+            $product = $cin7Service->productBySku($catalogItem->identifier);
+            sleep(1);
 
-        $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Moving to Azad May Warehouse');
+            if (!$product) {
+                return false;
+            }
+
+            $price = $catalogItem->cost * 0.9 * 1.07;
+
+            $cin7Service->updateProduct([
+                'ID' => $product->ID,
+                'PriceTier1' => $price
+            ]);
+            sleep(1);
+
+            echo "$catalogItem->identifier\n";
+        });
 
 //        $qty = cache()->get('quantities')->filter(fn($line) => $line['SKU'] != '00301349');
 
