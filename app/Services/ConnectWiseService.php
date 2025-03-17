@@ -1314,15 +1314,14 @@ class ConnectWiseService
                     \"description\": \"Updating quantity\",
                     \"unitCost\": {$catalogItem->cost},
                     \"warehouse\": {
-                        \"id\": 1,
-                        \"name\": \"Warehouse\",
-                        \"lockedFlag\": false,
-                        \"_info\": {
-                            \"warehouse_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/warehouses/1\"
-                        }
+                        \"id\": {$warehouseId}
                     },
                     \"warehouseBin\": {
-                        \"id\": {$warehouseId}
+                        \"id\": 1,
+                        \"name\": \"Default Bin\",
+                        \"_info\": {
+                            \"warehouseBin_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/warehouseBins/1\"
+                        }
                     },
                     \"quantityAdjusted\": {$qty},
                     \"adjustment\": {
