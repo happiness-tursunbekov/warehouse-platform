@@ -1266,8 +1266,10 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function convertCatalogItemToAdjustmentDetail(\stdClass $catalogItem, $qty)
+    public function convertCatalogItemToAdjustmentDetail(\stdClass $catalogItem, $qty, $warehouseId=self::DEFAULT_WAREHOUSE)
     {
+        $defaultBinId = $warehouseId == self::DEFAULT_WAREHOUSE ? self::DEFAULT_WAREHOUSE_DEFAULT_BIN : self::AZAD_MAY_WAREHOUSE_DEFAULT_BIN;
+
         return json_decode("
             {
                 \"id\": 0,
@@ -1277,10 +1279,10 @@ class ConnectWiseService
                 \"description\": \"Updating quantity\",
                 \"unitCost\": {$catalogItem->cost},
                 \"warehouse\": {
-                    \"id\": 1
+                    \"id\": {$warehouseId}
                 },
                 \"warehouseBin\": {
-                    \"id\": 1
+                    \"id\": {$defaultBinId}
                 },
                 \"quantityAdjusted\": {$qty}
             }
@@ -1470,7 +1472,7 @@ class ConnectWiseService
     public function getProductCatalogOnHand($page=null, $conditions=null, $fields=null, $pageSize=25)
     {
         try {
-            $response = $this->http->get('procurement/warehouseBins/1/inventoryOnHand', [
+            $response = $this->http->get('procurement/warehouseBins/31/inventoryOnHand', [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,

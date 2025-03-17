@@ -35,7 +35,16 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        dd($cin7Service->webhooks());
+        $onHands = cache()->get('onHands') ?: collect();
+
+        $adjustmentDetails = $onHands->map(function ($onHand) use ($connectWiseService) {
+
+            $catalogItem = $connectWiseService->getCatalogItem($onHand->catalogItem->id);
+
+            return $connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, $onHand->onHand, 2);
+        });
+
+        $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Moving to Azad May Warehouse');
 
 //        $qty = cache()->get('quantities')->filter(fn($line) => $line['SKU'] != '00301349');
 
