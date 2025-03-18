@@ -35,10 +35,22 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('75BDL4152E/00');
 
-        $newLines = cache()->get('new-lines');
+        $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
 
-        dd($newLines);
+        if (!$cin7Product) {
+            $cin7Product = $cin7Service->createProduct(
+                $catalogItem->identifier,
+                $catalogItem->description,
+                $catalogItem->category->name,
+                $catalogItem->unitOfMeasure->name,
+                $catalogItem->customerDescription,
+                $catalogItem->cost * 0.9 * 1.07
+            );
+        }
+
+        $cin7Service->stockAdjust($cin7Product->ID, 14, cost: $catalogItem->cost * 0.9);
 
 //        $lines = cache()->get('lines') ?: collect();
 //
