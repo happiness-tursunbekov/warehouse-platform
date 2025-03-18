@@ -1734,13 +1734,15 @@ class ConnectWiseService
                     $this->cin7Service->uploadProductFamilyAttachment(
                         $cin7ProductFamilyId,
                         $attachment->fileName,
-                        base64_encode($file)
+                        base64_encode($file),
+                        $index == 0
                     );
                 } else {
                     $this->cin7Service->uploadProductAttachment(
                         $cin7ProductFamilyId,
                         $attachment->fileName,
-                        base64_encode($file)
+                        base64_encode($file),
+                        $index == 0
                     );
                 }
 
@@ -1749,7 +1751,7 @@ class ConnectWiseService
                         $bigCommerceProduct->id,
                         $file,
                         $attachment->fileName,
-                        !$index && !$bigCommerceAttachments->count());
+                        !$index && $bigCommerceAttachments->count() == 0);
                 }
             });
 

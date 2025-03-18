@@ -35,22 +35,46 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('75BDL4152E/00');
+        $lines = cache()->get('lines') ?: collect();
 
-        $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
+        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000))->map(function ($onHand) use ($cin7Service, $connectWiseService, $lines) {
 
-        if (!$cin7Product) {
-            $cin7Product = $cin7Service->createProduct(
-                $catalogItem->identifier,
-                $catalogItem->description,
-                $catalogItem->category->name,
-                $catalogItem->unitOfMeasure->name,
-                $catalogItem->customerDescription,
-                $catalogItem->cost * 0.9 * 1.07
-            );
-        }
+            if ($lines->where('SKU', $onHand->catalogItem->identifier)->first()) {
+                return false;
+            }
 
-        $cin7Service->stockAdjust($cin7Product->ID, 14, cost: $catalogItem->cost * 0.9);
+            $product = $cin7Service->productBySku($onHand->catalogItem->identifier);
+
+            sleep(1);
+
+            if (!$product) {
+                return false;
+            }
+
+            $connectWiseService->syncCatalogItemAttachmentsWithCin7($onHand->catalogItem->id, $product->ID, false,null, false);
+            sleep(1);
+            echo "{$onHand->catalogItem->identifier}\n";
+        });
+
+
+
+
+//        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('ACS300');
+//
+//        $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
+//
+//        if (!$cin7Product) {
+//            $cin7Product = $cin7Service->createProduct(
+//                $catalogItem->identifier,
+//                $catalogItem->description,
+//                $catalogItem->category->name,
+//                $catalogItem->unitOfMeasure->name,
+//                $catalogItem->customerDescription,
+//                $catalogItem->cost * 0.9 * 1.07
+//            );
+//        }
+//
+//        $cin7Service->stockAdjust($cin7Product->ID, 14, cost: $catalogItem->cost * 0.9);
 
 //        $lines = cache()->get('lines') ?: collect();
 //

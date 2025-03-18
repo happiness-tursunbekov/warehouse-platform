@@ -48,8 +48,8 @@ class Cin7Controller extends Controller
                         $product->SKU,
                         $product->Name,
                         $category,
-                        $stock['StockOnHand'] / $stock['OnHand'],
-                        $stock['StockOnHand'] / $stock['OnHand'],
+                        $product->PriceTier1,
+                        $product->PriceTier1,
                         $product->UOM,
                         customerDescription: $product->Description
                     );
