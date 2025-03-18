@@ -35,39 +35,76 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $onHands = cache()->get('onHands') ?: collect();
+        $stock = $cin7Service->getStockAdjustment('64efc6e3-3230-4913-ba1a-e6a8b990ddbd');
 
-        $start = false;
+        $stock->Status = 'COMPLETED';
+        $stock->Lines = array_map(function ($line) use ($connectWiseService, $cin7Service) {
 
-        $onHands->map(function ($onHand) use ($cin7Service, $connectWiseService, &$start) {
+            return $line;
+        }, $stock->NewStockLines);
 
-            if ($onHand->catalogItem->identifier == 'LIC-ENT-3YR (Do not use)') {
-                $start = true;
-            }
+        unset($stock->NewStockLines);
 
-            if (!$start) {
-                return false;
-            }
+        $cin7Service->updateStockAdjustment($stock);
 
-            $catalogItem = $connectWiseService->getCatalogItem($onHand->catalogItem->id);
 
-            $product = $cin7Service->productBySku($catalogItem->identifier);
-            sleep(1);
+//        $lines = cache()->get('lines') ?: collect();
 
-            if (!$product) {
-                return false;
-            }
+//        $lines->map(function ($line) use ($cin7Service, &$newLines) {
+//
+//            unset($line['SKU'])
+//
+//            return $line;
+//        });
 
-            $price = $catalogItem->cost * 0.9 * 1.07;
 
-            $cin7Service->updateProduct([
-                'ID' => $product->ID,
-                'PriceTier1' => $price
-            ]);
-            sleep(1);
+//        $take = $lines->map(function ($line) {
+//
+//            $line['Quantity'] = 0;
+//
+//            return $line;
+//        });
+//
+//        $cin7Service->stockAdjustBulk($lines->values()->toArray());
+//        $cin7Service->stockAdjustBulk($lines->values()->toArray());
 
-            echo "$catalogItem->identifier\n";
-        });
+
+//
+//        $costs->map(function ($cost) use ($connectWiseService) {
+//            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($cost->productId);
+//
+//            $catalogItem->cost = $cost->cost;
+//
+//            $connectWiseService->updateCatalogItem($catalogItem);
+//        });
+
+//        $onHands = cache()->get('onHands') ?: collect();
+//
+//        $adjustment = $cin7Service->getStockAdjustment('52652423-70cb-446c-bc7c-768cae1f783d');
+//
+//        dd($adjustment);
+
+//        $onHands->map(function ($onHand) use ($cin7Service, $connectWiseService) {
+//
+//            $catalogItem = $connectWiseService->getCatalogItem($onHand->catalogItem->id);
+//
+//            $product = $cin7Service->productBySku($catalogItem->identifier);
+//            sleep(1);
+//
+//            if (!$product) {
+//                return false;
+//            }
+//
+//            $price = $catalogItem->cost * 0.9 * 1.07;
+//
+//            $cin7Service->updateProduct([
+//                'ID' => $product->ID,
+//                'PriceTier1' => $price
+//            ]);
+//            sleep(1);
+//
+//            echo "$catalogItem->identifier\n";
+//        });
 
 //        $qty = cache()->get('quantities')->filter(fn($line) => $line['SKU'] != '00301349');
 

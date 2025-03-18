@@ -263,7 +263,7 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function getCatalogItemOnHand($id)
+    public function getCatalogItemOnHand($id, $warehouseBinId=self::DEFAULT_WAREHOUSE_DEFAULT_BIN)
     {
         try {
             $response = $this->http->get("procurement/catalog/{$id}/quantityOnHand", [

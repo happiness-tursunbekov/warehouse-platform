@@ -15,10 +15,10 @@ class Cin7Controller extends Controller
 {
     public function availableStockLevelChanged(Request $request, ConnectWiseService $connectWiseService)
     {
-        WebhookLog::create([
-            'type' => 'Stock/AvailableStockLevelChanged',
-            'data' => $request->post()
-        ]);
+//        WebhookLog::create([
+//            'type' => 'Stock/AvailableStockLevelChanged',
+//            'data' => $request->post()
+//        ]);
 
         $adjustmentDetails = collect($request->post())
             ->unique('ID')
@@ -41,7 +41,7 @@ class Cin7Controller extends Controller
                     return false;
                 }
 
-                $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id)->count;
+                $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)->count;
 
                 if ($onHand == $available) {
                     return false;
