@@ -1708,6 +1708,10 @@ class ConnectWiseService
 
             $bigCommerceProduct = $this->bigCommerceService->getProductBySku($this->generateProductFamilySku($catalogItem->identifier));
 
+            if (!$bigCommerceProduct) {
+                return false;
+            }
+
             $bigCommerceAttachments = collect($this->bigCommerceService->getProductImages($bigCommerceProduct->id)->data);
 
             if ($bigCommerceProduct && $bigCommerceAttachments->count() > 0) {
