@@ -81,7 +81,7 @@ class Cin7Service
             'query' => [
                 'Page' => $page,
                 'Limit' => $limit,
-                'Sku' => $sku
+                'SKU' => $sku
             ],
         ]);
 
