@@ -15,10 +15,10 @@ class Cin7Controller extends Controller
 {
     public function availableStockLevelChanged(Request $request, ConnectWiseService $connectWiseService)
     {
-//        WebhookLog::create([
-//            'type' => 'Stock/AvailableStockLevelChanged',
-//            'data' => $request->post()
-//        ]);
+        WebhookLog::create([
+            'type' => 'Stock/AvailableStockLevelChanged',
+            'data' => $request->post()
+        ]);
 
         $adjustmentDetails = collect($request->post())
             ->unique('ID')
