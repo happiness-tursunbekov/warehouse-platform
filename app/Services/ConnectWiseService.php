@@ -269,7 +269,7 @@ class ConnectWiseService
             $response = $this->http->get("procurement/catalog/{$id}/quantityOnHand", [
                 'query' => [
                     'clientId' => $this->clientId,
-                    'warehouseBinId' => 1
+                    'warehouseBinId' => $warehouseBinId
                 ]
             ]);
         } catch (GuzzleException $e) {
