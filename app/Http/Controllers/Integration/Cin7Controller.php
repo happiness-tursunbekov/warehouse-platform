@@ -53,7 +53,9 @@ class Cin7Controller extends Controller
             })
             ->filter(fn($detail) => !!$detail);
 
-        $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Azad May Available Quantity Changed');
+        if ($adjustmentDetails->count() > 0) {
+            $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Azad May Available Quantity Changed');
+        }
 
         return response()->json(['message' => 'Product adjusted successfully!']);
     }
