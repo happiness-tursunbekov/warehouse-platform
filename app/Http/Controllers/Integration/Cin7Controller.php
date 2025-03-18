@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 class Cin7Controller extends Controller
 {
-    public function availableStockLevelChanged(Request $request, ConnectWiseService $connectWiseService)
+    public function availableStockLevelChanged(Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
     {
         WebhookLog::create([
             'type' => 'Stock/AvailableStockLevelChanged',
@@ -22,7 +22,7 @@ class Cin7Controller extends Controller
 
         $adjustmentDetails = collect($request->post())
             ->unique('ID')
-            ->map(function ($stock) use ($connectWiseService) {
+            ->map(function ($stock) use ($connectWiseService, $cin7Service) {
                 $productSku = $stock['SKU'] ?? null;
 
                 if (!$productSku) {
@@ -38,7 +38,23 @@ class Cin7Controller extends Controller
                 $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
 
                 if (!$catalogItem) {
-                    return false;
+
+                    $product = $cin7Service->product($stock['ID']);
+
+                    $category = new \stdClass();
+
+                    $category->id = 0;
+                    $category->name = $product->Category;
+
+                    $catalogItem = $connectWiseService->createCatalogItem(
+                        $product->SKU,
+                        $product->Name,
+                        $category,
+                        $stock['StockOnHand'] / $stock['OnHand'],
+                        $stock['StockOnHand'] / $stock['OnHand'],
+                        $product->UOM,
+                        customerDescription: $product->Description
+                    );
                 }
 
                 $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)->count;

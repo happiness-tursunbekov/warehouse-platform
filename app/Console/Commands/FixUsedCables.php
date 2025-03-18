@@ -35,20 +35,42 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $stock = $cin7Service->getStockAdjustment('64efc6e3-3230-4913-ba1a-e6a8b990ddbd');
 
-        $stock->Status = 'COMPLETED';
-        $stock->Lines = array_map(function ($line) use ($connectWiseService, $cin7Service) {
+        $newLines = cache()->get('new-lines');
 
-            return $line;
-        }, $stock->NewStockLines);
-
-        unset($stock->NewStockLines);
-
-        $cin7Service->updateStockAdjustment($stock);
-
+        dd($newLines);
 
 //        $lines = cache()->get('lines') ?: collect();
+//
+//        $newLines = collect();
+//
+//        $stock = $cin7Service->getStockAdjustment('52652423-70cb-446c-bc7c-768cae1f783d');
+//        array_map(function ($line) use ($connectWiseService, $cin7Service, &$newLines, $lines) {
+//
+//            if ($lines->where('ProductID', $line->ProductID)->first()) {
+//                return false;
+//            }
+//
+//            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($line->SKU);
+//
+//            $cin7OnHand = $cin7Service->productAvailability($line->ProductID);
+//
+//            if (!$cin7OnHand) {
+//                return false;
+//            }
+//
+//            $newLines->push([
+//                "ProductID" => $line->ProductID,
+//                "SKU" => $line->SKU,
+//                "Quantity" => $cin7OnHand->OnHand,
+//                "UnitCost" => $catalogItem->cost * 0.9,
+//                "Location" => Cin7Service::INVENTORY_AZAD_MAY
+//            ]);
+//
+//            return $line;
+//        }, $stock->NewStockLines);
+//
+//        cache()->put('new-lines', $newLines);
 
 //        $lines->map(function ($line) use ($cin7Service, &$newLines) {
 //
