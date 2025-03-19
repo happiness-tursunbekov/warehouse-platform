@@ -579,7 +579,16 @@ class ConnectWiseService
         $pickShip->quantity = (int)$quantity;
         $pickShip->warehouseBin->id = 1;
 
-        $this->addOrUpdatePickShip($pickShip);
+        try {
+            $this->addOrUpdatePickShip($pickShip);
+        } catch (\Exception $e) {
+            if (Str::contains($e->getMessage(), 'There are 0 items on hand')) {
+                sleep(5);
+                $this->addOrUpdatePickShip($pickShip);
+            } else {
+                throw $e;
+            }
+        }
 
         return $pickShip;
     }
@@ -1469,10 +1478,10 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function getProductCatalogOnHand($page=null, $conditions=null, $fields=null, $pageSize=25)
+    public function getProductCatalogOnHand($page=null, $conditions=null, $fields=null, $pageSize=25, $warehouseBinId=self::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)
     {
         try {
-            $response = $this->http->get('procurement/warehouseBins/31/inventoryOnHand', [
+            $response = $this->http->get("procurement/warehouseBins/{$warehouseBinId}/inventoryOnHand", [
                 'query' => [
                     'page' => $page,
                     'clientId' => $this->clientId,

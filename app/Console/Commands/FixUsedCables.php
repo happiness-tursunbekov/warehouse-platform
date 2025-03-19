@@ -35,6 +35,10 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+        $onHands = $connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000, ConnectWiseService::DEFAULT_WAREHOUSE_DEFAULT_BIN);
+
+        dd($onHands);
+
 //        $products = collect($bigCommerceService->getProducts(3, 250)->data);
 //
 //        $channels = [];
@@ -61,22 +65,22 @@ class FixUsedCables extends Command
 //        $bigCommerceService->setProductCategoriesBulk($categories);
 
 
-        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('TX-J2');
-
-        $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
-
-        if (!$cin7Product) {
-            $cin7Product = $cin7Service->createProduct(
-                $catalogItem->identifier,
-                $catalogItem->description,
-                $catalogItem->category->name,
-                $catalogItem->unitOfMeasure->name,
-                $catalogItem->customerDescription,
-                $catalogItem->cost * 0.9 * 1.07
-            );
-        }
-
-        $cin7Service->stockAdjust($cin7Product->ID, 1, cost: $catalogItem->cost * 0.9);
+//        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('TX-J2');
+//
+//        $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
+//
+//        if (!$cin7Product) {
+//            $cin7Product = $cin7Service->createProduct(
+//                $catalogItem->identifier,
+//                $catalogItem->description,
+//                $catalogItem->category->name,
+//                $catalogItem->unitOfMeasure->name,
+//                $catalogItem->customerDescription,
+//                $catalogItem->cost * 0.9 * 1.07
+//            );
+//        }
+//
+//        $cin7Service->stockAdjust($cin7Product->ID, 1, cost: $catalogItem->cost * 0.9);
 
 //        $lines = cache()->get('lines') ?: collect();
 //
