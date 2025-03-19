@@ -4,6 +4,7 @@ namespace App\Services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class Cin7Service
@@ -516,7 +517,7 @@ class Cin7Service
         return $product;
     }
 
-    public function saleOrder($saleId)
+    public function salesOrder($saleId)
     {
         $result = $this->http->get('sale/order', [
             'query' => [
@@ -538,9 +539,40 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
+    public function createSale($customerName)
+    {
+        $result = $this->http->post('sale', [
+            'json' => [
+                'Customer' => $customerName,
+                'Location' => self::INVENTORY_AZAD_MAY,
+                'AutoPickPackShipMode' => "AUTOPICK"
+            ]
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
     public function webhooks()
     {
         $result = $this->http->get('webhooks');
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function createSalesQuote($saleId, array $purchaseOrderItems)
+    {
+        $result = $this->http->post('sale/quote', [
+            'json' => [
+                'SaleID' => $saleId,
+                'Status' => 'AUTHORISED',
+                'Lines' => array_map(function (\stdClass $poItem) {
+                    return [
+                        'SKU' => $poItem->product->identifier,
+                        'Quantity' => $poItem->quantity
+                    ];
+                }, $purchaseOrderItems)
+            ],
+        ]);
 
         return json_decode($result->getBody()->getContents());
     }
