@@ -34,8 +34,11 @@ class CronCheckForCancelledProducts extends Command
 
         $time = "[" .$lastChecked->toDateTimeLocalString() . "Z]";
 
+        $adjustmentDetails = collect();
+        $adjustmentLines = collect();
+
         collect($connectWiseService->getProducts(1, "cancelledFlag=true and _info/lastUpdated > {$time}", 1000))
-            ->map(function ($product) use ($connectWiseService, $cin7Service) {
+            ->map(function ($product) use ($connectWiseService, $cin7Service, &$adjustmentDetails, &$adjustmentLines) {
                 $onHand = $connectWiseService->getCatalogItemOnHand($product->catalogItem->id)->count;
 
                 $cin7Stock = $cin7Service->productAvailabilityBySku($product->catalogItem->identifier);
@@ -62,12 +65,19 @@ class CronCheckForCancelledProducts extends Command
                     $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $cin7Product->ID, isProductFamily: false);
                 }
 
-                $cin7Service->stockAdjust($cin7Product->ID, $onHand + ($cin7Stock->OnHand - $cin7Stock->Available));
-
-                $connectWiseService->catalogItemAdjustBulk($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, 0), 'Taking to Azad May');
+                $adjustmentLines->push($cin7Service->convertProductToAdjustmentLine($cin7Product->ID, $onHand + ($cin7Stock->OnHand ?? 0), cost: $cin7Product->PriceTier1));
+                $adjustmentDetails->push($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $onHand));
 
                 return true;
             });
+
+        if ($adjustmentLines->count() > 0) {
+            $cin7Service->stockAdjustBulk($adjustmentLines);
+        }
+
+        if ($adjustmentDetails->count() > 0) {
+            $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Taking to Azad May');
+        }
 
         cache()->put('cancelled-products-last-checked-at', $now);
     }

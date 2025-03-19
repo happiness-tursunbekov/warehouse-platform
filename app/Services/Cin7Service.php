@@ -439,6 +439,16 @@ class Cin7Service
         return $this->stockAdjust($productId, $quantity, $inventory, $cost, $adjustmentId);
     }
 
+    public function convertProductToAdjustmentLine(int $productId, $quantity, $inventory=self::INVENTORY_AZAD_MAY, $cost=0.0001)
+    {
+        return [
+            "ProductID" => $productId,
+            "Quantity" => $quantity,
+            "UnitCost" => $cost,
+            "Location" => $inventory
+        ];
+    }
+
     public function stockAdjustBulk($lines)
     {
         $result = $this->http->post('stockadjustment', [
