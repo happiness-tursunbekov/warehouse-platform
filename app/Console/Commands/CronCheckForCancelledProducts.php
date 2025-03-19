@@ -37,19 +37,13 @@ class CronCheckForCancelledProducts extends Command
         collect($connectWiseService->getProducts(1, "cancelledFlag=true and _info/lastUpdated > {$time}", 1000))
             ->map(function ($product) use ($connectWiseService, $cin7Service) {
                 $onHand = $connectWiseService->getCatalogItemOnHand($product->catalogItem->id)->count;
-
-                $cin7Stock = $cin7Service->productAvailabilityBySku($product->catalogItem->identifier);
-
-                sleep(1);
-
-                if ($cin7Stock && $onHand <= $cin7Stock->Available) {
-                    return false;
-                }
+                $onHandAzadMay = $connectWiseService->getCatalogItemOnHand($product->catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)->count;
 
                 $cin7Product = $cin7Service->productBySku($product->catalogItem->identifier);
+                sleep(1);
+                $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
 
                 if (!$cin7Product) {
-                    $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
                     $cin7Product = $cin7Service->createProduct(
                         $catalogItem->identifier,
                         $catalogItem->description,
@@ -62,7 +56,11 @@ class CronCheckForCancelledProducts extends Command
                     $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $cin7Product->ID, isProductFamily: false);
                 }
 
-                $cin7Service->stockAdjust($cin7Product->ID, $onHand + ($cin7Stock->OnHand - $cin7Stock->Available));
+                $cin7Service->stockAdjust($cin7Product->ID, $onHand + $onHandAzadMay);
+
+                if ($onHand > 0) {
+                    $connectWiseService->catalogItemAdjustBulk($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $onHand), 'Taking to Azad May');
+                }
 
                 return true;
             });
