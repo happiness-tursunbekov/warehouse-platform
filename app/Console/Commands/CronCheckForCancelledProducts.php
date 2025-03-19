@@ -37,6 +37,11 @@ class CronCheckForCancelledProducts extends Command
         collect($connectWiseService->getProducts(1, "cancelledFlag=true and _info/lastUpdated > {$time}", 1000))
             ->map(function ($product) use ($connectWiseService, $cin7Service) {
                 $onHand = $connectWiseService->getCatalogItemOnHand($product->catalogItem->id)->count;
+
+                if ($onHand == 0) {
+                    return false;
+                }
+
                 $onHandAzadMay = $connectWiseService->getCatalogItemOnHand($product->catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)->count;
 
                 $cin7Product = $cin7Service->productBySku($product->catalogItem->identifier);
