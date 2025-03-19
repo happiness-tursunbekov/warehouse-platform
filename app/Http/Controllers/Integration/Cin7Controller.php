@@ -101,7 +101,7 @@ class Cin7Controller extends Controller
 
         $purchaseOrder = $connectWiseService->purchaseOrders(1, cin7SalesOrderId: $salesOrderId)[0] ?? null;
 
-        if (!$purchaseOrder) {
+        if ($purchaseOrder) {
             return response()->json(['message' => 'Purchase order for this sales order already exists!']);
         }
 
