@@ -527,6 +527,17 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
+    public function sale($saleId)
+    {
+        $result = $this->http->get('sale', [
+            'query' => [
+                'ID' => $saleId
+            ],
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
     public function webhooks()
     {
         $result = $this->http->get('webhooks');

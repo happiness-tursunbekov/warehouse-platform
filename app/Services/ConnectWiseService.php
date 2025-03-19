@@ -278,7 +278,7 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function purchaseOrders($page=null, $conditions=null, $fields=null, $orderBy=null, $pageSize=1000, int $cin7SalesOrderId=null)
+    public function purchaseOrders($page=null, $conditions=null, $fields=null, $orderBy=null, $pageSize=1000, string $cin7SalesOrderId=null)
     {
         $response = $this->http->get('procurement/purchaseorders', [
             'query' => [

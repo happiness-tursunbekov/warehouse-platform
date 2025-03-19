@@ -36,6 +36,10 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
+        $so = $cin7Service->sale('bc9106ef-2fa0-4b13-9c74-41bcd69fc69b');
+
+        dd($so);
+
 //        $onHands = $connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000, ConnectWiseService::DEFAULT_WAREHOUSE_DEFAULT_BIN);
 //
 //        dd($onHands);
