@@ -123,7 +123,7 @@ class Cin7Controller extends Controller
                 $departmentId = $connectWiseService->getSystemDepartments(1, 'name contains "*Team A*"')[0]->id;
             }
 
-            $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts, $departmentId);
+            $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts, $departmentId, $salesOrderId);
 
             $cwProducts->map(function ($cwProduct) use ($connectWiseService) {
                 $connectWiseService->pickAndShipProduct($cwProduct->id, $cwProduct->quantity);
