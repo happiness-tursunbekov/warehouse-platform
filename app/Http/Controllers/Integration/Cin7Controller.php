@@ -41,8 +41,11 @@ class Cin7Controller extends Controller
 
                     $product = $cin7Service->product($stock['ID']);
 
-                    $category = new \stdClass();
-                    $category->name = $product->Category;
+                    $category = $connectWiseService->getCategories(1, "name='{$product->Category}'", null, 1)[0] ?? null;
+
+                    if (!$category) {
+                        return false;
+                    }
 
                     $catalogItem = $connectWiseService->createCatalogItem(
                         $product->SKU,
