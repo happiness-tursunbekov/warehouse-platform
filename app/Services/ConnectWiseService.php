@@ -2176,7 +2176,7 @@ class ConnectWiseService
             "calculatedPriceFlag" => false,
             "calculatedCostFlag" => false,
             "category" => [
-                "id" => $category->id ?? null,
+                "id" => @$category->id ?: 0,
                 "name" => $category->name
             ],
             "markupFlag" => false,

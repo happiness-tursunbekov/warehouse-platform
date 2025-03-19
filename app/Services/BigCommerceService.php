@@ -561,6 +561,13 @@ class BigCommerceService
         ]);
     }
 
+    public function setProductChannelsBulk(array $productIdsChannelIds)
+    {
+        $this->http->put("catalog/products/channel-assignments", [
+            'json' => $productIdsChannelIds
+        ]);
+    }
+
     public function deleteProductChannels($productId, $channelId)
     {
         $this->http->delete("catalog/products/channel-assignments", [
@@ -580,6 +587,13 @@ class BigCommerceService
                     'product_id' => $productId
                 ];
             }, $categoryIds)
+        ]);
+    }
+
+    public function setProductCategoriesBulk(array $productIdsCategoryIds)
+    {
+        $this->http->put("catalog/products/category-assignments", [
+            'json' => $productIdsCategoryIds
         ]);
     }
 
