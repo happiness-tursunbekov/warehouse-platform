@@ -1133,7 +1133,7 @@ class ConnectWiseService
     {
         $purchaseOrder = $this->setCustomFieldValue($purchaseOrder, 'Cin7 SalesOrder ID', $salesOrderId);
 
-        $this->updateCatalogItem($purchaseOrder);
+        $this->updatePurchaseOrder($purchaseOrder);
 
         return $purchaseOrder;
     }
