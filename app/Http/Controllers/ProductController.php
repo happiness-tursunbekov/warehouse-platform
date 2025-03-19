@@ -96,7 +96,7 @@ class ProductController extends Controller
 
     public function onHand($id, ConnectWiseService $connectWiseService)
     {
-        return response()->json($connectWiseService->getCatalogItemOnHand($id)->count);
+        return response()->json($connectWiseService->getCatalogItemOnHand($id, ConnectWiseService::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)->count);
     }
 
     public function images($id, ConnectWiseService $connectWiseService)
