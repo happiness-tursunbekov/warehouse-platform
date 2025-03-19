@@ -91,10 +91,18 @@ class Cin7Controller extends Controller
             'data' => $request->post()
         ]);
 
+        $salesOrderId = $request->get('SaleTaskID');
+
         $bigCommerceOrderId = $request->get('CustomerReference');
 
         if (!$bigCommerceOrderId || !($bigCommerceOrder = $bigCommerceService->getOrder($bigCommerceOrderId)) || $bigCommerceOrder->channel_id != 1) {
-            return null;
+            return response()->json(['message' => "Sales order doesn't belong to Binyod!"]);
+        }
+
+        $purchaseOrder = $connectWiseService->purchaseOrders(1, cin7SalesOrderId: $salesOrderId)[0] ?? null;
+
+        if (!$purchaseOrder) {
+            return response()->json(['message' => 'Purchase order for this sales order already exists!']);
         }
 
         $bigCommerceOrderProducts = collect($bigCommerceService->getOrderProducts($bigCommerceOrder->id));
@@ -169,5 +177,7 @@ class Cin7Controller extends Controller
             return $item;
 
         });
+
+        return response()->json(['message' => 'Sales order handled successfully!']);
     }
 }

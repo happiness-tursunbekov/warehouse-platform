@@ -278,22 +278,19 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function purchaseOrders($page=null, $conditions=null, $fields=null, $orderBy=null, $pageSize=1000)
+    public function purchaseOrders($page=null, $conditions=null, $fields=null, $orderBy=null, $pageSize=1000, int $cin7SalesOrderId=null)
     {
-        try {
-            $response = $this->http->get('procurement/purchaseorders', [
-                'query' => [
-                    'page' => $page,
-                    'clientId' => $this->clientId,
-                    'conditions' => $conditions,
-                    'fields' => $fields,
-                    'pageSize' => $pageSize,
-                    'orderBy' => $orderBy
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return [];
-        }
+        $response = $this->http->get('procurement/purchaseorders', [
+            'query' => [
+                'page' => $page,
+                'clientId' => $this->clientId,
+                'conditions' => $conditions,
+                'fields' => $fields,
+                'pageSize' => $pageSize,
+                'orderBy' => $orderBy,
+                'customFieldConditions' => $cin7SalesOrderId ? "caption='Cin7 SalesOrder ID' and value='{$cin7SalesOrderId}'" : null
+            ],
+        ]);
         return json_decode($response->getBody()->getContents());
     }
 
@@ -1108,6 +1105,11 @@ class ConnectWiseService
         return $values;
     }
 
+    public function extractCin7SalesOrderId(\stdClass $purchaseOrder)
+    {
+        return $this->extractCustomFieldValueByName($purchaseOrder, 'Cin7 SalesOrder ID');
+    }
+
     public function extractCin7ProductId(\stdClass $catalogItem)
     {
         return $this->extractCustomFieldValueByName($catalogItem, 'Cin7 Product ID');
@@ -1125,6 +1127,15 @@ class ConnectWiseService
         $this->updateCatalogItem($catalogItem);
 
         return $catalogItem;
+    }
+
+    public function updatePurchaseOrderCin7SalesOrderId(\stdClass $purchaseOrder, $salesOrderId)
+    {
+        $purchaseOrder = $this->setCustomFieldValue($purchaseOrder, 'Cin7 SalesOrder ID', $salesOrderId);
+
+        $this->updateCatalogItem($purchaseOrder);
+
+        return $purchaseOrder;
     }
 
     public function updateCatalogItemCin7ProductFamilyId(\stdClass $catalogItem, $productFamilyId)
@@ -2214,7 +2225,7 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function createAzadMayPO(Collection $bcOrderItems, int $departmentId)
+    public function createAzadMayPO(Collection $bcOrderItems, int $departmentId, string $cin7SalesOrderId)
     {
         $products = $bcOrderItems->map(function ($orderProduct) {
 
@@ -2327,6 +2338,8 @@ class ConnectWiseService
 
         $purchaseOrder = $this->createPurchaseOrder(self::AZAD_MAY_ID, $departmentId);
 
+        $this->updatePurchaseOrderCin7SalesOrderId($purchaseOrder, $cin7SalesOrderId);
+
         $projects = $products->filter(fn($product) => !!@$product->project)->unique('project.id');
         $serviceTickets = $products->filter(fn($product) => !@$product->project)->unique('ticket.id');
 
@@ -2352,7 +2365,7 @@ class ConnectWiseService
 
             $payload = [
                 "purchaseHeaderRecID" => $purchaseOrderId,
-                "demandProductList" => [
+                "demandProductList" => [[
                     "warehouseRecID" => 1,
                     "warehouseBinRecID" => 1,
                     "dropShipFlag" => false,
@@ -2371,7 +2384,7 @@ class ConnectWiseService
                     "internalNotes" => "",
                     "itemDescription" => $product->description,
                     "vendorSku" => ""
-                ]
+                ]]
 
             ];
 
