@@ -2346,12 +2346,13 @@ class ConnectWiseService
         return $products;
     }
 
-    public function addProductsToPurchaseOrder(int $purchaseOrderId, Collection $products)
+    public function addProductsToPurchaseOrder(int $purchaseOrderId, Collection $products) : array
     {
-        $payload = [
-            "purchaseHeaderRecID" => $purchaseOrderId,
-            "demandProductList" => $products->map(function ($product) {
-                return [
+        return $products->map(function ($product) use ($purchaseOrderId) {
+
+            $payload = [
+                "purchaseHeaderRecID" => $purchaseOrderId,
+                "demandProductList" => [
                     "warehouseRecID" => 1,
                     "warehouseBinRecID" => 1,
                     "dropShipFlag" => false,
@@ -2370,22 +2371,23 @@ class ConnectWiseService
                     "internalNotes" => "",
                     "itemDescription" => $product->description,
                     "vendorSku" => ""
-                ];
-            })
-        ];
+                ]
 
-        $response = $this->internalApiRequest(
-            'actionprocessor/Procurement/AddProductsToPurchaseOrderAction.rails',
-            $payload,
-            'AddProductsToPurchaseOrderAction',
-            'ProcurementCommon'
-        );
+            ];
 
-        if (!$response->data->isSuccess) {
-            throw new \Exception(json_encode($response->data->error));
-        }
+            $response = $this->internalApiRequest(
+                'actionprocessor/Procurement/AddProductsToPurchaseOrderAction.rails',
+                $payload,
+                'AddProductsToPurchaseOrderAction',
+                'ProcurementCommon'
+            );
 
-        return $response;
+            if (!$response->data->isSuccess) {
+                throw new \Exception(json_encode($response->data->error));
+            }
+
+            return $response;
+        })->toArray();
     }
 
     public function createPurchaseOrderFromProductsForSingleProjectOrServiceTicket(Collection $products, int $vendorId)

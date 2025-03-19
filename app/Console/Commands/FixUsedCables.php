@@ -35,34 +35,34 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $onHands = $connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000, ConnectWiseService::DEFAULT_WAREHOUSE_DEFAULT_BIN);
+//        $onHands = $connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000, ConnectWiseService::DEFAULT_WAREHOUSE_DEFAULT_BIN);
+//
+//        dd($onHands);
 
-        dd($onHands);
+        $products = collect($bigCommerceService->getProducts(3, 250)->data);
 
-//        $products = collect($bigCommerceService->getProducts(3, 250)->data);
-//
-//        $channels = [];
-//        $categories = [];
-//
-//        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000))->map(function ($onHand) use ($bigCommerceService, $products, &$channels, &$categories) {
-//
-//            $product = $products->where('sku', $onHand->catalogItem->identifier)->first();
-//
-//            if ($product) {
-//                $channels[] = [
-//                    'channel_id' => 1,
-//                    'product_id' => $product->id
-//                ];
-//
-//                $categories[] = [
-//                    'category_id' => 332,
-//                    'product_id' => $product->id
-//                ];
-//            }
-//        });
-//
-//        $bigCommerceService->setProductChannelsBulk($channels);
-//        $bigCommerceService->setProductCategoriesBulk($categories);
+        $channels = [];
+        $categories = [];
+
+        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000))->map(function ($onHand) use ($bigCommerceService, $products, &$channels, &$categories) {
+
+            $product = $products->where('sku', $onHand->catalogItem->identifier)->first();
+
+            if ($product) {
+                $channels[] = [
+                    'channel_id' => 1,
+                    'product_id' => $product->id
+                ];
+
+                $categories[] = [
+                    'category_id' => 332,
+                    'product_id' => $product->id
+                ];
+            }
+        });
+
+        $bigCommerceService->setProductChannelsBulk($channels);
+        $bigCommerceService->setProductCategoriesBulk($categories);
 
 
 //        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('TX-J2');
