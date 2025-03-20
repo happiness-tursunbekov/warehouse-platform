@@ -549,14 +549,25 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function createSale($customerName)
+    public function createSale($customerName, $customerReference=null)
     {
         $result = $this->http->post('sale', [
             'json' => [
                 'Customer' => $customerName,
                 'Location' => self::INVENTORY_AZAD_MAY,
-                'AutoPickPackShipMode' => "AUTOPICK"
+                'AutoPickPackShipMode' => "AUTOPICK",
+                'CustomerReference' => $customerReference,
+                'SkipQuote' => false
             ]
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function updateSale(array|\stdClass $sale)
+    {
+        $result = $this->http->put('sale', [
+            'json' => $sale
         ]);
 
         return json_decode($result->getBody()->getContents());
@@ -569,21 +580,61 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function createSalesQuote($saleId, array $purchaseOrderItems)
+    public function createSalesQuote($saleId, array $purchaseOrderItems, string $memo=null)
     {
-        $result = $this->http->post('sale/quote', [
-            'json' => [
-                'SaleID' => $saleId,
-                'Status' => 'AUTHORISED',
-                'Lines' => array_map(function (\stdClass $poItem) {
-                    return [
-                        'SKU' => $poItem->product->identifier,
-                        'Quantity' => $poItem->quantity
-                    ];
-                }, $purchaseOrderItems)
-            ],
-        ]);
+        try {
+            $result = $this->http->post('sale/quote', [
+                'json' => [
+                    'SaleID' => $saleId,
+                    'Memo' => $memo,
+                    'Status' => 'AUTHORISED',
+                    'CombineAdditionalCharges' => false,
+                    'Lines' => array_map(function (\stdClass $poItem) {
+
+                        $product = $this->productBySku($poItem->product->identifier);
+
+                        return [
+                            'ProductID' => $product->ID,
+                            'Quantity' => $poItem->quantity,
+                            'TaxRule' => 'Tax Exempt',
+                            'Price' => $product->PriceTier1,
+                            'Total' => round($product->PriceTier1 * $poItem->quantity, 2)
+                        ];
+                    }, $purchaseOrderItems)
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            dd($e->getResponse()->getBody()->getContents());
+        }
 
         return json_decode($result->getBody()->getContents());
+    }
+
+    public function customer($name)
+    {
+        $result = $this->http->get('customer', [
+            'query' => [
+                'Name' => $name
+            ]
+        ]);
+
+        return json_decode($result->getBody()->getContents())->CustomerList[0] ?? null;
+    }
+
+    public function createCustomer($name)
+    {
+        $result = $this->http->post('customer', [
+            'json' => [
+                'Name' => $name,
+                'Status' => 'Active',
+                'Currency' => 'USD',
+                'PaymentTerm' => '15 days',
+                'AccountReceivable' => '120',
+                'RevenueAccount' => '400',
+                'TaxRule' => 'Tax Exempt'
+            ]
+        ]);
+
+        return json_decode($result->getBody()->getContents())->CustomerList[0] ?? null;
     }
 }

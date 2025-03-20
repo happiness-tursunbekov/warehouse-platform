@@ -2281,7 +2281,7 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
-    public function createAzadMayPO(Collection $bcOrderItems, int $departmentId, string $cin7SalesOrderId)
+    public function createAzadMayPO(Collection $bcOrderItems, int $departmentId, string $cin7SalesOrderId, &$createdPO=null)
     {
         $products = $bcOrderItems->map(function ($orderProduct) {
 
@@ -2411,6 +2411,9 @@ class ConnectWiseService
         collect($this->purchaseOrderItemsOriginal($purchaseOrder->id))->map(function ($poItem) use ($purchaseOrder) {
             $this->purchaseOrderItemReceive($purchaseOrder->id, $poItem, $poItem->quantity);
         });
+
+
+        $createdPO = $purchaseOrder;
 
         return $products;
     }

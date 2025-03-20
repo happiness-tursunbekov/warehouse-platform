@@ -140,32 +140,36 @@ class ConnectWiseController extends Controller
         // If vendor is Azad May
         if ($entity['vendorCompany']['id'] == ConnectWiseService::AZAD_MAY_ID) {
 
-            // TODO: Finish Quoting part
+            if ($entity['status']['name'] != 'Sent to Vendor') {
+                return response()->json(['message' => 'No action']);
+            }
 
-//            if ($entity['status']['name'] != 'Sent to Vendor') {
-//                return response()->json(['message' => 'No action']);
-//            }
-//
-//            $purchaseOrder = $connectWiseService->purchaseOrder($id);
-//
-//            $poItems = $connectWiseService->purchaseOrderItems($id);
-//
-//            $cin7SalesOrderId = $connectWiseService->extractCin7SalesOrderId($purchaseOrder);
-//
-//            $cin7SalesOrder = $cin7SalesOrderId ? $cin7Service->salesOrder($cin7SalesOrderId) : null;
-//
-//            if (!$cin7SalesOrder) {
-//
-//                $customerName = 'Binyod';
-//
-//                if (Str::contains($entity['businessUnit']['name'], 'Team')) {
-//                    $customerName .= ' Team' . explode('Team', $entity['businessUnit']['name'])[1];
-//                }
-//
-//                $cin7Sale = $cin7Service->createSale($customerName);
-//
-//                $cin7Service->createSalesQuote($cin7Sale->ID, $poItems);
-//            }
+            $purchaseOrder = $connectWiseService->purchaseOrder($id);
+
+            $poItems = $connectWiseService->purchaseOrderItemsOriginal($id);
+
+            $cin7SalesOrderId = $connectWiseService->extractCin7SalesOrderId($purchaseOrder);
+
+            $cin7SalesOrder = $cin7SalesOrderId ? $cin7Service->salesOrder($cin7SalesOrderId) : null;
+
+            if (!$cin7SalesOrder) {
+
+                $customerName = 'Binyod';
+
+                if (Str::contains($entity['businessUnit']['name'], 'Team')) {
+                    $customerName .= ' Team' . explode('Team', $entity['businessUnit']['name'])[1];
+                }
+
+                if (!$cin7Service->customer($customerName)) {
+                    $cin7Service->createCustomer($customerName);
+                }
+
+                $cin7Sale = $cin7Service->createSale($customerName, "ConnectWise PO: {$entity['poNumber']}");
+
+                $connectWiseService->updatePurchaseOrderCin7SalesOrderId($purchaseOrder, $cin7Sale->ID);
+
+                $cin7Service->createSalesQuote($cin7Sale->ID, $poItems);
+            }
 
             return response()->json(['message' => 'Azad May Purchase']);
         }

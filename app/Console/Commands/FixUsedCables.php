@@ -36,6 +36,18 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
+        $connectWiseService->updatePurchaseOrderCin7SalesOrderId($connectWiseService->purchaseOrder(1022), '');
+
+//        $cin7Service->updateSale([
+//            'ID' => 'e64c8bad-a394-46b4-a515-713c2055b33b',
+//            'CustomerReference' => 'ConnectWise PO: 1069-PROJECT-#275-#186'
+//        ]);
+//
+//        $cin7Service->sale([
+//            'ID' => 'e64c8bad-a394-46b4-a515-713c2055b33b',
+//            'CustomerReference' => 'ConnectWise PO: 1069-PROJECT-#275-#186'
+//        ]);
+
 //        $onHands = $connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000, ConnectWiseService::DEFAULT_WAREHOUSE_DEFAULT_BIN);
 //
 //        dd($onHands);
