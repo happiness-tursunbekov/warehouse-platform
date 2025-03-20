@@ -86,10 +86,10 @@ class Cin7Controller extends Controller
             'CustomerReference' => ['nullable', 'string']
         ]);
 
-//        WebhookLog::create([
-//            'type' => 'Sale/ShipmentAuthorized',
-//            'data' => $request->post()
-//        ]);
+        WebhookLog::create([
+            'type' => 'Sale/ShipmentAuthorized',
+            'data' => $request->post()
+        ]);
 
         $salesOrderId = $request->get('SaleTaskID');
 
