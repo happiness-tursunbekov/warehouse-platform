@@ -436,7 +436,7 @@ class ConnectWiseService
             $putItem->receivedStatus = 'PartiallyReceiveCloneRest';
         }
 
-        $response = $this->purchaseOrderItemReceive($poId, $putItem, $quantity);
+        $response = $this->preparePoItem($poId, $this->purchaseOrderItemReceive($poId, $putItem, $quantity));
 
         $this->updatePoItems($poId);
 
@@ -457,9 +457,7 @@ class ConnectWiseService
             'json' => $lineItem
         ]);
 
-        $response = json_decode($response->getBody()->getContents());
-
-        return $this->preparePoItem($poId, $response);
+        return json_decode($response->getBody()->getContents());
     }
 
     public function findItemFromPos($itemIdentifier)
@@ -2129,9 +2127,67 @@ class ConnectWiseService
             "poApprovedFlag" => true
         ];
 
-        $response = $this->http->post("procurement/products?clientId={$this->clientId}", [
-            'json' => $json
-        ]);
+        try {
+            $response = $this->http->post("procurement/products?clientId={$this->clientId}", [
+                'json' => $json
+            ]);
+        } catch (GuzzleException $e) {
+            $errContent = $e->getResponse()->getBody()->getContents();
+
+            if (Str::contains($errContent, 'This opportunity is closed and cannot be edited')) {
+                // Using internal api to create product
+
+                $payload = [
+                    "model" => [
+                        "taxable_Flag" => true,
+                        "warehouse" => [
+                            "id" => 1,
+                            "name" => "Warehouse"
+                        ],
+                        "warehouseBin" => [
+                            "id" => 1,
+                            "name" => "Default+Bin"
+                        ],
+                        "billable_Options_RecID" => 1,
+                        "billing_Unit_RecID" => 11,
+                        "IV_Item_RecID" => $catalogItem->id,
+                        "owner_Level_RecID" => 11,
+                        "PM_Project_RecID" => $project->id ?? '',
+                        "SR_Service_RecID" => $ticket->id ?? '',
+                        "order_Header_RecID" => '', // SalesOrder not handled
+                        "warehouse_Bin_RecID" => 1,
+                        "warehouse_RecID" => 1,
+                        "discount_Amount" => 0,
+                        "list_Price" => $price,
+                        "quantity" => 1,
+                        "unit_Cost" => $cost,
+                        "unit_Price" => $price,
+                        "description" => $catalogItem->customerDescription,
+                        "IV_Price_Method_ID" => "",
+                        "short_Description" => $catalogItem->description,
+                        "purchase_Date" => time()
+                    ],
+                    "companyRecId" => $company->id,
+                    "productType" => $project ? "Project" : ($ticket ? "Service" : "SalesOrder"),
+                    "userDefinedFieldValues" => []
+                ];
+
+                $response = $this->internalApiRequest(
+                    'actionprocessor/Procurement/AddProductsToPurchaseOrderAction.rails',
+                    $payload,
+                    'SaveProductDetailAction',
+                    'ProcurementCommon'
+                );
+
+                if (!$response->data->isSuccess) {
+                    throw new \Exception(json_encode($response->data->error));
+                }
+
+                return $this->getProduct($response->data->action->recId);
+            }
+
+            throw new \Exception($errContent);
+        }
 
         return json_decode($response->getBody()->getContents());
     }
