@@ -557,7 +557,7 @@ class Cin7Service
                 'Location' => self::INVENTORY_AZAD_MAY,
                 'AutoPickPackShipMode' => "AUTOPICK",
                 'CustomerReference' => $customerReference,
-                'SkipQuote' => false
+                'SkipQuote' => true
             ]
         ]);
 
@@ -584,6 +584,36 @@ class Cin7Service
     {
         try {
             $result = $this->http->post('sale/quote', [
+                'json' => [
+                    'SaleID' => $saleId,
+                    'Memo' => $memo,
+                    'Status' => 'AUTHORISED',
+                    'CombineAdditionalCharges' => false,
+                    'Lines' => array_map(function (\stdClass $poItem) {
+
+                        $product = $this->productBySku($poItem->product->identifier);
+
+                        return [
+                            'ProductID' => $product->ID,
+                            'Quantity' => $poItem->quantity,
+                            'TaxRule' => 'Tax Exempt',
+                            'Price' => $product->PriceTier1,
+                            'Total' => round($product->PriceTier1 * $poItem->quantity, 2)
+                        ];
+                    }, $purchaseOrderItems)
+                ],
+            ]);
+        } catch (GuzzleException $e) {
+            dd($e->getResponse()->getBody()->getContents());
+        }
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function createSalesOrder($saleId, array $purchaseOrderItems, string $memo=null)
+    {
+        try {
+            $result = $this->http->post('sale/order', [
                 'json' => [
                     'SaleID' => $saleId,
                     'Memo' => $memo,
