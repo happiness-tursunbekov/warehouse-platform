@@ -153,7 +153,6 @@ class ConnectWiseController extends Controller
             $cin7SalesOrder = $cin7SalesOrderId ? $cin7Service->salesOrder($cin7SalesOrderId) : null;
 
             if (!$cin7SalesOrder) {
-
                 $customerName = 'Binyod';
 
                 if (Str::contains($entity['businessUnit']['name'], 'Team')) {
@@ -169,6 +168,11 @@ class ConnectWiseController extends Controller
                 $connectWiseService->updatePurchaseOrderCin7SalesOrderId($purchaseOrder, $cin7Sale->ID);
 
                 $cin7Service->createSalesOrder($cin7Sale->ID, $poItems);
+
+                collect($poItems)->map(function ($poItem) use ($purchaseOrder, $connectWiseService) {
+                    $connectWiseService->purchaseOrderItemReceive($purchaseOrder->id, $poItem, $poItem->quantity);
+                    $connectWiseService->pickPurchaseOrderItem($purchaseOrder->id, $poItem);
+                });
             }
 
             return response()->json(['message' => 'Azad May Purchase']);
@@ -327,8 +331,7 @@ class ConnectWiseController extends Controller
                             $quantity = $quantity <= $unpickAvailableQuantity ? 0 : $quantity - $unpickAvailableQuantity;
 
                             return $result;
-                        })
-                        ;
+                        });
 
                         // Skipping in case pick/unpick quantity is greater than available quantity
                         if ($quantity) {
@@ -374,8 +377,7 @@ class ConnectWiseController extends Controller
                     }
 
                     return false;
-                })
-                ;
+                });
 
                 return response()->json(['message' => 'Updated successfully']);
 

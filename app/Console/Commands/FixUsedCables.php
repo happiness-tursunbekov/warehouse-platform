@@ -36,7 +36,7 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
-        $connectWiseService->updatePurchaseOrderCin7SalesOrderId($connectWiseService->purchaseOrder(1022), '');
+        $connectWiseService->updatePurchaseOrderCin7SalesOrderId($connectWiseService->purchaseOrder(1013), '');
 
 //        $cin7Service->updateSale([
 //            'ID' => 'e64c8bad-a394-46b4-a515-713c2055b33b',

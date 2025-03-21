@@ -448,6 +448,10 @@ class ConnectWiseService
      */
     public function purchaseOrderItemReceive(int $poId, \stdClass $lineItem, $quantity)
     {
+        if (@$lineItem->receivedQuantity == $quantity) {
+            return $lineItem;
+        }
+
         $lineItem->receivedQuantity = $quantity;
         $lineItem->closedFlag = true;
         $response = $this->http->put("procurement/purchaseorders/{$poId}/lineitems/{$lineItem->id}", [
@@ -2541,5 +2545,69 @@ class ConnectWiseService
         ]);
 
         return json_decode($response->getBody()->getContents());
+    }
+
+    /**
+     * @param int $poId
+     * @param \stdClass $poItem
+     * @param $callback - params: $product, $quantity
+     * @return false|void
+     * @throws GuzzleException
+     */
+    public function pickPurchaseOrderItem(int $poId, \stdClass $poItem, $ship=false, $callback=null)
+    {
+        $ticket = $this->getPurchaseOrderItemTicketInfo($poId, $poItem->id)[0];
+
+        if (!$ticket) {
+            return false;
+        }
+
+        $quantity = $poItem->quantity;
+
+        $products = collect($this->getProductsByTicketInfo($ticket));
+
+        return $products->map(function ($product) use (&$quantity, $poId) {
+
+            if ($quantity == 0) {
+                return false;
+            }
+
+            $productPoItems = collect($this->getProductPoItems($product->id))->where('ID', $poId);
+
+            if (!$productPoItems->count()) {
+                return false;
+            }
+
+            $productPickAndShips = collect($this->getProductPickingShippingDetails($product->id));
+
+            $pickAvailableQuantity = $product->quantity - $productPickAndShips->pluck('pickedQuantity')->sum();
+
+            if ($product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
+                return false;
+            }
+
+            $result = [
+                'product' => $product,
+                'quantity' => min($quantity, $pickAvailableQuantity)
+            ];
+
+            $quantity = $quantity <= $pickAvailableQuantity ? 0 : $quantity - $pickAvailableQuantity;
+
+            return $result;
+        })
+            ->filter(fn($results) => !!$results)
+            ->map(function (array $result) use ($callback, $ship) {
+                if ($ship) {
+                    $this->pickAndShipProduct($result['product']->id, $result['quantity']);
+                } else {
+                    $this->pickProduct($result['product']->id, $result['quantity']);
+                }
+
+                if ($callback) {
+                    $callback($result['product'], $result['quantity']);
+                }
+
+                return $result['product'];
+            });
     }
 }

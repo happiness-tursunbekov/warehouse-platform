@@ -95,14 +95,25 @@ class Cin7Controller extends Controller
 
         $bigCommerceOrderId = $request->get('CustomerReference');
 
-        if (!$bigCommerceOrderId || !($bigCommerceOrder = $bigCommerceService->getOrder($bigCommerceOrderId)) || $bigCommerceOrder->channel_id != 1) {
-            return response()->json(['message' => "Sales order doesn't belong to Binyod!"]);
-        }
+        $bigCommerceOrder = $bigCommerceService->getOrder($bigCommerceOrderId);
 
         $purchaseOrder = $connectWiseService->purchaseOrders(1, cin7SalesOrderId: $salesOrderId)[0] ?? null;
 
         if ($purchaseOrder) {
+            
+            if (!$bigCommerceOrder) {
+
+                collect($connectWiseService->purchaseOrderItemsOriginal($purchaseOrder->id))
+                    ->map(fn ($poItem) => $connectWiseService->pickPurchaseOrderItem($purchaseOrder->id, $poItem, true));
+
+                return response()->json(['message' => 'Purchase order items shipped to the projects!']);
+            }
+
             return response()->json(['message' => 'Purchase order for this sales order already exists!']);
+        }
+
+        if (!$bigCommerceOrderId || !$bigCommerceOrder || $bigCommerceOrder->channel_id != 1) {
+            return response()->json(['message' => "Sales order doesn't belong to Binyod!"]);
         }
 
         $bigCommerceOrderProducts = collect($bigCommerceService->getOrderProducts($bigCommerceOrder->id));
