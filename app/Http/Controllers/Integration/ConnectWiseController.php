@@ -171,7 +171,7 @@ class ConnectWiseController extends Controller
 
                 collect($poItems)->map(function ($poItem) use ($purchaseOrder, $connectWiseService) {
                     $connectWiseService->purchaseOrderItemReceive($purchaseOrder->id, $poItem, $poItem->quantity);
-                    $connectWiseService->pickPurchaseOrderItem($purchaseOrder->id, $poItem);
+                    $connectWiseService->pickOrShipPurchaseOrderItem($purchaseOrder->id, $poItem);
                 });
             }
 

@@ -2554,8 +2554,12 @@ class ConnectWiseService
      * @return false|void
      * @throws GuzzleException
      */
-    public function pickPurchaseOrderItem(int $poId, \stdClass $poItem, $ship=false, $callback=null)
+    public function pickOrShipPurchaseOrderItem(int $poId, \stdClass $poItem, $pick=true, $ship=false, $callback=null)
     {
+        if (!$ship && !$pick) {
+            return false;
+        }
+
         $ticket = $this->getPurchaseOrderItemTicketInfo($poId, $poItem->id)[0];
 
         if (!$ticket) {
@@ -2566,7 +2570,7 @@ class ConnectWiseService
 
         $products = collect($this->getProductsByTicketInfo($ticket));
 
-        return $products->map(function ($product) use (&$quantity, $poId) {
+        return $products->map(function ($product) use ($pick, $ship, &$quantity, $poId) {
 
             if ($quantity == 0) {
                 return false;
@@ -2580,27 +2584,29 @@ class ConnectWiseService
 
             $productPickAndShips = collect($this->getProductPickingShippingDetails($product->id));
 
-            $pickAvailableQuantity = $product->quantity - $productPickAndShips->pluck('pickedQuantity')->sum();
-
             if ($product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
                 return false;
             }
 
+            $pickOrShipAvailableQuantity = $product->quantity - $productPickAndShips->pluck($ship && !$pick ? 'shippedQuantity' : 'pickedQuantity')->sum();
+
             $result = [
                 'product' => $product,
-                'quantity' => min($quantity, $pickAvailableQuantity)
+                'quantity' => min($quantity, $pickOrShipAvailableQuantity)
             ];
 
-            $quantity = $quantity <= $pickAvailableQuantity ? 0 : $quantity - $pickAvailableQuantity;
+            $quantity = $quantity <= $pickOrShipAvailableQuantity ? 0 : $quantity - $pickOrShipAvailableQuantity;
 
             return $result;
         })
             ->filter(fn($results) => !!$results)
-            ->map(function (array $result) use ($callback, $ship) {
-                if ($ship) {
+            ->map(function (array $result) use ($pick, $callback, $ship) {
+                if ($pick && $ship) {
                     $this->pickAndShipProduct($result['product']->id, $result['quantity']);
-                } else {
+                } elseif ($pick) {
                     $this->pickProduct($result['product']->id, $result['quantity']);
+                } else {
+                    $this->shipProduct($result['product']->id, $result['quantity']);
                 }
 
                 if ($callback) {

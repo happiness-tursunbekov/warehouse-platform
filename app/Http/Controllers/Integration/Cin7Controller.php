@@ -100,11 +100,11 @@ class Cin7Controller extends Controller
         $purchaseOrder = $connectWiseService->purchaseOrders(1, cin7SalesOrderId: $salesOrderId)[0] ?? null;
 
         if ($purchaseOrder) {
-            
+
             if (!$bigCommerceOrder) {
 
                 collect($connectWiseService->purchaseOrderItemsOriginal($purchaseOrder->id))
-                    ->map(fn ($poItem) => $connectWiseService->pickPurchaseOrderItem($purchaseOrder->id, $poItem, true));
+                    ->map(fn ($poItem) => $connectWiseService->pickOrShipPurchaseOrderItem($purchaseOrder->id, $poItem, false, true));
 
                 return response()->json(['message' => 'Purchase order items shipped to the projects!']);
             }
