@@ -38,24 +38,7 @@ class Cin7Controller extends Controller
                 $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
 
                 if (!$catalogItem) {
-
-                    $product = $cin7Service->product($stock['ID']);
-
-                    $category = $connectWiseService->getCategories(1, "name='{$product->Category}'", null, 1)[0] ?? null;
-
-                    if (!$category) {
-                        return false;
-                    }
-
-                    $catalogItem = $connectWiseService->createCatalogItem(
-                        $product->SKU,
-                        $product->Name,
-                        $category,
-                        $product->PriceTier1,
-                        $product->PriceTier1,
-                        $product->UOM,
-                        customerDescription: $product->Description
-                    );
+                    return false;
                 }
 
                 $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)->count;
