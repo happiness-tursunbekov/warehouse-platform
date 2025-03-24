@@ -676,11 +676,13 @@ class Cin7Service
 
         if (!$product) {
 
-            $catalogItem = (new ConnectWiseService())->getCatalogItem($cwProduct->catalogItem->id);
+            $connectWiseService = new ConnectWiseService();
+
+            $catalogItem = $connectWiseService->getCatalogItem($cwProduct->catalogItem->id);
 
             $product = $this->createProduct(
                 $cwProduct->catalogItem->identifier,
-                $cwProduct->description,
+                $connectWiseService->generateProductName($cwProduct->description, $cwProduct->catalogItem->identifier),
                 $catalogItem->category->name,
                 $catalogItem->unitOfMeasure->name,
                 $catalogItem->customerDescription,

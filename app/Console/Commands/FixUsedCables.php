@@ -36,6 +36,20 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
+        $products = collect($cin7Service->products(1, 1000)->Products);
+
+        sleep(1);
+
+        $products->map(function ($product) use ($cin7Service) {
+            if (Str::endsWith($product->SKU, 'ft)')) {
+                $cin7Service->updateProduct([
+                    'ID' => $product->ID,
+                    'Name' => "[USED] " . $product->Name
+                ]);
+                sleep(1);
+            }
+        });
+
 //        dd($connectWiseService->purchaseOrder(1028));
 
 //        $connectWiseService->updatePurchaseOrderCin7SalesOrderId($connectWiseService->purchaseOrder(1029), '');
