@@ -1869,7 +1869,17 @@ class ConnectWiseService
 
     public function generateProductName($description, $identifier)
     {
-        return (Str::endsWith($identifier, '-RF') ? '[REFURBISHED] ' : (Str::endsWith($identifier, 'ft)' ? '[USED] ' : ''))) . $description;
+        if (Str::endsWith($identifier, '-RF')) {
+            return "[REFURBISHED] {$description}";
+        }
+
+        if (Str::endsWith($identifier, 'ft)')) {
+            $length = '(' . array_reverse(explode('(', $identifier))[0];
+
+            return "[USED] {$description} {$length}";
+        }
+
+        return $description;
     }
 
     public function generatePhaseName($projectId, $phaseId, \stdClass $phase=null)

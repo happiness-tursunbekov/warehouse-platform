@@ -35,20 +35,24 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-
-        $products = collect($cin7Service->products(1, 1000)->Products);
-
-        sleep(1);
-
-        $products->map(function ($product) use ($cin7Service) {
-            if (Str::endsWith($product->SKU, 'ft)')) {
-                $cin7Service->updateProduct([
-                    'ID' => $product->ID,
-                    'Name' => "[USED] " . $product->Name
-                ]);
-                sleep(1);
-            }
-        });
+//
+//        $products = collect($cin7Service->products(1, 1000)->Products);
+//
+//        sleep(1);
+//
+//        $products->map(function ($product) use ($connectWiseService, $cin7Service) {
+//
+//            if (Str::endsWith($product->SKU, 'ft)') && Str::startsWith($product->Name, '[USED] [USED]')) {
+//
+//                $name = Str::replace('[USED] [USED]', '[USED]', $product->Name);
+//
+//                $cin7Service->updateProduct([
+//                    'ID' => $product->ID,
+//                    'Name' => Str::limit($name, Str::length($name) - 8, '')
+//                ]);
+//                sleep(1);
+//            }
+//        });
 
 //        dd($connectWiseService->purchaseOrder(1028));
 
@@ -68,30 +72,30 @@ class FixUsedCables extends Command
 //
 //        dd($onHands);
 
-//        $products = collect($bigCommerceService->getProducts(3, 250)->data);
-//
-//        $channels = [];
-//        $categories = [];
-//
-//        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000))->map(function ($onHand) use ($bigCommerceService, $products, &$channels, &$categories) {
-//
-//            $product = $products->where('sku', $onHand->catalogItem->identifier)->first();
-//
-//            if ($product) {
-//                $channels[] = [
-//                    'channel_id' => 1,
-//                    'product_id' => $product->id
-//                ];
-//
-//                $categories[] = [
-//                    'category_id' => 332,
-//                    'product_id' => $product->id
-//                ];
-//            }
-//        });
-//
-//        $bigCommerceService->setProductChannelsBulk($channels);
-//        $bigCommerceService->setProductCategoriesBulk($categories);
+        $products = collect($bigCommerceService->getProducts(3, 250)->data);
+
+        $channels = [];
+        $categories = [];
+
+        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000))->map(function ($onHand) use ($bigCommerceService, $products, &$channels, &$categories) {
+
+            $product = $products->where('sku', $onHand->catalogItem->identifier)->first();
+
+            if ($product) {
+                $channels[] = [
+                    'channel_id' => 1,
+                    'product_id' => $product->id
+                ];
+
+                $categories[] = [
+                    'category_id' => 332,
+                    'product_id' => $product->id
+                ];
+            }
+        });
+
+        $bigCommerceService->setProductChannelsBulk($channels);
+        $bigCommerceService->setProductCategoriesBulk($categories);
 
 
 //        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('TX-J2');
