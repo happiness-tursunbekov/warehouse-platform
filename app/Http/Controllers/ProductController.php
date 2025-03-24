@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 
 use App\Models\User;
+use App\Services\Cin7Service;
 use App\Services\ConnectWiseService;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
@@ -512,5 +513,56 @@ class ProductController extends Controller
         $connectWiseService->addToReport('ProductSellable', $catalogItem, $request->get('quantity'));
 
         return $catalogItem;
+    }
+
+    public function takeProductsToAzadMay(Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
+    {
+        $request->validate([
+            'products' => ['required', 'array'],
+            'products.*.id' => ['required', 'integer'],
+            'products.*.quantity' => ['required', 'min:1']
+        ]);
+
+        $productsData = collect($request->get('products'));
+
+        $adjustmentDetails = collect();
+
+        $memo = "";
+
+        $purchaseOrderLine = $productsData->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails) {
+            $product = $connectWiseService->getProduct($productData['id']);
+
+            $quantity = $productData['quantity'];
+
+            $connectWiseService->unpickProduct($product->id, $quantity);
+
+            $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
+
+            $adjustmentDetails->push($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $quantity));
+
+            $memo .= $catalogItem->identifier . ' - Unpicked from' . (@$product->project ? " project: #{$product->project->id}"
+                    : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} | "));
+
+            return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity);
+        });
+
+        $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Taking to Azad May Inventory');
+
+        $purchaseOrder = $cin7Service->createPurchaseOrder($purchaseOrderLine->toArray(), memo: $memo);
+
+        $cin7Service->receivePurchaseOrderItems($purchaseOrder->TaskID, array_map(fn($line) => ([
+            'ProductID' => $line->ProductID,
+            'Quantity' => $line->Quantity,
+            'Date' => date('Y-m-d H:i:s'),
+            'Received' => true,
+            'Location' => Cin7Service::INVENTORY_AZAD_MAY
+        ]), $purchaseOrder->Lines));
+
+        return $request->all();
+    }
+
+    public function moveProductToOtherProject(Request $request)
+    {
+        // TODO: Handle
     }
 }

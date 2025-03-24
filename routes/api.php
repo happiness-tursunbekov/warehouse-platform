@@ -93,6 +93,7 @@ Route::group([
             Route::get('{id}/on-hand', [ProductController::class, 'onHand']);
             Route::get('{id}/images', [ProductController::class, 'images']);
             Route::post('{product}/upload', [ProductController::class, 'upload']);
+            Route::post('take-products-to-azad-may', [ProductController::class, 'takeProductsToAzadMay']);
         });
 
         Route::resource('orders', OrderController::class);

@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 class Cin7Controller extends Controller
 {
-    public function availableStockLevelChanged(Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
+    public function availableStockLevelChanged(Request $request, ConnectWiseService $connectWiseService)
     {
         WebhookLog::create([
             'type' => 'Stock/AvailableStockLevelChanged',
@@ -22,7 +22,7 @@ class Cin7Controller extends Controller
 
         $adjustmentDetails = collect($request->post())
             ->unique('ID')
-            ->map(function ($stock) use ($connectWiseService, $cin7Service) {
+            ->map(function ($stock) use ($connectWiseService) {
                 $productSku = $stock['SKU'] ?? null;
 
                 if (!$productSku) {

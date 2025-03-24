@@ -667,4 +667,79 @@ class Cin7Service
 
         return json_decode($result->getBody()->getContents())->CustomerList[0] ?? null;
     }
+
+    public function convertProductToPurchaseOrderLine($cwProduct, $quantity)
+    {
+        $product = $this->productBySku($cwProduct->catalogItem->identifier);
+
+        $cost = $cwProduct->cost * 0.9;
+
+        if (!$product) {
+
+            $catalogItem = (new ConnectWiseService())->getCatalogItem($cwProduct->catalogItem->id);
+
+            $product = $this->createProduct(
+                $cwProduct->catalogItem->identifier,
+                $cwProduct->description,
+                $catalogItem->category->name,
+                $catalogItem->unitOfMeasure->name,
+                $catalogItem->customerDescription,
+                $cost * 1.07
+            );
+        }
+
+        return [
+            'ProductID' => $product->ID,
+            'Name' => $product->Name,
+            'Quantity' => $quantity,
+            'Price' => $cost,
+            'TaxRule' => 'Tax Exempt',
+            'Total' => round($cost * $quantity, 2),
+            'Received' => true
+        ];
+    }
+
+    public function createPurchaseOrder(array $lineProducts, $supplierName='BINYOD LLC', $memo='Purchase Order')
+    {
+        $purchase = $this->createPurchase($supplierName);
+
+        $result = $this->http->post('purchase/order', [
+            'json' => [
+                'Memo' => $memo,
+                'Status' => 'AUTHORISED',
+                'Lines' => $lineProducts,
+                'TaskID' => $purchase->ID,
+                'CombineAdditionalCharges' => false
+            ]
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function createPurchase($supplierName='BINYOD LLC')
+    {
+        $result = $this->http->post('advanced-purchase', [
+            'json' => [
+                'Supplier' => $supplierName,
+                'Approach' => 'STOCK',
+                'Location' => self::INVENTORY_AZAD_MAY,
+                'TaxRule' => 'Tax Exempt'
+            ]
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function receivePurchaseOrderItems($purchaseOrderId, array $lineProducts)
+    {
+        $result = $this->http->post('purchase/stock', [
+            'json' => [
+                'TaskID' => $purchaseOrderId,
+                'Lines' => $lineProducts,
+                'Status' => 'AUTHORISED'
+            ]
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
 }

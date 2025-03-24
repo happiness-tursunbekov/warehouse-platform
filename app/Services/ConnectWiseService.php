@@ -582,7 +582,7 @@ class ConnectWiseService
             $this->addOrUpdatePickShip($pickShip);
         } catch (\Exception $e) {
             if (Str::contains($e->getMessage(), 'There are 0 items on hand')) {
-                sleep(5);
+                sleep(3);
                 $this->addOrUpdatePickShip($pickShip);
             } else {
                 throw $e;
@@ -1311,72 +1311,11 @@ class ConnectWiseService
         ");
     }
 
-    public function catalogItemAdjust(\stdClass $catalogItem, $qty, $prefix="", $warehouseId=self::DEFAULT_WAREHOUSE)
+    public function catalogItemAdjust(\stdClass $catalogItem, $qty, $warehouseId=self::DEFAULT_WAREHOUSE)
     {
-        $adjustmentID = date('m/d/Y') . ' - ' . time() . $prefix;
+        $adjustmentDetail = $this->convertCatalogItemToAdjustmentDetail($catalogItem, $qty, $warehouseId);
 
-        $defaultBinId = $warehouseId == self::DEFAULT_WAREHOUSE ? self::DEFAULT_WAREHOUSE_DEFAULT_BIN : self::AZAD_MAY_WAREHOUSE_DEFAULT_BIN;
-
-        $adjustment = json_decode("
-        {
-            \"id\": 0,
-            \"identifier\": \"{$adjustmentID}\",
-            \"type\": {
-                \"id\": 1,
-                \"identifier\": \"Initial Count\",
-                \"_info\": {
-                    \"type_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/adjustments/types/1\"
-                }
-            },
-            \"reason\": \"Quantity update\",
-            \"closedFlag\": true,
-            \"adjustmentDetails\": [
-                {
-                    \"id\": 0,
-                    \"catalogItem\": {
-                        \"id\": {$catalogItem->id},
-                        \"identifier\": \"{$catalogItem->identifier}\",
-                        \"_info\": {
-                            \"catalog_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/catalog/{$catalogItem->id}\"
-                        }
-                    },
-                    \"description\": \"Updating quantity\",
-                    \"unitCost\": {$catalogItem->cost},
-                    \"warehouse\": {
-                        \"id\": {$warehouseId}
-                    },
-                    \"warehouseBin\": {
-                        \"id\": {$defaultBinId}
-                    },
-                    \"quantityAdjusted\": {$qty},
-                    \"adjustment\": {
-                        \"id\": 0,
-                        \"name\": \"{$adjustmentID}\",
-                        \"_info\": {
-                            \"adjustment_href\": \"https://api-na.myconnectwise.net/v4_6_release/apis/3.0//procurement/adjustments/0\"
-                        }
-                    },
-                    \"_info\": {
-                        \"lastUpdated\": \"2024-12-16T20:41:09Z\",
-                        \"updatedBy\": \"Integrator\"
-                    }
-                }
-            ],
-            \"_info\": {
-                \"lastUpdated\": \"2024-12-16T20:40:19Z\",
-                \"updatedBy\": \"Integrator\"
-            }
-        }
-        ");
-        try {
-            $response = $this->http->post('procurement/adjustments?clientId=' . $this->clientId, [
-                'json' => $adjustment
-            ]);
-        } catch (GuzzleException $e) {
-            abort(500, $e->getResponse()->getBody()->getContents());
-        }
-
-        return json_decode($response->getBody()->getContents());
+        return $this->catalogItemAdjustBulk(collect([$adjustmentDetail]));
     }
 
     public function createUsedCatalogItem(int $catalogItemId, int $qty)

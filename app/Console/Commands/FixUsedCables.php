@@ -38,7 +38,7 @@ class FixUsedCables extends Command
 
 //        dd($connectWiseService->purchaseOrder(1028));
 
-        $connectWiseService->updatePurchaseOrderCin7SalesOrderId($connectWiseService->purchaseOrder(1029), '');
+//        $connectWiseService->updatePurchaseOrderCin7SalesOrderId($connectWiseService->purchaseOrder(1029), '');
 
 //        $cin7Service->updateSale([
 //            'ID' => 'e64c8bad-a394-46b4-a515-713c2055b33b',
