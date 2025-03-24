@@ -2351,6 +2351,9 @@ class ConnectWiseService
 
         $this->addProductsToPurchaseOrder($purchaseOrder->id, $products);
 
+        // Waiting 2 seconds to allow ConnectWise to process purchase order
+        sleep(2);
+
         collect($this->purchaseOrderItemsOriginal($purchaseOrder->id))->map(function ($poItem) use ($purchaseOrder) {
             $this->purchaseOrderItemReceive($purchaseOrder->id, $poItem, $poItem->quantity);
         });
