@@ -541,7 +541,7 @@ class ProductController extends Controller
             $adjustmentDetails->push($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $quantity));
 
             $memo .= $catalogItem->identifier . ' - Unpicked from' . (@$product->project ? " project: #{$product->project->id}"
-                    : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} | "));
+                    : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} &#13;"));
 
             return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity);
         });
