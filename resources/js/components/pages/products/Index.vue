@@ -139,6 +139,7 @@
                                     <button v-if="product.quantity !== product.shippedQuantity" @click.prevent="selectedProjectProduct=product;shipmentModal=true" type="button" class="dropdown-item">Ship</button>
                                     <button v-if="product.shippedQuantity !== 0" @click.prevent="selectedProjectProduct=product;shipmentModal=true" type="button" class="dropdown-item">Return/Unship</button>
                                     <button v-if="product.pickedQuantity - product.shippedQuantity !== 0" @click.prevent="selectedProjectProduct=product;takeProductToAzadMayModal=true" type="button" class="dropdown-item">Take product to Azad May</button>
+                                    <button v-if="product.pickedQuantity - product.shippedQuantity !== 0" @click.prevent="fetchProjects();selectedProjectProduct=product;moveProductModal=true" type="button" class="dropdown-item">Move product to different project</button>
                                 </div>
                             </div>
                         </td>
@@ -228,7 +229,7 @@
                 <div class="mb-3">
                     <label class="form-label">Quantity</label>
                     <div class="input-group">
-                        <input ref="takeProductToAzadMay" type="number" min="1" class="form-control" :value="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" required>
+                        <input ref="takeProductToAzadMay" type="number" min="1" class="form-control" :max="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" :value="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" required>
                         <span class="input-group-text">{{ selectedProjectProduct.unitOfMeasure.name }}</span>
                     </div>
                 </div>
@@ -275,6 +276,76 @@
                 </div>
             </form>
         </modal>
+        <modal v-model:show="moveProductModal" modal-title="Moving product to a different project">
+            <form v-if="selectedProjectProduct" @submit.prevent="moveProduct($refs.takeProductToDifferentProject.value)">
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProjectProduct.catalogItem.identifier }}</li>
+                    <li class="list-group-item"><strong>Description:</strong> {{ selectedProjectProduct.description }}</li>
+                </ul>
+                <div class="mb-3">
+                    <label class="form-label">Quantity</label>
+                    <div class="input-group">
+                        <input ref="takeProductToDifferentProject" type="number" min="1" :max="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" class="form-control" :value="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" required>
+                        <span class="input-group-text">{{ selectedProjectProduct.unitOfMeasure.name }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Project</label>
+                    <v-select
+                        v-model="moveProductForm.projectId"
+                        :options="projects"
+                        :get-option-label="option => option.id !== '0' ? `#${option.id} - ${option.name} (${option.company.name})` : option.name"
+                        :reduce="option => option.id"
+                        placeholder="Select a project"
+                        required
+                    />
+                </div>
+                <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0'" class="mb-3">
+                    <label class="form-label">Phase</label>
+                    <v-select
+                        v-model="moveProductForm.phaseId"
+                        :options="phases"
+                        label="title"
+                        :reduce="option => option.id"
+                        placeholder="Select a phase"
+                        required
+                    />
+                </div>
+                <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0'" class="mb-3">
+                    <label class="form-label">Project Ticket</label>
+                    <select v-model="moveProductForm.ticketId" class="form-control" required>
+                        <option value="">Select a ticket</option>
+                        <option value="0" :disabled="tickets.length > 0">No ticket</option>
+                        <option v-for="(ticket) in tickets" :key="ticket.id" :value="ticket.id" :disabled="ticket.closedFlag">{{ ticket.summary }} (Status: {{ ticket.status.name }})</option>
+                    </select>
+                </div>
+                <div v-if="moveProductForm.projectId === '0'" class="mb-3">
+                    <label class="form-label">Company</label>
+                    <v-select
+                        v-model="moveProductForm.companyId"
+                        :options="companies"
+                        label="name"
+                        :reduce="option => option.id"
+                        placeholder="Select a company"
+                        required
+                    />
+                </div>
+                <div v-if="moveProductForm.projectId === '0'" class="mb-3">
+                    <label class="form-label">Service ticket</label>
+                    <v-select
+                        v-model="moveProductForm.ticketId"
+                        :options="tickets"
+                        :get-option-label="option => `#${option.id} - ${option.summary}`"
+                        :reduce="option => option.id"
+                        placeholder="Select a ticket"
+                        required
+                    />
+                </div>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-success">Move</button>
+                </div>
+            </form>
+        </modal>
         <div v-if="needsToBeTakenProducts.length > 0" class="position-fixed" style="right:0;bottom:0">
             <div class="card">
                 <div class="card-header"><a class="btn-link" @click.prevent="takeProductsToAzadMayModal = !takeProductsToAzadMayModal" role="button">[{{ takeProductsToAzadMayModal ? 'Hide' : 'Show' }}]</a> Products list for Azad May Inventory ({{ needsToBeTakenProducts.length }})</div>
@@ -314,10 +385,11 @@ import Pagination from "../../Pagination.vue";
 import Modal from "../../Modal.vue";
 import BarcodeLinkModal from "../../BarcodeLinkModal.vue";
 import FileUploadModal from "../../FileUploadModal.vue";
+import VSelect from "../../v-select/components/VSelect.vue";
 
 export default {
     name: "Index",
-    components: {FileUploadModal, BarcodeLinkModal, Modal, Pagination},
+    components: {VSelect, FileUploadModal, BarcodeLinkModal, Modal, Pagination},
 
     data() {
         return {
@@ -357,7 +429,20 @@ export default {
             uoms: [],
             takeProductToAzadMayModal: false,
             takeProductsToAzadMayModal: false,
-            needsToBeTakenProducts: []
+            needsToBeTakenProducts: [],
+            moveProductModal: false,
+            moveProductForm: {
+                projectId: '',
+                phaseId: '',
+                ticketId: '',
+                companyId: '',
+                bundleId: ''
+            },
+            projects: [],
+            tickets: [],
+            phases: [],
+            companies: [],
+            bundles: []
         }
     },
 
@@ -399,6 +484,22 @@ export default {
             if (val && !this.uoms.length) {
                 this.fetchUoms()
             }
+        },
+        'moveProductForm.projectId' (val) {
+            this.moveProductForm.phaseId = ''
+            this.moveProductForm.ticketId = ''
+
+            if (val === '0') {
+                this.fetchCompanies()
+            } else {
+                this.fetchPhases()
+            }
+        },
+        'moveProductForm.phaseId' () {
+            this.fetchProjectTickets()
+        },
+        'moveProductForm.companyId' () {
+            this.fetchServiceTickets()
         }
     },
 
@@ -407,6 +508,75 @@ export default {
     },
 
     methods: {
+        moveProduct(quantity) {
+            axios.post(`/api/products/move-product-to-different-project`, {
+                ...this.moveProductForm,
+                quantity,
+                productId: this.selectedProjectProduct.id
+            }).then(() => {
+                this.getPos(this.selectedProduct)
+                this.$snotify.success('Product moved successfully!')
+                this.moveProductModal = false
+            })
+        },
+        fetchProjects() {
+            if (!this.projects.length) {
+                axios.get(`/api/binyod/projects`).then(res => {
+                    this.projects = [{
+                        id: '0',
+                        name: 'No project'
+                    }, ...res.data]
+                })
+            }
+        },
+        fetchCompanies() {
+            if (!this.companies.length) {
+                axios.get(`/api/binyod/companies`).then(res => {
+                    this.companies = res.data
+                })
+            }
+        },
+        fetchPhases() {
+            if (this.moveProductForm.projectId) {
+                axios.get(`/api/binyod/phases`, {
+                    params: { projectId: this.moveProductForm.projectId }
+                }).then(res => {
+                    this.phases = [{
+                        id: '0',
+                        title: 'No phase'
+                    }, ...res.data]
+                })
+            } else {
+                this.phases = []
+            }
+        },
+        fetchProjectTickets() {
+            if (this.moveProductForm.phaseId) {
+                axios.get(`/api/binyod/project-tickets`, {
+                    params: {
+                        projectId: this.moveProductForm.projectId || null,
+                        phaseId: this.moveProductForm.phaseId || null
+                    }
+                }).then(res => {
+                    this.tickets = res.data
+                })
+            } else {
+                this.phases = []
+            }
+        },
+        fetchServiceTickets() {
+            if (this.moveProductForm.companyId) {
+                axios.get(`/api/binyod/service-tickets`, {
+                    params: {
+                        companyId: this.moveProductForm.companyId
+                    }
+                }).then(res => {
+                    this.tickets = res.data
+                })
+            } else {
+                this.tickets = []
+            }
+        },
         fetchUoms() {
             axios.get(`/api/products/uoms`).then(res => {
                 this.uoms = res.data

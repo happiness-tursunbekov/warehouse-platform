@@ -498,7 +498,7 @@ class ConnectWiseService
         return $poItems;
     }
 
-    public function getProducts($page=null, $conditions=null, $pageSize=null, $customFieldConditions=null)
+    public function getProducts($page=null, $conditions=null, $pageSize=null, $customFieldConditions=null, $fields=null)
     {
         $response = $this->http->get('procurement/products', [
             'query' => [
@@ -506,7 +506,8 @@ class ConnectWiseService
                 'clientId' => $this->clientId,
                 'conditions' => $conditions,
                 'pageSize' => $pageSize,
-                'customFieldConditions' => $customFieldConditions
+                'customFieldConditions' => $customFieldConditions,
+                'fields' => $fields
             ],
         ]);
         return json_decode($response->getBody()->getContents());
@@ -514,11 +515,7 @@ class ConnectWiseService
 
     public function getProduct($id)
     {
-        try {
-            $response = $this->http->get("procurement/products/{$id}?clientId={$this->clientId}");
-        } catch (GuzzleException $e) {
-            return new \stdClass();
-        }
+        $response = $this->http->get("procurement/products/{$id}?clientId={$this->clientId}");
         return json_decode($response->getBody()->getContents());
     }
 
@@ -1997,6 +1994,164 @@ class ConnectWiseService
         return $record;
     }
 
+    public function cloneProduct(
+        \stdClass $product,
+        $ticketId=null,
+        $projectId=null,
+        $phaseId=null,
+        $companyId=null,
+        $opportunityId=null,
+        $salesOrderId=null,
+        $quantity=1
+    )
+    {
+        if (@$product->project) {
+            unset($product->project);
+        }
+        if (@$product->ticket) {
+            unset($product->ticket);
+        }
+        if (@$product->phase) {
+            unset($product->phase);
+        }
+        if (@$product->company) {
+            unset($product->company);
+        }
+        if (@$product->opportunity) {
+            unset($product->opportunity);
+        }
+        if (@$product->salesOrder) {
+            unset($product->salesOrder);
+        }
+        if (@$product->invoice) {
+            unset($product->invoice);
+        }
+
+        $product->id = 0;
+        $product->quantity = $quantity;
+
+        if ($projectId) {
+            $product->project = ['id' => $projectId];
+        }
+
+        if ($ticketId) {
+            $product->ticket = ['id' => $ticketId];
+        }
+
+        if ($companyId) {
+            $product->company = ['id' => $companyId];
+        }
+
+        if ($phaseId) {
+            $product->phase = ['id' => $phaseId];
+        }
+
+        if ($opportunityId) {
+            $product->opportunity = ['id' => $opportunityId];
+        }
+
+        if ($salesOrderId) {
+            $product->salesOrder = ['id' => $salesOrderId];
+        }
+
+        try {
+            $response = $this->createProductWithJson($product);
+        } catch (GuzzleException $e) {
+            $errContent = $e->getResponse()->getBody()->getContents();
+
+            if (Str::contains($errContent, 'This opportunity is closed and cannot be edited')) {
+                // Using internal api to create product
+
+                return $this->createProductViaInternalApi(
+                    $product->catalogItem->id,
+                    $product->description,
+                    $product->customerDescription,
+                    $project->id ?? '',
+                    $ticket->id ?? '',
+                    $companyId,
+                    $product->price,
+                    $product->cost
+                );
+            }
+
+            throw new \Exception($errContent);
+        }
+
+        return $response;
+    }
+
+    /**
+     * @throws GuzzleException
+     */
+    public function createProductWithJson(array|\stdClass $json)
+    {
+        $response = $this->http->post("procurement/products?clientId={$this->clientId}", [
+            'json' => $json
+        ]);
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function createProductViaInternalApi(
+        int $catalogItemId,
+        string $catalogItemDescription,
+        string $catalogItemCustomerDescription,
+        int $projectId=null,
+        int $ticketId=null,
+        $companyId=null,
+        float $price=0,
+        float $cost=0,
+    )
+    {
+        $payload = [
+            "model" => [
+                "taxable_Flag" => true,
+                "warehouse" => [
+                    "id" => 1,
+                    "name" => "Warehouse"
+                ],
+                "warehouseBin" => [
+                    "id" => 1,
+                    "name" => "Default+Bin"
+                ],
+                "billable_Options_RecID" => 1,
+                "billing_Unit_RecID" => 11,
+                "IV_Item_RecID" => $catalogItemId,
+                "owner_Level_RecID" => 11,
+                "PM_Project_RecID" => $projectId ?: '',
+                "SR_Service_RecID" => $ticketId ?: '',
+                "order_Header_RecID" => '', // SalesOrder not handled
+                "warehouse_Bin_RecID" => 1,
+                "warehouse_RecID" => 1,
+                "discount_Amount" => 0,
+                "list_Price" => $price,
+                "quantity" => 1,
+                "unit_Cost" => $cost,
+                "unit_Price" => $price,
+                "description" => $catalogItemCustomerDescription,
+                "IV_Price_Method_ID" => "",
+                "short_Description" => $catalogItemDescription,
+                "purchase_Date" => time()
+            ],
+            "companyRecId" => $companyId ?: '',
+            "productType" => $projectId ? "Project" : ($ticketId ? "Service" : "SalesOrder"),
+            "userDefinedFieldValues" => []
+        ];
+
+        $response = $this->internalApiRequest(
+            'actionprocessor/Procurement/AddProductsToPurchaseOrderAction.rails',
+            $payload,
+            'SaveProductDetailAction',
+            'ProcurementCommon'
+        );
+
+        if (!$response->data->isSuccess) {
+            throw new \Exception(json_encode($response->data->error));
+        }
+
+        return $this->getProduct($response->data->action->recId);
+    }
+
     public function createProduct(
         \stdClass $catalogItem,
         \stdClass $ticket=null,
@@ -2086,68 +2241,29 @@ class ConnectWiseService
         ];
 
         try {
-            $response = $this->http->post("procurement/products?clientId={$this->clientId}", [
-                'json' => $json
-            ]);
+            $response = $this->createProductWithJson($json);
         } catch (GuzzleException $e) {
             $errContent = $e->getResponse()->getBody()->getContents();
 
             if (Str::contains($errContent, 'This opportunity is closed and cannot be edited')) {
                 // Using internal api to create product
 
-                $payload = [
-                    "model" => [
-                        "taxable_Flag" => true,
-                        "warehouse" => [
-                            "id" => 1,
-                            "name" => "Warehouse"
-                        ],
-                        "warehouseBin" => [
-                            "id" => 1,
-                            "name" => "Default+Bin"
-                        ],
-                        "billable_Options_RecID" => 1,
-                        "billing_Unit_RecID" => 11,
-                        "IV_Item_RecID" => $catalogItem->id,
-                        "owner_Level_RecID" => 11,
-                        "PM_Project_RecID" => $project->id ?? '',
-                        "SR_Service_RecID" => $ticket->id ?? '',
-                        "order_Header_RecID" => '', // SalesOrder not handled
-                        "warehouse_Bin_RecID" => 1,
-                        "warehouse_RecID" => 1,
-                        "discount_Amount" => 0,
-                        "list_Price" => $price,
-                        "quantity" => 1,
-                        "unit_Cost" => $cost,
-                        "unit_Price" => $price,
-                        "description" => $catalogItem->customerDescription,
-                        "IV_Price_Method_ID" => "",
-                        "short_Description" => $catalogItem->description,
-                        "purchase_Date" => time()
-                    ],
-                    "companyRecId" => $company->id,
-                    "productType" => $project ? "Project" : ($ticket ? "Service" : "SalesOrder"),
-                    "userDefinedFieldValues" => []
-                ];
-
-                $response = $this->internalApiRequest(
-                    'actionprocessor/Procurement/AddProductsToPurchaseOrderAction.rails',
-                    $payload,
-                    'SaveProductDetailAction',
-                    'ProcurementCommon'
+                return $this->createProductViaInternalApi(
+                    $catalogItem->id,
+                    $catalogItem->description,
+                    $catalogItem->customerDescription,
+                    $project->id ?? '',
+                    $ticket->id ?? '',
+                    $company->id,
+                    $price,
+                    $cost
                 );
-
-                if (!$response->data->isSuccess) {
-                    throw new \Exception(json_encode($response->data->error));
-                }
-
-                return $this->getProduct($response->data->action->recId);
             }
 
             throw new \Exception($errContent);
         }
 
-        return json_decode($response->getBody()->getContents());
+        return $response;
     }
 
     public function createProductComponent(int $bundleId, \stdClass $catalogItem, int $quantity, float $price)
@@ -2572,5 +2688,11 @@ class ConnectWiseService
 
                 return $result['product'];
             });
+    }
+
+    public function deleteProduct($id)
+    {
+        $response = $this->http->delete("procurement/products/{$id}?clientId={$this->clientId}");
+        return json_decode($response->getBody()->getContents());
     }
 }

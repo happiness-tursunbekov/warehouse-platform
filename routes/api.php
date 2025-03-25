@@ -4,7 +4,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Integration\BigCommerceController;
 use App\Http\Controllers\Integration\Cin7Controller;
 use App\Http\Controllers\Integration\ConnectWiseController;
-use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Store\ProductController as StoreProductController;
 use App\Http\Controllers\Store\OrderController as StoreOrderController;
@@ -19,6 +18,7 @@ Route::prefix('/binyod')->group(function () {
         Route::get('companies', [ConnectWiseController::class, 'companies']);
         Route::get('project-tickets', [ConnectWiseController::class, 'projectTickets']);
         Route::get('service-tickets', [ConnectWiseController::class, 'serviceTickets']);
+        Route::get('bundles', [ConnectWiseController::class, 'bundles']);
     });
 });
 
@@ -94,9 +94,8 @@ Route::group([
             Route::get('{id}/images', [ProductController::class, 'images']);
             Route::post('{product}/upload', [ProductController::class, 'upload']);
             Route::post('take-products-to-azad-may', [ProductController::class, 'takeProductsToAzadMay']);
+            Route::post('move-product-to-different-project', [ProductController::class, 'moveProductToDifferentProject']);
         });
-
-        Route::resource('orders', OrderController::class);
     });
 
     Route::get('/auth/user', [AuthController::class, 'user']);

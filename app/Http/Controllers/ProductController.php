@@ -561,8 +561,46 @@ class ProductController extends Controller
         return $request->all();
     }
 
-    public function moveProductToOtherProject(Request $request)
+    public function moveProductToDifferentProject(Request $request, ConnectWiseService $connectWiseService)
     {
-        // TODO: Handle
+        $request->validate([
+            'productId' => ['required', 'integer'],
+            'quantity' => ['required', 'integer'],
+            'projectId' => ['nullable', 'required_without:companyId', 'integer'],
+            'companyId' => ['nullable', 'required_without:projectId', 'integer'],
+            'phaseId' => ['nullable', 'integer'],
+            'ticketId' => ['nullable', 'integer']
+        ]);
+
+        $productId = $request->get('productId');
+        $quantity = $request->get('quantity');
+        $projectId = $request->get('projectId');
+        $companyId = $request->get('companyId');
+        $phaseId = $request->get('phaseId');
+        $ticketId = $request->get('ticketId');
+
+        $product = $connectWiseService->getProduct($productId);
+
+        if ($projectId) {
+            $project = $connectWiseService->getProject($projectId);
+
+            $companyId = $project->company->id;
+        }
+
+        $newProduct = $connectWiseService->cloneProduct(
+            $product,
+            $ticketId,
+            $projectId,
+            $phaseId,
+            $companyId,
+            null,
+            null,
+            $quantity
+        );
+
+        $connectWiseService->unpickProduct($productId, $quantity);
+        $connectWiseService->pickProduct($newProduct->id, $quantity);
+
+        return $newProduct;
     }
 }

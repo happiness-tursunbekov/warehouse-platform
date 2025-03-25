@@ -35,6 +35,7 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+
 //
 //        $products = collect($cin7Service->products(1, 1000)->Products);
 //
@@ -72,40 +73,40 @@ class FixUsedCables extends Command
 //
 //        dd($onHands);
 
-        $products = collect($bigCommerceService->getProducts(3, 250)->data);
+//        $products = collect($bigCommerceService->getProducts(2, 250)->data);
+//
+//        $channels = [];
+//        $categories = [];
+//
+//        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000))->map(function ($onHand) use ($bigCommerceService, $products, &$channels, &$categories) {
+//
+//            $product = $products->where('sku', $onHand->catalogItem->identifier)->first();
+//
+//            if ($product) {
+//                $channels[] = [
+//                    'channel_id' => 1,
+//                    'product_id' => $product->id
+//                ];
+//
+//                $categories[] = [
+//                    'category_id' => 332,
+//                    'product_id' => $product->id
+//                ];
+//            }
+//        });
+//
+//        $bigCommerceService->setProductChannelsBulk($channels);
+//        $bigCommerceService->setProductCategoriesBulk($categories);
 
-        $channels = [];
-        $categories = [];
 
-        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand > 0', null, 1000))->map(function ($onHand) use ($bigCommerceService, $products, &$channels, &$categories) {
-
-            $product = $products->where('sku', $onHand->catalogItem->identifier)->first();
-
-            if ($product) {
-                $channels[] = [
-                    'channel_id' => 1,
-                    'product_id' => $product->id
-                ];
-
-                $categories[] = [
-                    'category_id' => 332,
-                    'product_id' => $product->id
-                ];
-            }
-        });
-
-        $bigCommerceService->setProductChannelsBulk($channels);
-        $bigCommerceService->setProductCategoriesBulk($categories);
-
-
-//        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('TX-J2');
+//        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('12006ND01(266ft)');
 //
 //        $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
 //
 //        if (!$cin7Product) {
 //            $cin7Product = $cin7Service->createProduct(
 //                $catalogItem->identifier,
-//                $catalogItem->description,
+//                $connectWiseService->generateProductName($catalogItem->description, $catalogItem->identifier),
 //                $catalogItem->category->name,
 //                $catalogItem->unitOfMeasure->name,
 //                $catalogItem->customerDescription,

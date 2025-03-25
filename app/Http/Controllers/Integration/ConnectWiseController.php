@@ -464,6 +464,27 @@ class ConnectWiseController extends Controller
         return response()->json($connectWiseService->getCompanies(1, 'status/name != "Cancelled" and deletedFlag=false', null, 'id,name,company', 1000));
     }
 
+    public function bundles(Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'projectId' => ['required_without:ticketId', 'integer'],
+            'ticketId' => ['required_without:projectId', 'integer']
+        ]);
+
+        $projectId = $request->get('projectId');
+        $ticketId = $request->get('ticketId');
+
+        $condition = "productClass='Bundle'";
+
+        if ($ticketId) {
+            $condition .= " and ticket/id={$ticketId}";
+        } else {
+            $condition .= " and project/id={$projectId}";
+        }
+
+        return response()->json($connectWiseService->getProducts(1, $condition, 20, fields: 'id, identifier'));
+    }
+
     public function serviceTickets(Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
