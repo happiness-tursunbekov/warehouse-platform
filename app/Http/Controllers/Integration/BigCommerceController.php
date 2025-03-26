@@ -23,10 +23,7 @@ class BigCommerceController extends Controller
                 $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PROJECT_TICKET);
                 $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_COMPANY);
                 $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_SERVICE_TICKET);
-
-                $sharedModifierBundle = $bigCommerceService->getSharedModifierByName(BigCommerceService::PRODUCT_OPTION_BUNDLE);
-
-                $bigCommerceService->addProductSharedModifier($product->id, $sharedModifierBundle);
+                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_BUNDLE);
             } catch (\Exception) {}
         }
     }
