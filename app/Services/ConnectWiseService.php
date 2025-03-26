@@ -568,12 +568,13 @@ class ConnectWiseService
      */
     public function pickProduct($id, $quantity)
     {
-        $pickShip = $this->getProductPickingShippingDetails($id)[0];
+        $pickShip = json_decode('{"warehouseBin":{},"productItem":{}}');
         $pickShip->pickedQuantity = (int)$quantity;
         $pickShip->shippedQuantity = 0;
         $pickShip->id = 0;
         $pickShip->quantity = (int)$quantity;
         $pickShip->warehouseBin->id = 1;
+        $pickShip->productItem->id = $id;
 
         try {
             $this->addOrUpdatePickShip($pickShip);
@@ -594,12 +595,13 @@ class ConnectWiseService
      */
     public function pickAndShipProduct($id, $quantity)
     {
-        $pickShip = $this->getProductPickingShippingDetails($id)[0];
+        $pickShip = json_decode('{"warehouseBin":{},"productItem":{}}');
         $pickShip->pickedQuantity = (int)$quantity;
         $pickShip->shippedQuantity = (int)$quantity;
         $pickShip->id = 0;
         $pickShip->quantity = (int)$quantity;
         $pickShip->warehouseBin->id = 1;
+        $pickShip->productItem->id = $id;
 
         return $this->addOrUpdatePickShip($pickShip);
     }
@@ -701,7 +703,7 @@ class ConnectWiseService
                 "IV_Product_RecID" => $pickShipDetail->productItem->id,
                 "quantity_Picked" => $pickShipDetail->pickedQuantity,
                 "quantity_Shipped" => $pickShipDetail->shippedQuantity,
-                "warehouse_Bin_RecID" => $pickShipDetail->warehouse->id
+                "warehouse_Bin_RecID" => $pickShipDetail->warehouseBin->id
             ]
         ];
 
