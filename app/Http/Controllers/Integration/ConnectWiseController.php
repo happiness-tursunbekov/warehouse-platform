@@ -482,7 +482,7 @@ class ConnectWiseController extends Controller
             $condition .= " and project/id={$projectId}";
         }
 
-        return response()->json($connectWiseService->getProducts(1, $condition, 20, fields: 'id, identifier'));
+        return response()->json($connectWiseService->getProducts(1, $condition, 20, fields: 'id,catalogItem,description'));
     }
 
     public function serviceTickets(Request $request, ConnectWiseService $connectWiseService)

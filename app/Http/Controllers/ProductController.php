@@ -569,7 +569,8 @@ class ProductController extends Controller
             'projectId' => ['nullable', 'required_without:companyId', 'integer'],
             'companyId' => ['nullable', 'required_without:projectId', 'integer'],
             'phaseId' => ['nullable', 'integer'],
-            'ticketId' => ['nullable', 'integer']
+            'ticketId' => ['nullable', 'integer'],
+            'bundleId' => ['nullable', 'integer'],
         ]);
 
         $productId = $request->get('productId');
@@ -578,25 +579,30 @@ class ProductController extends Controller
         $companyId = $request->get('companyId');
         $phaseId = $request->get('phaseId');
         $ticketId = $request->get('ticketId');
+        $bundleId = $request->get('bundleId');
 
         $product = $connectWiseService->getProduct($productId);
 
-        if ($projectId) {
-            $project = $connectWiseService->getProject($projectId);
+        if ($bundleId) {
+            $newProduct = $connectWiseService->getProduct($connectWiseService->createProductComponent($bundleId, $product->catalogItem->id, $quantity, $product->price, $product->cost)->productItem->id);
+        } else {
+            if ($projectId) {
+                $project = $connectWiseService->getProject($projectId);
 
-            $companyId = $project->company->id;
+                $companyId = $project->company->id;
+            }
+
+            $newProduct = $connectWiseService->cloneProduct(
+                $product,
+                $ticketId,
+                $projectId,
+                $phaseId,
+                $companyId,
+                null,
+                null,
+                $quantity
+            );
         }
-
-        $newProduct = $connectWiseService->cloneProduct(
-            $product,
-            $ticketId,
-            $projectId,
-            $phaseId,
-            $companyId,
-            null,
-            null,
-            $quantity
-        );
 
         $connectWiseService->unpickProduct($productId, $quantity);
         $connectWiseService->pickProduct($newProduct->id, $quantity);

@@ -319,6 +319,14 @@
                         <option v-for="(ticket) in tickets" :key="ticket.id" :value="ticket.id" :disabled="ticket.closedFlag">{{ ticket.summary }} (Status: {{ ticket.status.name }})</option>
                     </select>
                 </div>
+                <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0' && bundles.length > 0" class="mb-3">
+                    <label class="form-label">Bundle</label>
+                    <select v-model="moveProductForm.bundleId" class="form-control" required>
+                        <option value="">Select a bundle</option>
+                        <option value="0" :disabled="tickets.length > 0">No bundle</option>
+                        <option v-for="(bundle) in bundles" :key="bundle.id" :value="bundle.id">{{ bundle.catalogItem.identifier }}</option>
+                    </select>
+                </div>
                 <div v-if="moveProductForm.projectId === '0'" class="mb-3">
                     <label class="form-label">Company</label>
                     <v-select
@@ -488,6 +496,7 @@ export default {
         'moveProductForm.projectId' (val) {
             this.moveProductForm.phaseId = ''
             this.moveProductForm.ticketId = ''
+            this.moveProductForm.bundleId = ''
 
             if (val === '0') {
                 this.fetchCompanies()
@@ -500,6 +509,9 @@ export default {
         },
         'moveProductForm.companyId' () {
             this.fetchServiceTickets()
+        },
+        'moveProductForm.ticketId' (val) {
+            this.fetchBundles(val)
         }
     },
 
@@ -527,6 +539,17 @@ export default {
                         name: 'No project'
                     }, ...res.data]
                 })
+            }
+        },
+        fetchBundles(ticketId) {
+            if (ticketId) {
+                axios.get(`/api/binyod/bundles`, {
+                    params: ticketId !== '0' ? ({ ticketId }) : ({ projectId: this.moveProductForm.projectId })
+                }).then(res => {
+                    this.bundles = res.data
+                })
+            } else {
+                this.bundles = []
             }
         },
         fetchCompanies() {
@@ -561,8 +584,10 @@ export default {
                     this.tickets = res.data
                 })
             } else {
-                this.phases = []
+                this.tickets = []
             }
+
+            this.moveProductForm.bundleId = ''
         },
         fetchServiceTickets() {
             if (this.moveProductForm.companyId) {
@@ -576,6 +601,8 @@ export default {
             } else {
                 this.tickets = []
             }
+
+            this.moveProductForm.bundleId = ''
         },
         fetchUoms() {
             axios.get(`/api/products/uoms`).then(res => {

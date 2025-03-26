@@ -2266,14 +2266,13 @@ class ConnectWiseService
         return $response;
     }
 
-    public function createProductComponent(int $bundleId, \stdClass $catalogItem, int $quantity, float $price)
+    public function createProductComponent(int $bundleId, int $catalogItemId, int $quantity, float $price, float $cost)
     {
         $json = [
             "id" => 0,
             "quantity" => $quantity,
             "catalogItem" => [
-                "id" => $catalogItem->id,
-                "identifier" => $catalogItem->identifier
+                "id" => $catalogItemId
             ],
             "hidePriceFlag" => false,
             "hideItemIdentifierFlag" => false,
@@ -2449,7 +2448,7 @@ class ConnectWiseService
             }
 
             if ($bundle && !$billed) {
-                return $this->getProduct($this->createProductComponent($bundle->id, $catalogItem, $quantity, $cost)->productItem->id);
+                return $this->getProduct($this->createProductComponent($bundle->id, $catalogItem->id, $quantity, $cost, $cost)->productItem->id);
             }
 
             return $this->createProduct(
