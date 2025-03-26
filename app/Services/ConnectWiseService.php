@@ -2365,11 +2365,12 @@ class ConnectWiseService
             $projectTicketId = $options->where('display_name', 'Project Ticket')->first()->value;
             $companyId = $options->where('display_name', 'Company')->first()->value;
             $serviceTicketId = $options->where('display_name', 'Service Ticket')->first()->value;
-            $bundleIdentifier = $options->where('display_name', 'Bundle')->first()->display_value ?? null;
+            $bundleId = $options->where('display_name', 'Bundle')->first()->value;
 
             $project = $projectId ? $this->getProject($projectId) : null;
             $phase = $phaseId ? $this->getProjectPhase($projectId, $phaseId) : null;
             $company = $companyId ? $this->getCompany($companyId) : null;
+            $bundle = $bundleId ? $this->getProduct($bundleId) : null;
             $ticket = $projectTicketId ? $this->getProjectTicket($projectTicketId)
                 : ($serviceTicketId ? $this->getServiceTicket($serviceTicketId) : null);
             $cost = $orderProduct->base_price;
@@ -2391,32 +2392,10 @@ class ConnectWiseService
 
             if ($ticket) {
                 $conditions .= " and ticket/id={$ticket->id}";
-
-                $bundle = $this->getProducts(1, "catalogItem/_info/typeId=12{$conditions}")[0] ?? null;
-            } else {
-                $conditions .= " and ticket/id=null";
-                $bundle = $bundleIdentifier ? $this->getProducts(1, "catalogItem/_info/typeId=12 and catalogItem/identifier='{$bundleIdentifier}'{$conditions}")[0] ?? null : null;
             }
 
             $billed = (@$bundle->invoice && $this->getInvoice($bundle->invoice->id)->status->isClosed)
                 || (($cwProducts = collect($this->getProducts(1, "cancelledFlag=false{$conditions}"))) && $cwProducts->filter(fn($cwProduct) => !@$cwProduct->invoice)->count() == 0);
-
-            if (
-                !$bundle
-                && !$billed
-                && $bundleIdentifier
-                && ($catalogItemBundle = ($this->getCatalogItems(1, "identifier='{$bundleIdentifier}' and type/id=12")[0] ?? null))
-            ) {
-                $bundle = $this->createProduct(
-                    $catalogItemBundle,
-                    $ticket,
-                    $project,
-                    $phase,
-                    $company ?: $project->company,
-                    $ticket->opportunity ?? $project->opportunity
-                );
-
-            }
 
             $catalogItem = $this->getCatalogItemByIdentifier($orderProduct->sku);
 
