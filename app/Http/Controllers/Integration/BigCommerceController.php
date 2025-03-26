@@ -19,11 +19,11 @@ class BigCommerceController extends Controller
         if (!Str::contains($product->sku, 'PROJECT')) {
             try {
                 $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PROJECT);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PHASE);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PROJECT_TICKET);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_COMPANY);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_SERVICE_TICKET);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_BUNDLE);
+                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PHASE, sort_order: 1);
+                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PROJECT_TICKET, sort_order: 2);
+                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_COMPANY, sort_order: 3);
+                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_SERVICE_TICKET, sort_order: 4);
+                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_BUNDLE, sort_order: 5);
             } catch (\Exception) {}
         }
     }

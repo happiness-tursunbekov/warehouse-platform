@@ -204,7 +204,7 @@ class BigCommerceService
 
     public function updateProductModifier($productId, \stdClass|array $modifier)
     {
-        $result = $this->http->put("catalog/products/{$productId}/modifiers/{$modifier['id']}", [
+        $result = $this->http->put("catalog/products/{$productId}/modifiers/{$modifier->id}", [
             'json' => $modifier,
         ]);
         return json_decode($result->getBody()->getContents());
@@ -399,13 +399,13 @@ class BigCommerceService
         return json_decode($request->getBody()->getContents())->data;
     }
 
-    public function createProductModifier($productId, $display_name, $type="numbers_only_text", $initial_value_label=null)
+    public function createProductModifier($productId, $display_name, $type="numbers_only_text", $initial_value_label=null, $sort_order=0)
     {
         $json = [
             "type" => $type,
             "display_name" => $display_name,
             "required" => false,
-            "sort_order" => 0
+            "sort_order" => $sort_order
         ];
 
         if ($initial_value_label) {

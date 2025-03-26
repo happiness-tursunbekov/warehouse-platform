@@ -35,6 +35,38 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+        collect($bigCommerceService->getProducts(2, 250)->data)->map(function ($product) use ($bigCommerceService) {
+
+            if (!Str::contains($product->sku, 'PROJECT') && $product->id > 5086) {
+                    collect($bigCommerceService->getProductModifiers($product->id))->sortBy('id')->values()->map(function ($option, $key) use ($bigCommerceService, $product) {
+                        try {
+                            $option->sort_order = $key;
+
+                            $bigCommerceService->updateProductModifier($product->id, $option);
+                        } catch (\Exception $e) {
+                            if ($e->getCode() == 429) {
+                                echo "Sleeping\n";
+                                sleep(5);
+                                $option->sort_order = $key;
+
+                                $bigCommerceService->updateProductModifier($product->id, $option);
+                            } else {
+                                throw $e;
+                            }
+                        }
+                    });
+
+            }
+        });
+
+//        $product = $bigCommerceService->getProduct(4780);
+//
+//        if (!Str::contains($product->sku, 'PROJECT')) {
+//            $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_COMPANY);
+//            $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_SERVICE_TICKET);
+//        }
+
+
 
 //
 //        $products = collect($cin7Service->products(1, 1000)->Products);
