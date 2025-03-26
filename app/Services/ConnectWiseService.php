@@ -2436,7 +2436,7 @@ class ConnectWiseService
                 $project,
                 $phase,
                 $company ?: $project->company,
-                $ticket->opportunity ?? $project->opportunity,
+                @$ticket->opportunity ?? @$project->opportunity,
                 $cost,
                 $cost,
                 $quantity,
