@@ -299,7 +299,7 @@
                     <ul class="list-group mb-3">
                         <li v-for="product in products.filter(prod => prod.id !== selectedProjectProduct.id && prod.quantity !== prod.pickedQuantity)" :key="product.id" class="list-group-item">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" :id="'flexCheckChecked' + product.id" v-model="moveProductForm.toProductId" :value="product.id">
+                                <input required class="form-check-input" type="radio" :id="'flexCheckChecked' + product.id" v-model="moveProductForm.toProductId" :value="product.id">
                                 <label class="form-check-label" :for="'flexCheckChecked' + product.id">
                                     <template v-if="product.project">
                                         #{{ product.project.id }} - {{ product.project.name }} ({{ product.company.name }})
@@ -578,6 +578,8 @@ export default {
                 this.getPos(this.selectedProduct)
                 this.$snotify.success('Product moved successfully!')
                 this.moveProductModal = false
+                this.moveProductForm.toProductId = ''
+                this.selectedProjectProduct = null
             })
         },
         fetchProjects() {
