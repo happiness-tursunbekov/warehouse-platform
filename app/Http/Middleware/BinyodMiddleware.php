@@ -16,7 +16,7 @@ class BinyodMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Str::contains($request->headers->get('origin'), 'binyod.com') && $request->headers->get('origin')) {
+        if (!Str::contains($request->headers->get('origin'), 'binyod.com') && !Str::contains($request->headers->get('host'), 'stxcables.com')) {
             abort(403);
         }
 
