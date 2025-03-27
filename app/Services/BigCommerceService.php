@@ -161,16 +161,12 @@ class BigCommerceService
 
     public function getProductModifiers($productId, $page=null, $limit=null)
     {
-        try {
-            $result = $this->http->get("catalog/products/{$productId}/modifiers", [
-                'query' => [
-                    'page' => $page,
-                    'limit' => $limit
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return new \stdClass();
-        }
+        $result = $this->http->get("catalog/products/{$productId}/modifiers", [
+            'query' => [
+                'page' => $page,
+                'limit' => $limit
+            ],
+        ]);
         return json_decode($result->getBody()->getContents())->data;
     }
 

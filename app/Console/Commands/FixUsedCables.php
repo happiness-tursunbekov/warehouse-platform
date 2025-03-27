@@ -35,14 +35,26 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-//        $product = $bigCommerceService->getProduct(4780);
+//        $products = cache()->get('products') ?:
+//            collect();
 //
-//        if (!Str::contains($product->sku, 'PROJECT')) {
-//            $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_COMPANY);
-//            $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_SERVICE_TICKET);
-//        }
+//        $products->map(function ($item) use ($bigCommerceService) {
+//            $product = $item['product'];
+//
+//            $options = collect($bigCommerceService->getProductModifiers($product->id));
+//
+//            if (!Str::contains($product->sku, 'PROJECT')) {
+//                $option = $options->where('display_name', BigCommerceService::PRODUCT_OPTION_BUNDLE)->first();
+//
+//                $option->sort_order = 5;
+//
+//                $bigCommerceService->updateProductModifier($product->id, $option);
+//            }
+//        });
 
 
+//
+//
 
 //
 //        $products = collect($cin7Service->products(1, 1000)->Products);
@@ -107,22 +119,22 @@ class FixUsedCables extends Command
 //        $bigCommerceService->setProductCategoriesBulk($categories);
 
 
-        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('66-240-4B(186ft)');
-
-        $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
-
-        if (!$cin7Product) {
-            $cin7Product = $cin7Service->createProduct(
-                $catalogItem->identifier,
-                $connectWiseService->generateProductName($catalogItem->description, $catalogItem->identifier),
-                $catalogItem->category->name,
-                $catalogItem->unitOfMeasure->name,
-                $catalogItem->customerDescription,
-                $catalogItem->cost * 0.9 * 1.07
-            );
-        }
-
-        $cin7Service->stockAdjust($cin7Product->ID, 1, cost: $catalogItem->cost * 0.9);
+//        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('66-240-4B(186ft)');
+//
+//        $cin7Product = $cin7Service->productBySku($catalogItem->identifier);
+//
+//        if (!$cin7Product) {
+//            $cin7Product = $cin7Service->createProduct(
+//                $catalogItem->identifier,
+//                $connectWiseService->generateProductName($catalogItem->description, $catalogItem->identifier),
+//                $catalogItem->category->name,
+//                $catalogItem->unitOfMeasure->name,
+//                $catalogItem->customerDescription,
+//                $catalogItem->cost * 0.9 * 1.07
+//            );
+//        }
+//
+//        $cin7Service->stockAdjust($cin7Product->ID, 1, cost: $catalogItem->cost * 0.9);
 
 //        $lines = cache()->get('lines') ?: collect();
 //
