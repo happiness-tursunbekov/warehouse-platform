@@ -566,11 +566,12 @@ class ProductController extends Controller
         $request->validate([
             'productId' => ['required', 'integer'],
             'quantity' => ['required', 'integer'],
-            'projectId' => ['nullable', 'required_without:companyId', 'integer'],
-            'companyId' => ['nullable', 'required_without:projectId', 'integer'],
+            'projectId' => ['nullable', 'required_without_all:companyId,toProductId', 'integer'],
+            'companyId' => ['nullable', 'required_without_all:projectId,toProductId', 'integer'],
             'phaseId' => ['nullable', 'integer'],
             'ticketId' => ['nullable', 'integer'],
             'bundleId' => ['nullable', 'integer'],
+            'toProductId' => ['nullable', 'required_without_all:companyId,projectId']
         ]);
 
         $productId = $request->get('productId');
@@ -580,33 +581,36 @@ class ProductController extends Controller
         $phaseId = $request->get('phaseId');
         $ticketId = $request->get('ticketId');
         $bundleId = $request->get('bundleId');
+        $toProductId = $request->get('toProductId');
 
         $product = $connectWiseService->getProduct($productId);
 
-        if ($bundleId) {
-            $newProduct = $connectWiseService->getProduct($connectWiseService->createProductComponent($bundleId, $product->catalogItem->id, $quantity, $product->price, $product->cost)->productItem->id);
-        } else {
-            if ($projectId) {
-                $project = $connectWiseService->getProject($projectId);
+        if (!$toProductId) {
+            if ($bundleId) {
+                $newProduct = $connectWiseService->getProduct($connectWiseService->createProductComponent($bundleId, $product->catalogItem->id, $quantity, $product->price, $product->cost)->productItem->id);
+            } else {
+                if ($projectId) {
+                    $project = $connectWiseService->getProject($projectId);
 
-                $companyId = $project->company->id;
+                    $companyId = $project->company->id;
+                }
+
+                $newProduct = $connectWiseService->cloneProduct(
+                    $product,
+                    $ticketId,
+                    $projectId,
+                    $phaseId,
+                    $companyId,
+                    null,
+                    null,
+                    $quantity
+                );
             }
-
-            $newProduct = $connectWiseService->cloneProduct(
-                $product,
-                $ticketId,
-                $projectId,
-                $phaseId,
-                $companyId,
-                null,
-                null,
-                $quantity
-            );
         }
 
         $connectWiseService->unpickProduct($productId, $quantity);
-        $connectWiseService->pickProduct($newProduct->id, $quantity);
+        $connectWiseService->pickProduct($newProduct->id ?? $toProductId, $quantity);
 
-        return $newProduct;
+        return $newProduct->id ?? $toProductId;
     }
 }

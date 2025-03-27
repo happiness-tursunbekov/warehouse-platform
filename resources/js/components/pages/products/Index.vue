@@ -278,7 +278,7 @@
         </modal>
         <modal v-model:show="moveProductModal" modal-title="Moving product to a different project">
             <form v-if="selectedProjectProduct" @submit.prevent="moveProduct($refs.takeProductToDifferentProject.value)">
-                <ul class="list-group">
+                <ul class="list-group mb-3">
                     <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProjectProduct.catalogItem.identifier }}</li>
                     <li class="list-group-item"><strong>Description:</strong> {{ selectedProjectProduct.description }}</li>
                 </ul>
@@ -289,65 +289,93 @@
                         <span class="input-group-text">{{ selectedProjectProduct.unitOfMeasure.name }}</span>
                     </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Project</label>
-                    <v-select
-                        v-model="moveProductForm.projectId"
-                        :options="projects"
-                        :get-option-label="option => option.id !== '0' ? `#${option.id} - ${option.name} (${option.company.name})` : option.name"
-                        :reduce="option => option.id"
-                        placeholder="Select a project"
-                        required
-                    />
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="flexCheckChecked" v-model="isExistingProduct">
+                    <label class="form-check-label" for="flexCheckChecked">
+                        Existing product
+                    </label>
                 </div>
-                <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0'" class="mb-3">
-                    <label class="form-label">Phase</label>
-                    <v-select
-                        v-model="moveProductForm.phaseId"
-                        :options="phases"
-                        label="title"
-                        :reduce="option => option.id"
-                        placeholder="Select a phase"
-                        required
-                    />
+                <div v-if="isExistingProduct">
+                    <ul class="list-group mb-3">
+                        <li v-for="product in products.filter(prod => prod.id !== selectedProjectProduct.id && prod.quantity !== prod.pickedQuantity)" :key="product.id" class="list-group-item">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" :id="'flexCheckChecked' + product.id" v-model="moveProductForm.toProductId" :value="product.id">
+                                <label class="form-check-label" :for="'flexCheckChecked' + product.id">
+                                    <template v-if="product.project">
+                                        #{{ product.project.id }} - {{ product.project.name }} ({{ product.company.name }})
+                                    </template>
+                                    <template v-else>
+                                        {{ product.company.name }}
+                                    </template>
+                                    <span class="small fst-italic d-block w-100 text-success">
+                                        Max qty: {{ product.quantity - product.pickedQuantity }}
+                                    </span>
+                                </label>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
-                <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0'" class="mb-3">
-                    <label class="form-label">Project Ticket</label>
-                    <select v-model="moveProductForm.ticketId" class="form-control" required>
-                        <option value="">Select a ticket</option>
-                        <option value="0" :disabled="tickets.length > 0">No ticket</option>
-                        <option v-for="(ticket) in tickets" :key="ticket.id" :value="ticket.id" :disabled="ticket.closedFlag">{{ ticket.summary }} (Status: {{ ticket.status.name }})</option>
-                    </select>
-                </div>
-                <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0' && bundles.length > 0" class="mb-3">
-                    <label class="form-label">Bundle</label>
-                    <select v-model="moveProductForm.bundleId" class="form-control" required>
-                        <option value="">Select a bundle</option>
-                        <option value="0" :disabled="tickets.length > 0">No bundle</option>
-                        <option v-for="(bundle) in bundles" :key="bundle.id" :value="bundle.id">{{ bundle.catalogItem.identifier }}</option>
-                    </select>
-                </div>
-                <div v-if="moveProductForm.projectId === '0'" class="mb-3">
-                    <label class="form-label">Company</label>
-                    <v-select
-                        v-model="moveProductForm.companyId"
-                        :options="companies"
-                        label="name"
-                        :reduce="option => option.id"
-                        placeholder="Select a company"
-                        required
-                    />
-                </div>
-                <div v-if="moveProductForm.projectId === '0'" class="mb-3">
-                    <label class="form-label">Service ticket</label>
-                    <v-select
-                        v-model="moveProductForm.ticketId"
-                        :options="tickets"
-                        :get-option-label="option => `#${option.id} - ${option.summary}`"
-                        :reduce="option => option.id"
-                        placeholder="Select a ticket"
-                        required
-                    />
+                <div v-else>
+                    <div class="mb-3">
+                        <label class="form-label">Project</label>
+                        <v-select
+                            v-model="moveProductForm.projectId"
+                            :options="projects"
+                            :get-option-label="option => option.id !== '0' ? `#${option.id} - ${option.name} (${option.company.name})` : option.name"
+                            :reduce="option => option.id"
+                            placeholder="Select a project"
+                            required
+                        />
+                    </div>
+                    <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0'" class="mb-3">
+                        <label class="form-label">Phase</label>
+                        <v-select
+                            v-model="moveProductForm.phaseId"
+                            :options="phases"
+                            label="title"
+                            :reduce="option => option.id"
+                            placeholder="Select a phase"
+                            required
+                        />
+                    </div>
+                    <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0'" class="mb-3">
+                        <label class="form-label">Project Ticket</label>
+                        <select v-model="moveProductForm.ticketId" class="form-control" required>
+                            <option value="">Select a ticket</option>
+                            <option value="0" :disabled="tickets.length > 0">No ticket</option>
+                            <option v-for="(ticket) in tickets" :key="ticket.id" :value="ticket.id" :disabled="ticket.closedFlag">{{ ticket.summary }} (Status: {{ ticket.status.name }})</option>
+                        </select>
+                    </div>
+                    <div v-if="moveProductForm.projectId && moveProductForm.projectId !== '0' && bundles.length > 0" class="mb-3">
+                        <label class="form-label">Bundle</label>
+                        <select v-model="moveProductForm.bundleId" class="form-control" required>
+                            <option value="">Select a bundle</option>
+                            <option value="0" :disabled="tickets.length > 0">No bundle</option>
+                            <option v-for="(bundle) in bundles" :key="bundle.id" :value="bundle.id">{{ bundle.catalogItem.identifier }}</option>
+                        </select>
+                    </div>
+                    <div v-if="moveProductForm.projectId === '0'" class="mb-3">
+                        <label class="form-label">Company</label>
+                        <v-select
+                            v-model="moveProductForm.companyId"
+                            :options="companies"
+                            label="name"
+                            :reduce="option => option.id"
+                            placeholder="Select a company"
+                            required
+                        />
+                    </div>
+                    <div v-if="moveProductForm.projectId === '0'" class="mb-3">
+                        <label class="form-label">Service ticket</label>
+                        <v-select
+                            v-model="moveProductForm.ticketId"
+                            :options="tickets"
+                            :get-option-label="option => `#${option.id} - ${option.summary}`"
+                            :reduce="option => option.id"
+                            placeholder="Select a ticket"
+                            required
+                        />
+                    </div>
                 </div>
                 <div class="mb-3">
                     <button type="submit" class="btn btn-success">Move</button>
@@ -444,8 +472,10 @@ export default {
                 phaseId: '',
                 ticketId: '',
                 companyId: '',
-                bundleId: ''
+                bundleId: '',
+                toProductId: ''
             },
+            isExistingProduct: false,
             projects: [],
             tickets: [],
             phases: [],
@@ -512,6 +542,25 @@ export default {
         },
         'moveProductForm.ticketId' (val) {
             this.fetchBundles(val)
+        },
+        'moveProductForm.toProductId' (val) {
+
+            const available = this.selectedProjectProduct.pickedQuantity - this.selectedProjectProduct.shippedQuantity
+
+            if (val) {
+                const product = this.products.filter(product => product.id === val)[0]
+
+                const max = product.quantity - product.pickedQuantity
+
+                this.$refs.takeProductToDifferentProject.max = (max > available ? available : max) + ""
+            } else {
+                this.$refs.takeProductToDifferentProject.max = available + ""
+            }
+        },
+        'isExistingProduct' (val) {
+            if (!val) {
+                this.moveProductForm.toProductId = ''
+            }
         }
     },
 
