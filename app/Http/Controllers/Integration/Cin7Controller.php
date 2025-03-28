@@ -20,42 +20,46 @@ class Cin7Controller extends Controller
             'data' => $request->post()
         ]);
 
-        $adjustmentDetails = collect($request->post())
-            ->unique('ID')
-            ->map(function ($stock) use ($connectWiseService) {
-                $productSku = $stock['SKU'] ?? null;
+        $exception = null;
 
-                if (!$productSku) {
-                    return false;
-                }
+        try {
+            $adjustmentDetails = collect($request->post())
+                ->unique('ID')
+                ->map(function ($stock) use ($connectWiseService) {
+                    $productSku = $stock['SKU'] ?? null;
 
-                $available = $stock['Available'];
+                    if (!$productSku) {
+                        return false;
+                    }
 
-                if (Str::contains($productSku, '-PROJECT')) {
-                    return false;
-                }
+                    $available = $stock['Available'];
 
-                $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
+                    if (Str::contains($productSku, '-PROJECT')) {
+                        return false;
+                    }
 
-                if (!$catalogItem) {
-                    return false;
-                }
+                    $catalogItem = $connectWiseService->getCatalogItemByIdentifier($productSku);
 
-                $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)->count;
+                    if (!$catalogItem) {
+                        return false;
+                    }
 
-                if ($onHand == $available) {
-                    return false;
-                }
+                    $onHand = $connectWiseService->getCatalogItemOnHand($catalogItem->id, ConnectWiseService::AZAD_MAY_WAREHOUSE_DEFAULT_BIN)->count;
 
-                $quantity = $available - $onHand;
+                    if ($onHand == $available) {
+                        return false;
+                    }
 
-                return $connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, $quantity, ConnectWiseService::AZAD_MAY_WAREHOUSE);
-            })
-            ->filter(fn($detail) => !!$detail);
+                    $quantity = $available - $onHand;
 
-        if ($adjustmentDetails->count() > 0) {
-            $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Azad May Available Quantity Changed');
-        }
+                    return $connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, $quantity, ConnectWiseService::AZAD_MAY_WAREHOUSE);
+                })
+                ->filter(fn($detail) => !!$detail);
+
+            if ($adjustmentDetails->count() > 0) {
+                $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Azad May Available Quantity Changed');
+            }
+        } catch (\Exception) {}
 
         return response()->json(['message' => 'Product adjusted successfully!']);
     }
