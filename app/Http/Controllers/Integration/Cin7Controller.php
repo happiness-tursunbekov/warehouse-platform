@@ -9,6 +9,7 @@ use App\Services\Cin7Service;
 use App\Services\ConnectWiseService;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class Cin7Controller extends Controller
@@ -59,7 +60,9 @@ class Cin7Controller extends Controller
             if ($adjustmentDetails->count() > 0) {
                 $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Azad May Available Quantity Changed');
             }
-        } catch (\Exception) {}
+        } catch (\Exception $e) {
+            Log::error($e->getMessage() . "\n" . $e->getTraceAsString());
+        }
 
         return response()->json(['message' => 'Product adjusted successfully!']);
     }
