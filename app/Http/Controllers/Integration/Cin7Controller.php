@@ -21,8 +21,6 @@ class Cin7Controller extends Controller
             'data' => $request->post()
         ]);
 
-        $exception = null;
-
         try {
             $adjustmentDetails = collect($request->post())
                 ->unique('ID')
