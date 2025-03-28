@@ -535,7 +535,7 @@ class ProductController extends Controller
 
         $memo = "";
 
-        $purchaseOrderLine = $productsData->filter(fn($productData) => !$productData['doNotCharge'])->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails, $isCatalogItem) {
+        $purchaseOrderLine = $productsData->filter(fn($productData) => !@$productData['doNotCharge'])->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails, $isCatalogItem) {
             $product = $isCatalogItem ? $connectWiseService->getCatalogItem($productData['id']) : $connectWiseService->getProduct($productData['id']);
 
             $quantity = $productData['quantity'];
@@ -557,7 +557,7 @@ class ProductController extends Controller
         if (!$isCatalogItem) {
             $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Taking to Azad May Inventory');
         } else {
-            $adjustmentLine = $productsData->filter(fn($productData) => $productData['doNotCharge'])->map(function ($productData) use ($cin7Service, $connectWiseService) {
+            $adjustmentLine = $productsData->filter(fn($productData) => @$productData['doNotCharge'])->map(function ($productData) use ($cin7Service, $connectWiseService) {
                 $catalogItem = $connectWiseService->getCatalogItem($productData['id']);
 
                 $product = $cin7Service->productBySku($catalogItem->identifier);
