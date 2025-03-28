@@ -49,7 +49,7 @@ class ProductController extends Controller
         if ($identifier)
             $conditions .= " and identifier contains '{$identifier}'";
         if ($description)
-            $conditions .= " and description contains '{$description}'";
+            $conditions .= " and customerDescription contains '{$description}'";
         if ($barcode) {
             $customFieldConditions = "caption='Barcodes' and value contains '{$barcode}'";
         }

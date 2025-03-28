@@ -217,17 +217,13 @@ class ConnectWiseService
 
     public function getCatalogItemByIdentifier($identifier)
     {
-        try {
-            $response = $this->http->get('procurement/catalog', [
-                'query' => [
-                    'clientId' => $this->clientId,
-                    'conditions' => "identifier='{$identifier}'"
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return new \stdClass();
-        }
-        return @json_decode($response->getBody()->getContents())[0];
+        $response = $this->http->get('procurement/catalog', [
+            'query' => [
+                'clientId' => $this->clientId,
+                'conditions' => "identifier='{$identifier}'"
+            ],
+        ]);
+        return json_decode($response->getBody()->getContents())[0] ?? null;
     }
 
     public function getCatalogItemsByBarcode(string $barcode, $fields=null, $page=null, $pageSize=25)
