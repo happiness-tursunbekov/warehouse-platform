@@ -72,6 +72,7 @@
                                     <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="dropdown-item" title="Add used product">Add used product</button>
                                     <button @click.prevent="selectedProduct=product;uomModal=true" type="button" class="dropdown-item" title="Add used product">Edit unit of measure</button>
                                     <button v-if="user.reportMode" @click.prevent="selectedProduct=product;sellableModal=true" type="button" class="dropdown-item" title="Add used product">Add to sellable products list</button>
+                                    <button @click.prevent="selectedProduct=product;takeCatalogItemToAzadMayModal=true" type="button" class="dropdown-item">Sell to Azad May</button>
                                 </div>
                             </div>
                         </td>
@@ -220,7 +221,7 @@
                 </div>
             </form>
         </modal>
-        <modal v-model:show="takeProductToAzadMayModal" modal-title="Adding used catalog item">
+        <modal v-model:show="takeProductToAzadMayModal" modal-title="Taking product to Azad May list">
             <form v-if="selectedProjectProduct" @submit.prevent="addToNeedsToBeTakenProducts($refs.takeProductToAzadMay.value)">
                 <ul class="list-group">
                     <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProjectProduct.catalogItem.identifier }}</li>
@@ -231,6 +232,24 @@
                     <div class="input-group">
                         <input ref="takeProductToAzadMay" type="number" min="1" class="form-control" :max="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" :value="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" required>
                         <span class="input-group-text">{{ selectedProjectProduct.unitOfMeasure.name }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-success">Add to list</button>
+                </div>
+            </form>
+        </modal>
+        <modal v-model:show="takeCatalogItemToAzadMayModal" modal-title="Selling to Azad May">
+            <form v-if="selectedProduct" @submit.prevent="addToNeedsToBeTakenCatalogItems($refs.takeCatalogItemToAzadMay.value)">
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
+                    <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
+                </ul>
+                <div class="mb-3">
+                    <label class="form-label">Quantity</label>
+                    <div class="input-group">
+                        <input ref="takeCatalogItemToAzadMay" type="number" min="1" class="form-control" value="1" required>
+                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -382,8 +401,31 @@
                 </div>
             </form>
         </modal>
-        <div v-if="needsToBeTakenProducts.length > 0" class="position-fixed" style="right:0;bottom:0">
-            <div class="card">
+        <div class="position-fixed" style="right:0;bottom:0">
+            <div v-if="needsToBeTakenCatalogItems.length > 0" class="card">
+                <div class="card-header"><a class="btn-link" @click.prevent="takeCatalogItemsToAzadMayModal = !takeCatalogItemsToAzadMayModal" role="button">[{{ takeCatalogItemsToAzadMayModal ? 'Hide' : 'Show' }}]</a> Sale list for Azad May Inventory ({{ needsToBeTakenCatalogItems.length }})</div>
+                <div v-if="takeCatalogItemsToAzadMayModal" class="card-body">
+                    <table class="table table-striped">
+                        <thead class="sticky-top">
+                        <tr>
+                            <th>Product ID</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="(item, key) in needsToBeTakenCatalogItems" :key="key">
+                            <td>{{ item.catalogItem.identifier }}</td>
+                            <td>{{ item.catalogItem.category.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+
+                    <button @click="takeCatalogItemsToAzadMay" type="button" class="btn btn-success btn-sm">Start the process</button>
+                </div>
+            </div>
+            <div v-if="needsToBeTakenProducts.length > 0" class="card">
                 <div class="card-header"><a class="btn-link" @click.prevent="takeProductsToAzadMayModal = !takeProductsToAzadMayModal" role="button">[{{ takeProductsToAzadMayModal ? 'Hide' : 'Show' }}]</a> Products list for Azad May Inventory ({{ needsToBeTakenProducts.length }})</div>
                 <div v-if="takeProductsToAzadMayModal" class="card-body">
                     <table class="table table-striped">
@@ -464,8 +506,11 @@ export default {
             uomModal: false,
             uoms: [],
             takeProductToAzadMayModal: false,
+            takeCatalogItemToAzadMayModal: false,
+            takeCatalogItemsToAzadMayModal: false,
             takeProductsToAzadMayModal: false,
             needsToBeTakenProducts: [],
+            needsToBeTakenCatalogItems: [],
             moveProductModal: false,
             moveProductForm: {
                 projectId: '',
@@ -719,6 +764,20 @@ export default {
             })
         },
 
+        takeCatalogItemsToAzadMay() {
+            return axios.post(`/api/products/take-products-to-azad-may`, {
+                products: this.needsToBeTakenCatalogItems.map(item => ({
+                    id: item.catalogItem.id,
+                    quantity: item.quantity
+                })),
+                isCatalogItem: true
+            }).then(() => {
+                this.$snotify.success(`Sale process finished successfully!`)
+                this.takeCatalogItemsToAzadMayModal = false
+                this.needsToBeTakenCatalogItems = []
+            })
+        },
+
         unshipAsUsed(qty) {
             if (this.selectedProjectProduct.catalogItem.identifier.includes('-used)') && qty === toString(this.selectedProjectProduct.shippedQuantity)) {
                 return this.unship(qty)
@@ -870,6 +929,17 @@ export default {
             this.$snotify.success('Product added to the list!')
 
             this.takeProductToAzadMayModal = false
+        },
+
+        addToNeedsToBeTakenCatalogItems(qty) {
+            this.needsToBeTakenCatalogItems.push({
+                catalogItem: this.selectedProduct,
+                quantity: qty
+            })
+
+            this.$snotify.success('CatalogItem added to the list!')
+
+            this.takeCatalogItemToAzadMayModal = false
         }
     }
 }

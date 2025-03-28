@@ -668,9 +668,11 @@ class Cin7Service
         return json_decode($result->getBody()->getContents())->CustomerList[0] ?? null;
     }
 
-    public function convertProductToPurchaseOrderLine($cwProduct, $quantity)
+    public function convertProductToPurchaseOrderLine($cwProduct, $quantity, $isCatalogItem=false)
     {
-        $product = $this->productBySku($cwProduct->catalogItem->identifier);
+        $sku = $isCatalogItem ? $cwProduct->identifier : $cwProduct->catalogItem->identifier;
+
+        $product = $this->productBySku($sku);
 
         $cost = $cwProduct->cost * 0.9;
 
@@ -678,11 +680,11 @@ class Cin7Service
 
             $connectWiseService = new ConnectWiseService();
 
-            $catalogItem = $connectWiseService->getCatalogItem($cwProduct->catalogItem->id);
+            $catalogItem = $isCatalogItem ? $cwProduct : $connectWiseService->getCatalogItem($cwProduct->catalogItem->id);
 
             $product = $this->createProduct(
-                $cwProduct->catalogItem->identifier,
-                $connectWiseService->generateProductName($cwProduct->description, $cwProduct->catalogItem->identifier),
+                $sku,
+                $connectWiseService->generateProductName($catalogItem->description, $catalogItem->identifier),
                 $catalogItem->category->name,
                 $catalogItem->unitOfMeasure->name,
                 $catalogItem->customerDescription,

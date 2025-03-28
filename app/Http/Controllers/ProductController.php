@@ -520,8 +520,11 @@ class ProductController extends Controller
         $request->validate([
             'products' => ['required', 'array'],
             'products.*.id' => ['required', 'integer'],
-            'products.*.quantity' => ['required', 'min:1']
+            'products.*.quantity' => ['required', 'min:1'],
+            'isCatalogItem' => ['nullable', 'boolean']
         ]);
+
+        $isCatalogItem = $request->get('isCatalogItem', false);
 
         $productsData = collect($request->get('products'));
 
@@ -529,24 +532,30 @@ class ProductController extends Controller
 
         $memo = "";
 
-        $purchaseOrderLine = $productsData->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails) {
-            $product = $connectWiseService->getProduct($productData['id']);
+        $purchaseOrderLine = $productsData->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails, $isCatalogItem) {
+            $product = $isCatalogItem ? $connectWiseService->getCatalogItem($productData['id']) : $connectWiseService->getProduct($productData['id']);
 
             $quantity = $productData['quantity'];
 
-            $connectWiseService->unpickProduct($product->id, $quantity);
+            if (!$isCatalogItem) {
+                $connectWiseService->unpickProduct($product->id, $quantity);
 
-            $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
+                $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
 
-            $adjustmentDetails->push($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $quantity));
+                $adjustmentDetails->push($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $quantity));
 
-            $memo .= $catalogItem->identifier . ' - Unpicked from' . (@$product->project ? " project: #{$product->project->id}"
-                    : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} &#13;"));
+                $memo .= $catalogItem->identifier . ' - Unpicked from' . (@$product->project ? " project: #{$product->project->id}"
+                        : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} &#13;"));
+            } else {
+                $memo .= 'Returned products from Binyod projects';
+            }
 
-            return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity);
+            return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity, $isCatalogItem);
         });
 
-        $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Taking to Azad May Inventory');
+        if (!$isCatalogItem) {
+            $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Taking to Azad May Inventory');
+        }
 
         $purchaseOrder = $cin7Service->createPurchaseOrder($purchaseOrderLine->toArray(), memo: $memo);
 

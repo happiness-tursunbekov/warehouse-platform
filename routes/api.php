@@ -94,6 +94,7 @@ Route::group([
             Route::get('{id}/images', [ProductController::class, 'images']);
             Route::post('{product}/upload', [ProductController::class, 'upload']);
             Route::post('take-products-to-azad-may', [ProductController::class, 'takeProductsToAzadMay']);
+            Route::post('take-catalog-items-to-azad-may', [ProductController::class, 'takeCatalogItemsToAzadMay']);
             Route::post('move-product-to-different-project', [ProductController::class, 'moveProductToDifferentProject']);
         });
     });
