@@ -518,11 +518,14 @@ class ProductController extends Controller
     public function takeProductsToAzadMay(Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
     {
         $request->validate([
+            'supplierId' => ['required', 'string'],
             'products' => ['required', 'array'],
             'products.*.id' => ['required', 'integer'],
             'products.*.quantity' => ['required', 'min:1'],
             'isCatalogItem' => ['nullable', 'boolean']
         ]);
+
+        $supplierId = $request->get('supplierId');
 
         $isCatalogItem = $request->get('isCatalogItem', false);
 
@@ -532,7 +535,7 @@ class ProductController extends Controller
 
         $memo = "";
 
-        $purchaseOrderLine = $productsData->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails, $isCatalogItem) {
+        $purchaseOrderLine = $productsData->filter(fn($productData) => !$productData['doNotCharge'])->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails, $isCatalogItem) {
             $product = $isCatalogItem ? $connectWiseService->getCatalogItem($productData['id']) : $connectWiseService->getProduct($productData['id']);
 
             $quantity = $productData['quantity'];
@@ -546,8 +549,6 @@ class ProductController extends Controller
 
                 $memo .= $catalogItem->identifier . ' - Unpicked from' . (@$product->project ? " project: #{$product->project->id}"
                         : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} &#13;"));
-            } else {
-                $memo .= 'Returned products from Binyod projects';
             }
 
             return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity, $isCatalogItem);
@@ -555,17 +556,47 @@ class ProductController extends Controller
 
         if (!$isCatalogItem) {
             $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Taking to Azad May Inventory');
+        } else {
+            $adjustmentLine = $productsData->filter(fn($productData) => $productData['doNotCharge'])->map(function ($productData) use ($cin7Service, $connectWiseService) {
+                $catalogItem = $connectWiseService->getCatalogItem($productData['id']);
+
+                $product = $cin7Service->productBySku($catalogItem->identifier);
+
+                if (!$product) {
+
+                    $connectWiseService = new ConnectWiseService();
+
+                    $product = $cin7Service->createProduct(
+                        $catalogItem->identifier,
+                        $connectWiseService->generateProductName($catalogItem->description, $catalogItem->identifier),
+                        $catalogItem->category->name,
+                        $catalogItem->unitOfMeasure->name,
+                        $catalogItem->customerDescription,
+                        $catalogItem->cost
+                    );
+                }
+
+                $stock = $cin7Service->productAvailability($product->ID);
+
+                return $cin7Service->convertProductToAdjustmentLine($product->ID, $productData['quantity'] + ($stock->OnHand ?? 0));
+            });
+
+            if ($adjustmentLine->count() > 0) {
+                $cin7Service->stockAdjustBulk($adjustmentLine);
+            }
         }
 
-        $purchaseOrder = $cin7Service->createPurchaseOrder($purchaseOrderLine->toArray(), memo: $memo);
+        if ($purchaseOrderLine->count() > 0) {
+            $purchaseOrder = $cin7Service->createPurchaseOrder($purchaseOrderLine->toArray(), $supplierId, $memo);
 
-        $cin7Service->receivePurchaseOrderItems($purchaseOrder->TaskID, array_map(fn($line) => ([
-            'ProductID' => $line->ProductID,
-            'Quantity' => $line->Quantity,
-            'Date' => date('Y-m-d H:i:s'),
-            'Received' => true,
-            'Location' => Cin7Service::INVENTORY_AZAD_MAY
-        ]), $purchaseOrder->Lines));
+            $cin7Service->receivePurchaseOrderItems($purchaseOrder->TaskID, array_map(fn($line) => ([
+                'ProductID' => $line->ProductID,
+                'Quantity' => $line->Quantity,
+                'Date' => date('Y-m-d H:i:s'),
+                'Received' => true,
+                'Location' => Cin7Service::INVENTORY_AZAD_MAY
+            ]), $purchaseOrder->Lines));
+        }
 
         return $request->all();
     }
@@ -621,5 +652,10 @@ class ProductController extends Controller
         $connectWiseService->pickProduct($newProduct->id ?? $toProductId, $quantity);
 
         return $newProduct->id ?? $toProductId;
+    }
+
+    public function cin7Suppliers(Cin7Service $cin7Service)
+    {
+        return collect($cin7Service->suppliers()->SupplierList)->filter(fn($sup) => Str::contains(Str::lower($sup->Name), 'binyod'));
     }
 }

@@ -439,7 +439,7 @@ class Cin7Service
         return $this->stockAdjust($productId, $quantity, $inventory, $cost, $adjustmentId);
     }
 
-    public function convertProductToAdjustmentLine(int $productId, $quantity, $inventory=self::INVENTORY_AZAD_MAY, $cost=0.0001)
+    public function convertProductToAdjustmentLine($productId, $quantity, $inventory=self::INVENTORY_AZAD_MAY, $cost=0.0001)
     {
         return [
             "ProductID" => $productId,
@@ -703,9 +703,9 @@ class Cin7Service
         ];
     }
 
-    public function createPurchaseOrder(array $lineProducts, $supplierName='BINYOD LLC', $memo='Purchase Order')
+    public function createPurchaseOrder(array $lineProducts, $supplierId, $memo='Purchase Order')
     {
-        $purchase = $this->createPurchase($supplierName);
+        $purchase = $this->createPurchase($supplierId);
 
         $result = $this->http->post('purchase/order', [
             'json' => [
@@ -720,11 +720,11 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function createPurchase($supplierName='BINYOD LLC')
+    public function createPurchase($supplierId)
     {
         $result = $this->http->post('advanced-purchase', [
             'json' => [
-                'Supplier' => $supplierName,
+                'SupplierID' => $supplierId,
                 'Approach' => 'STOCK',
                 'Location' => self::INVENTORY_AZAD_MAY,
                 'TaxRule' => 'Tax Exempt'
@@ -743,6 +743,13 @@ class Cin7Service
                 'Status' => 'AUTHORISED'
             ]
         ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
+    public function suppliers()
+    {
+        $result = $this->http->get('supplier');
 
         return json_decode($result->getBody()->getContents());
     }
