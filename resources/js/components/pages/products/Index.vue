@@ -390,7 +390,7 @@
 
                 <div v-if="needsToBeTakenCatalogItems.length > 0" class="card">
                     <div class="card-header"><a class="btn-link" @click.prevent="takeCatalogItemsToAzadMayModal = !takeCatalogItemsToAzadMayModal" role="button">[{{ takeCatalogItemsToAzadMayModal ? 'Hide' : 'Show' }}]</a> Sale list for Azad May Inventory ({{ needsToBeTakenCatalogItems.length }})</div>
-                    <div v-if="takeCatalogItemsToAzadMayModal" class="card-body">
+                    <div v-if="takeCatalogItemsToAzadMayModal" class="card-body table-responsive">
                         <table class="table table-striped">
                             <thead class="sticky-top">
                             <tr>
@@ -421,7 +421,7 @@
                 </div>
                 <div v-if="needsToBeTakenProducts.length > 0" class="card">
                     <div class="card-header"><a class="btn-link" @click.prevent="takeProductsToAzadMayModal = !takeProductsToAzadMayModal" role="button">[{{ takeProductsToAzadMayModal ? 'Hide' : 'Show' }}]</a> Products list for Azad May Inventory ({{ needsToBeTakenProducts.length }})</div>
-                    <div v-if="takeProductsToAzadMayModal" class="card-body">
+                    <div v-if="takeProductsToAzadMayModal" class="card-body table-responsive">
                         <table class="table table-striped">
                             <thead class="sticky-top">
                             <tr>
