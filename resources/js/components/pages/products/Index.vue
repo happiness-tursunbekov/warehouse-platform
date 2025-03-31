@@ -377,7 +377,7 @@
                 </div>
             </form>
         </modal>
-        <div class="position-fixed bg-white p-3" style="right:0;bottom:0;max-height: 100%;overflow-y: auto; z-index: 1021">
+        <div class="position-fixed bg-white p-3" style="right:0;bottom:0;max-height: 100%;overflow: auto; z-index: 1021">
             <form @submit.prevent="handleAzadMayList">
                 <div v-if="needsToBeTakenCatalogItems.length || needsToBeTakenProducts.length > 0" class="mb-3">
                     <label class="form-label">Cin7 Supplier</label>
