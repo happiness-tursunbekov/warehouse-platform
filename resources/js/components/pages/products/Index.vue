@@ -67,7 +67,6 @@
                                 </button>
                                 <div class="dropdown-menu">
                                     <button @click.prevent="getPos(product)" type="button" class="dropdown-item">Get PO's/Ship</button>
-                                    <button @click.prevent="selectedProduct=product;getProductOnHand(product);adjustItemModal=true" type="button" class="dropdown-item" title="Adjust">Adjust quantity</button>
                                     <button @click.prevent="showUploadPhotoModal(product)" type="button" class="dropdown-item" title="Upload a photo">Upload a photo</button>
                                     <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="dropdown-item" title="Add used product">Add used product</button>
                                     <button @click.prevent="selectedProduct=product;uomModal=true" type="button" class="dropdown-item" title="Add used product">Edit unit of measure</button>
@@ -150,25 +149,6 @@
             </div>
         </modal>
         <barcode-link-modal @handled="getProducts()" v-model:show="barcodeLinkModal" :barcode="barcode" :product="selectedProduct"/>
-        <modal v-model:show="adjustItemModal" modal-title="Adjusting catalog item">
-            <form @submit.prevent="adjustItem($refs.adjustItemQty.value)">
-                <ul class="list-group">
-                    <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
-                    <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
-                    <li class="list-group-item"><strong>On hand:</strong> {{ selectedProduct.onHand }}</li>
-                </ul>
-                <div class="mb-3">
-                    <label class="form-label">Quantity</label>
-                    <div class="input-group">
-                        <input ref="adjustItemQty" type="number" class="form-control" required>
-                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <button type="submit" class="btn btn-success">Save</button>
-                </div>
-            </form>
-        </modal>
         <file-upload-modal @upload="uploadPhotos" v-model:show="photoModal" :accept="['image/*']" modal-title="Manage product photos" multiple/>
         <modal v-model:show="shipmentModal" :modal-title="'Shipment: ' + (selectedProjectProduct ? selectedProjectProduct.catalogItem.identifier : '')">
             <div v-if="selectedProjectProduct" style="min-width: 300px;">
@@ -519,7 +499,6 @@ export default {
                 upPhotos: [],
             },
             loadPhotosAutomatically: false,
-            adjustItemModal: false,
             shipmentModal: false,
             usedItemModal: false,
             nothingFound: false,
@@ -910,20 +889,6 @@ export default {
                 this.selectedProduct = null
                 this.$snotify.success('Photos uploaded successfully!')
                 })
-        },
-
-        adjustItem(qty) {
-            if (qty === '0') {
-                return this.$snotify.error('Quantity must be positive or negative')
-            }
-            return axios.post(`/api/products/${this.selectedProduct.id}/adjust`, {
-                quantity: qty
-            }).then(res => {
-                this.$snotify.success('Product adjusted successfully!')
-                this.clearFilter()
-                this.getProductOnHand(this.selectedProduct)
-                this.adjustItemModal = false
-            })
         },
 
         createUsedItem(qty) {

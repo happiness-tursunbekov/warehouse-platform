@@ -1398,8 +1398,6 @@ class ConnectWiseService
 
         $newCatalogItem = json_decode($response->getBody()->getContents());
 
-        $this->catalogItemAdjust($newCatalogItem, $qty);
-
         return $newCatalogItem;
     }
 

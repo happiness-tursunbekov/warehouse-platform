@@ -453,19 +453,6 @@ class ProductController extends Controller
         return $connectWiseService->createUsedCatalogItem($id, $request->get('quantity'));
     }
 
-    public function adjust($id, Request $request, ConnectWiseService $connectWiseService)
-    {
-        $request->validate([
-            'quantity' => ['required', 'integer']
-        ]);
-
-        $catalogItem = $connectWiseService->getCatalogItem($id);
-
-        $connectWiseService->catalogItemAdjust($catalogItem, $request->get('quantity'));
-
-        return $catalogItem;
-    }
-
     public function poReport(Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
