@@ -74,7 +74,6 @@ Route::group([
             Route::get('/', [ProductController::class, 'index']);
             Route::post('receive', [ProductController::class, 'receive']);
             Route::post('unship', [ProductController::class, 'unship']);
-            Route::post('unship-as-used', [ProductController::class, 'unshipAsUsed']);
             Route::post('add-barcode', [ProductController::class, 'addBarcode']);
             Route::options('ship', [ProductController::class, 'shipOptions']);
             Route::post('ship', [ProductController::class, 'ship']);

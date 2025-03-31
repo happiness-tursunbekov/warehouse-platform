@@ -176,7 +176,7 @@
                     <hr class="mt-0 mb-1"/>
                     <label class="form-label">Ship</label>
                     <div class="input-group">
-                        <input required :value="selectedProjectProduct.quantity - selectedProjectProduct.shippedQuantity" type="number" min="1" :max="selectedProjectProduct.quantity - selectedProjectProduct.shippedQuantity" ref="shipQty" class="form-control"/>
+                        <input required :value="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" type="number" min="1" :max="selectedProjectProduct.pickedQuantity - selectedProjectProduct.shippedQuantity" ref="shipQty" class="form-control"/>
                         <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
                     </div>
                     <button type="submit" class="btn btn-success mt-2 btn-sm">Ship</button>
@@ -190,16 +190,6 @@
                         <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
                     </div>
                     <button type="submit" class="btn btn-danger mt-2 btn-sm">Return/Unship</button>
-                </form>
-
-                <form @submit.prevent="unshipAsUsed($refs.unshipUsedQty.value)" :class="{ 'd-none': selectedProjectProduct.shippedQuantity === 0 }" class="mb-3">
-                    <hr class="mt-0 mb-1"/>
-                    <label class="form-label">Return/Unship as Used</label>
-                    <div class="input-group">
-                        <input required :value="0" type="number" min="1" :max="selectedProjectProduct.shippedQuantity" ref="unshipUsedQty" class="form-control"/>
-                        <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
-                    </div>
-                    <button type="submit" class="btn btn-danger mt-2 btn-sm">Return/Unship as Used</button>
                 </form>
             </div>
         </modal>
@@ -818,21 +808,6 @@ export default {
                 this.$snotify.success(`Sale/list process finished successfully!`)
                 this.takeCatalogItemsToAzadMayModal = false
                 this.needsToBeTakenCatalogItems = []
-            })
-        },
-
-        unshipAsUsed(qty) {
-            if (this.selectedProjectProduct.catalogItem.identifier.includes('-used)') && qty === toString(this.selectedProjectProduct.shippedQuantity)) {
-                return this.unship(qty)
-            }
-
-            return axios.post(`/api/products/unship-as-used`, {
-                productId: this.selectedProjectProduct.id,
-                quantity: qty
-            }).then(() => {
-                setTimeout(() => this.getPos(this.selectedProduct), 500)
-                this.$snotify.success(`${this.selectedProjectProduct.catalogItem.identifier} unshipped as used successfully!`)
-                this.shipmentModal = false
             })
         },
 

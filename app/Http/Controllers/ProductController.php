@@ -407,22 +407,10 @@ class ProductController extends Controller
         ]);
 
         $productId = $request->get('productId');
-        $quantity = $request->get('quantity') * -1;
-
-        return $connectWiseService->productPickShip($productId, $quantity);
-    }
-
-    public function unshipAsUsed(Request $request, ConnectWiseService $connectWiseService)
-    {
-        $request->validate([
-            'productId' => ['required', 'integer'],
-            'quantity' => ['required', 'integer', 'min:1']
-        ]);
-
-        $productId = $request->get('productId');
         $quantity = $request->get('quantity');
 
-        return $connectWiseService->productPickShip($productId, $quantity, true);
+        $connectWiseService->unshipProduct($productId, $quantity);
+        return response()->json($request->all());
     }
 
     public function shipOptions(ConnectWiseService $connectWiseService)

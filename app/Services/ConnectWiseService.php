@@ -643,6 +643,42 @@ class ConnectWiseService
     /**
      * @throws \Exception|GuzzleException
      */
+    public function unshipProduct($id, $quantity) : void
+    {
+        $dynamicQty = $quantity;
+        collect($this->getProductPickingShippingDetails($id, null, "lineNumber != 0"))
+            ->filter(fn($pickShip) => $pickShip->shippedQuantity > 0)
+            ->map(function ($pickShip) use (&$dynamicQty) {
+
+                if ($dynamicQty == 0) {
+                    return false;
+                }
+
+                if ($dynamicQty > $pickShip->shippedQuantity) {
+                    $pickShip->shippedQuantity = 0;
+                    $dynamicQty = $dynamicQty - $pickShip->shippedQuantity;
+                } else {
+                    $pickShip->shippedQuantity -= $dynamicQty;
+                    $dynamicQty = 0;
+                }
+
+                return $pickShip;
+            })
+            ->filter(fn($pickShip) => !!$pickShip)
+            ->map(function ($pickShip) use ($dynamicQty) {
+
+                if ($dynamicQty > 0) {
+                    throw new \Exception('Unshipping quantity cannot be greater than shipped quantity');
+                }
+
+                $this->addOrUpdatePickShip($pickShip);
+            })
+        ;
+    }
+
+    /**
+     * @throws \Exception|GuzzleException
+     */
     public function shipProduct($id, $quantity)
     {
         $dynamicQty = $quantity;
