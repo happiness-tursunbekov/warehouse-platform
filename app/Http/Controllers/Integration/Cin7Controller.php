@@ -79,104 +79,108 @@ class Cin7Controller extends Controller
             'data' => $request->post()
         ]);
 
-        $salesOrderId = $request->get('SaleTaskID');
+        try {
+            $salesOrderId = $request->get('SaleTaskID');
 
-        $bigCommerceOrderId = $request->get('CustomerReference');
+            $bigCommerceOrderId = $request->get('CustomerReference');
 
-        $bigCommerceOrder = $bigCommerceService->getOrder($bigCommerceOrderId);
+            $bigCommerceOrder = $bigCommerceService->getOrder($bigCommerceOrderId);
 
-        $purchaseOrder = $connectWiseService->purchaseOrders(1, cin7SalesOrderId: $salesOrderId)[0] ?? null;
+            $purchaseOrder = $connectWiseService->purchaseOrders(1, cin7SalesOrderId: $salesOrderId)[0] ?? null;
 
-        if ($purchaseOrder) {
+            if ($purchaseOrder) {
 
-            if (!$bigCommerceOrder) {
+                if (!$bigCommerceOrder) {
 
-                collect($connectWiseService->purchaseOrderItemsOriginal($purchaseOrder->id))
-                    ->map(fn ($poItem) => $connectWiseService->pickOrShipPurchaseOrderItem($purchaseOrder->id, $poItem, false, true));
+                    collect($connectWiseService->purchaseOrderItemsOriginal($purchaseOrder->id))
+                        ->map(fn ($poItem) => $connectWiseService->pickOrShipPurchaseOrderItem($purchaseOrder->id, $poItem, false, true));
 
-                return response()->json(['message' => 'Purchase order items shipped to the projects!']);
+                    return response()->json(['message' => 'Purchase order items shipped to the projects!']);
+                }
+
+                return response()->json(['message' => 'Purchase order for this sales order already exists!']);
             }
 
-            return response()->json(['message' => 'Purchase order for this sales order already exists!']);
-        }
-
-        if (!$bigCommerceOrderId || !$bigCommerceOrder || $bigCommerceOrder->channel_id != 1) {
-            return response()->json(['message' => "Sales order doesn't belong to Binyod!"]);
-        }
-
-        $bigCommerceOrderProducts = collect($bigCommerceService->getOrderProducts($bigCommerceOrder->id));
-
-        // Handling Azad May products
-
-        $azadMayProducts = $bigCommerceOrderProducts->filter(fn($item) => !Str::contains($item->sku, '-PROJECT'));
-
-        if ($azadMayProducts->count() > 0) {
-
-            $customer = $bigCommerceService->getCustomer($bigCommerceOrder->customer_id);
-
-            if (
-                !$customer->customer_group_id
-                || !($group = $bigCommerceService->getCustomerGroup($customer->customer_group_id))
-                || !($departmentId = Str::numbers(explode('-', $group->name)[0]))
-            ) {
-                $departmentId = $connectWiseService->getSystemDepartments(1, 'name contains "*Team A*"')[0]->id;
+            if (!$bigCommerceOrderId || !$bigCommerceOrder || $bigCommerceOrder->channel_id != 1) {
+                return response()->json(['message' => "Sales order doesn't belong to Binyod!"]);
             }
 
-            $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts, $departmentId, $salesOrderId);
+            $bigCommerceOrderProducts = collect($bigCommerceService->getOrderProducts($bigCommerceOrder->id));
 
-            $cwProducts->map(function ($cwProduct) use ($connectWiseService) {
-                $connectWiseService->pickAndShipProduct($cwProduct->id, $cwProduct->quantity);
-            });
+            // Handling Azad May products
+
+            $azadMayProducts = $bigCommerceOrderProducts->filter(fn($item) => !Str::contains($item->sku, '-PROJECT'));
+
+            if ($azadMayProducts->count() > 0) {
+
+                $customer = $bigCommerceService->getCustomer($bigCommerceOrder->customer_id);
+
+                if (
+                    !$customer->customer_group_id
+                    || !($group = $bigCommerceService->getCustomerGroup($customer->customer_group_id))
+                    || !($departmentId = Str::numbers(explode('-', $group->name)[0]))
+                ) {
+                    $departmentId = $connectWiseService->getSystemDepartments(1, 'name contains "*Team A*"')[0]->id;
+                }
+
+                $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts, $departmentId, $salesOrderId);
+
+                $cwProducts->map(function ($cwProduct) use ($connectWiseService) {
+                    $connectWiseService->pickAndShipProduct($cwProduct->id, $cwProduct->quantity);
+                });
+            }
+
+            // Shipping project products
+
+            $bigCommerceOrderProducts->filter(fn($item) => Str::contains($item->sku, '-PROJECT'))
+                ->map(function ($item) use ($connectWiseService) {
+
+                    $skuParts = array_reverse(explode('-', $item->sku));
+
+                    $ticketId = $skuParts[1] != 'PROJECT' ? $skuParts[0] : null;
+
+                    $projectId = $skuParts[1] == 'PROJECT' ? $skuParts[0] : ($skuParts[3] == 'PROJECT' ? $skuParts[2] : null);
+
+                    $catalogItemIdentifier = explode('-PROJECT', $item->sku)[0];
+
+                    $shipQuantity = $item->Quantity;
+
+                    array_map(function ($product) use (&$shipQuantity, $connectWiseService) {
+
+                        if ($shipQuantity == 0) {
+                            return false;
+                        }
+
+                        $productPoItems = collect($connectWiseService->getProductPoItems($product->id))
+                            ->where('Received_Qty', '!=', 0)
+                        ;
+
+                        if (!$productPoItems->count()) {
+                            return false;
+                        }
+
+                        $productPickAndShips = collect($connectWiseService->getProductPickingShippingDetails($product->id));
+
+                        if ($product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
+                            return false;
+                        }
+
+                        $shipAvailableQuantity = $product->quantity - $productPickAndShips->pluck('shippedQuantity')->sum();
+
+                        $connectWiseService->shipProduct($product->id, $shipQuantity);
+
+                        $shipQuantity = $shipQuantity <= $shipAvailableQuantity ? 0 : $shipQuantity - $shipAvailableQuantity;
+
+                        return $product;
+
+                    }, $connectWiseService->getProductsBy($catalogItemIdentifier, $ticketId, $projectId));
+
+                    return $item;
+
+                });
+        } catch (\Exception $e) {
+            Log::error($e->getMessage() . "\n" . $e->getTraceAsString());
         }
-
-        // Shipping project products
-
-        $bigCommerceOrderProducts->filter(fn($item) => Str::contains($item->sku, '-PROJECT'))
-            ->map(function ($item) use ($connectWiseService) {
-
-                $skuParts = array_reverse(explode('-', $item->sku));
-
-                $ticketId = $skuParts[1] != 'PROJECT' ? $skuParts[0] : null;
-
-                $projectId = $skuParts[1] == 'PROJECT' ? $skuParts[0] : ($skuParts[3] == 'PROJECT' ? $skuParts[2] : null);
-
-                $catalogItemIdentifier = explode('-PROJECT', $item->sku)[0];
-
-                $shipQuantity = $item->Quantity;
-
-                array_map(function ($product) use (&$shipQuantity, $connectWiseService) {
-
-                    if ($shipQuantity == 0) {
-                        return false;
-                    }
-
-                    $productPoItems = collect($connectWiseService->getProductPoItems($product->id))
-                        ->where('Received_Qty', '!=', 0)
-                    ;
-
-                    if (!$productPoItems->count()) {
-                        return false;
-                    }
-
-                    $productPickAndShips = collect($connectWiseService->getProductPickingShippingDetails($product->id));
-
-                    if ($product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
-                        return false;
-                    }
-
-                    $shipAvailableQuantity = $product->quantity - $productPickAndShips->pluck('shippedQuantity')->sum();
-
-                    $connectWiseService->shipProduct($product->id, $shipQuantity);
-
-                    $shipQuantity = $shipQuantity <= $shipAvailableQuantity ? 0 : $shipQuantity - $shipAvailableQuantity;
-
-                    return $product;
-
-                }, $connectWiseService->getProductsBy($catalogItemIdentifier, $ticketId, $projectId));
-
-                return $item;
-
-            });
 
         return response()->json(['message' => 'Sales order handled successfully!']);
     }
