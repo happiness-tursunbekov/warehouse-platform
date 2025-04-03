@@ -1384,10 +1384,13 @@ class ConnectWiseService
 
             $catalogItem->price *= $qty;
             $catalogItem->cost *= $qty;
-
-            $qty = 1;
         } else {
             $catalogItem->identifier = $catalogItem->identifier . "-RF";
+
+            $catalogItem->unitOfMeasure = [
+                'id' => 1,
+                'name' => 'Pcs'
+            ];
         }
 
         $catalogItem->id = 0;
@@ -1396,9 +1399,7 @@ class ConnectWiseService
             'json' => $catalogItem
         ]);
 
-        $newCatalogItem = json_decode($response->getBody()->getContents());
-
-        return $newCatalogItem;
+        return json_decode($response->getBody()->getContents());
     }
 
     public function updateCatalogItem(\stdClass $item)
