@@ -33,6 +33,8 @@ class BigCommerceController extends Controller
                     $bigCommerceService->setProductChannels($product->id, [1]);
                     $bigCommerceService->setProductCategories($product->id, [332]);
                 }
+
+                sleep(0.3);
             } catch (\Exception) {}
         }
     }
