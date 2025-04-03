@@ -690,6 +690,8 @@ class Cin7Service
                 $catalogItem->customerDescription,
                 $cost * 1.07
             );
+
+            $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
         }
 
         return [

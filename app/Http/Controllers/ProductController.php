@@ -549,6 +549,8 @@ class ProductController extends Controller
                         $catalogItem->customerDescription,
                         $catalogItem->cost
                     );
+
+                    $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
                 }
 
                 $stock = $cin7Service->productAvailability($product->ID);
