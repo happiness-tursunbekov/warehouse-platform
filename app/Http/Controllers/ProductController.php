@@ -426,11 +426,13 @@ class ProductController extends Controller
         ]);
     }
 
-    public function upload($productId, Request $request, ConnectWiseService $connectWiseService)
+    public function upload($productId, Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
     {
         $request->validate([
             'images.*' => 'required|image'
         ]);
+
+        $files = [];
 
         foreach ($request->file('images') as $image) {
             $files[] = $connectWiseService->systemDocumentUpload(
@@ -439,6 +441,14 @@ class ProductController extends Controller
                 $productId,
                 'Product image'
             );
+        }
+
+        $catalogItem = $connectWiseService->getCatalogItem($productId);
+
+        $product = $cin7Service->productBySku($catalogItem->identifier);
+
+        if ($product) {
+            $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
         }
 
         return response()->json($files);

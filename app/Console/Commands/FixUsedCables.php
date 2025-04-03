@@ -35,18 +35,29 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        $product = $bigCommerceService->getProduct(5431);
 
-        if (!Str::contains($product->sku, 'PROJECT')) {
-            try {
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PROJECT);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PHASE, sort_order: 1);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PROJECT_TICKET, sort_order: 2);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_COMPANY, sort_order: 3);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_SERVICE_TICKET, sort_order: 4);
-                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_BUNDLE, sort_order: 5);
-            } catch (\Exception) {}
-        }
+        array_map(function ($product) use ($connectWiseService) {
+
+            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($product->SKU);
+
+            if ($catalogItem) {
+                $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
+            }
+
+        }, $cin7Service->products(16, 50)->Products);
+
+//        $product = $bigCommerceService->getProduct(5431);
+//
+//        if (!Str::contains($product->sku, 'PROJECT')) {
+//            try {
+//                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PROJECT);
+//                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PHASE, sort_order: 1);
+//                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_PROJECT_TICKET, sort_order: 2);
+//                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_COMPANY, sort_order: 3);
+//                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_SERVICE_TICKET, sort_order: 4);
+//                $bigCommerceService->createProductModifier($product->id, BigCommerceService::PRODUCT_OPTION_BUNDLE, sort_order: 5);
+//            } catch (\Exception) {}
+//        }
 
 
 //        $products = cache()->get('products') ?:
