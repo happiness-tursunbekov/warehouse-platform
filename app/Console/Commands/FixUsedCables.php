@@ -36,15 +36,55 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
-        array_map(function ($product) use ($connectWiseService) {
+        $pickedReport = (cache()->get('pickedReport'))->map(function ($item) {
+            return [
+                'company' => $item['product']->company->name,
+                'project' => @$item['product']->project ? "#{$item['product']->project->id} - {$item['product']->project->name}" : "",
+                'phase' => @$item['product']->phase ? "#{$item['product']->phase->id} - {$item['product']->phase->name}" : "",
+                'ticket' => @$item['product']->ticket ? "#{$item['product']->ticket->id} - {$item['product']->ticket->summary}" : "",
+                'product' => $item['product']->catalogItem->identifier,
+                'picked_quantity' => $item['picked']
+            ];
+        })->toArray();
 
-            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($product->SKU);
+        $csvFileName = 'pickedReport.csv';
+        $csvFile = fopen($csvFileName, 'w');
+        $headers = array_keys($pickedReport[0]); // Get the column headers from the first row
+        fputcsv($csvFile, $headers);
 
-            if ($catalogItem) {
-                $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
-            }
+        foreach ($pickedReport as $row) {
+            fputcsv($csvFile, (array) $row);
+        }
 
-        }, $cin7Service->products(16, 50)->Products);
+        fclose($csvFile);
+
+//        $ids = collect();
+//
+//        $ids->map(function ($id) use ($connectWiseService, &$pickedReport) {
+//            collect($connectWiseService->getProducts(1, 'catalogItem/id=' . $id, 1000))->map(function ($product) use ($connectWiseService, &$pickedReport) {
+//                $picks = collect($connectWiseService->getProductPickingShippingDetails($product->id));
+//
+//                if ($picks->count() > 0 && ($picked = $picks->pluck('pickedQuantity')->sum() - $picks->pluck('shippedQuantity')->sum()) > 0) {
+//
+//                    $pickedReport->push([
+//                        'product' => $product,
+//                        'picked' => $picked
+//                    ]);
+//                }
+//            });
+//        });
+////
+//        cache()->put('pickedReport', $pickedReport);
+
+//        array_map(function ($product) use ($connectWiseService) {
+//
+//            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($product->SKU);
+//
+//            if ($catalogItem) {
+//                $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
+//            }
+//
+//        }, $cin7Service->products(16, 50)->Products);
 
 //        $product = $bigCommerceService->getProduct(5431);
 //

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 
 use App\Models\User;
+use App\Services\BigCommerceService;
 use App\Services\Cin7Service;
 use App\Services\ConnectWiseService;
 use GuzzleHttp\Exception\GuzzleException;
@@ -399,7 +400,7 @@ class ProductController extends Controller
         return $connectWiseService->pickProduct($productId, $quantity);
     }
 
-    public function unship(Request $request, ConnectWiseService $connectWiseService)
+    public function unship(Request $request, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
         $request->validate([
             'productId' => ['required', 'integer'],
@@ -410,6 +411,15 @@ class ProductController extends Controller
         $quantity = $request->get('quantity');
 
         $connectWiseService->unshipProduct($productId, $quantity);
+
+        $product = $connectWiseService->getProduct($productId);
+
+        $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
+
+        $productFamilyId = $connectWiseService->extractCin7ProductFamilyId($catalogItem);
+
+//        $bigCommerceService->getVa
+
         return response()->json($request->all());
     }
 

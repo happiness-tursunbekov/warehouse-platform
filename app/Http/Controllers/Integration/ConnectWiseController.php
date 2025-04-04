@@ -27,42 +27,6 @@ class ConnectWiseController extends Controller
                 $catalogItem = $connectWiseService->getCatalogItem($id);
 
                 if ($catalogItem->productClass == 'Bundle') {
-
-                    $sharedModifierBundle = $bigCommerceService->getSharedModifierByName(BigCommerceService::PRODUCT_OPTION_BUNDLE);
-
-                    $modifierValueId = $connectWiseService->extractBigCommerceModifierId($catalogItem);
-
-                    if ($catalogItem->inactiveFlag) {
-                        if ($modifierValueId) {
-                            $bigCommerceService->removeSharedModifierValue($sharedModifierBundle->id, $modifierValueId);
-                        }
-
-                        $catalogItem = $connectWiseService->setBigCommerceModifierId($catalogItem, '');
-
-                        $connectWiseService->updateCatalogItem($catalogItem);
-
-                        break;
-                    }
-
-                    if ($modifierValueId) {
-
-                        $modifierValue = $bigCommerceService->getSharedValueById($sharedModifierBundle, $modifierValueId);
-
-                        if ($modifierValue) {
-                            $modifierValue->label = $catalogItem->identifier;
-
-                            $bigCommerceService->updateSharedModifierValue($sharedModifierBundle, $modifierValue);
-
-                            break;
-                        }
-                    }
-
-                    $modifierValue = $bigCommerceService->addSharedModifierValue($sharedModifierBundle, $catalogItem->identifier);
-
-                    $catalogItem = $connectWiseService->setBigCommerceModifierId($catalogItem, $modifierValue->id);
-
-                    $connectWiseService->updateCatalogItem($catalogItem);
-
                     break;
                 }
 
@@ -272,7 +236,7 @@ class ConnectWiseController extends Controller
 
                         // Item_ID: Catalog Item Identifier
                         // SR_Service_RecID: Ticket ID
-                        $ticket = $connectWiseService->getPurchaseOrderItemTicketInfo($po->id, $poItem->id)[0];
+                        $ticket = $connectWiseService->getPurchaseOrderItemTicketInfo($po->id, $poItem->id)[0] ?? null;
 
                         if (!$ticket) {
                             return false;
