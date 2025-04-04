@@ -434,7 +434,7 @@ class Cin7Service
     {
         $available = $this->productAvailability($productId);
 
-        $quantity += $available && $available->onHand ? $available->onHand : 0;
+        $quantity += ($available && $available->OnHand ? $available->OnHand : 0);
 
         return $this->stockAdjust($productId, $quantity, $inventory, $cost, $adjustmentId);
     }
