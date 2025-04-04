@@ -1759,9 +1759,14 @@ class ConnectWiseService
             return null;
         }
 
-        $cin7ProductId = $this->extractCin7ProductId($product);
+        $cin7ProductSku = $this->generateProductSku(
+            $productFamily->SKU,
+            $product->project->id ?? null,
+            $product->ticket->id ?? null,
+            $product->company->id ?? null
+        );
 
-        $cin7Product = $cin7ProductId ? $this->cin7Service->product($cin7ProductId) : null;
+        $cin7Product = $this->cin7Service->productBySku($cin7ProductSku);
 
         if (!$cin7Product) {
 
@@ -1775,12 +1780,7 @@ class ConnectWiseService
 
             $cin7Product = $this->cin7Service->generateFamilyProduct(
                 $productFamily->ID,
-                $this->generateProductSku(
-                    $productFamily->SKU,
-                        $product->project->id ?? null,
-                        $product->ticket->id ?? null,
-                        $product->company->id ?? null
-                ),
+                $cin7ProductSku,
                 $projectOrCompanyName,
                 $this->generatePhaseName($product->project->id, $product->phase->id ?? null),
                 $ticketName,
@@ -1795,7 +1795,7 @@ class ConnectWiseService
             ]);
         }
 
-//        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
+        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
 
         if ($onBigCommerceAsWell) {
             $this->publishVariantOnBigCommerce($product, $quantity, $catalogItem);

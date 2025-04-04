@@ -60,9 +60,11 @@ class FixUsedCables extends Command
 
         $pickedReport = cache()->get('pickedReport') ?: collect();
 
-        $item = $pickedReport->first();
-
-        $connectWiseService->publishProductOnCin7($item['product'], $item['picked'], true);
+        $pickedReport->where('product.catalogItem.identifier', '!=', '4-EMT')->map(function ($item) use ($connectWiseService) {
+            $connectWiseService->publishProductOnCin7($item['product'], $item['picked'], true);
+            echo "{$item['product']->id}: {$item['product']->catalogItem->identifier}\n";
+            sleep(7);
+        });
 
 //        $ids = collect();
 //
