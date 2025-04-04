@@ -64,7 +64,7 @@ class FixUsedCables extends Command
 
         $pickedReport->where('product.catalogItem.identifier', '!=', '4-EMT')->map(function ($item) use ($connectWiseService, &$start) {
 
-            if ($item['product']->id == 12471) {
+            if ($item['product']->id == 16729) {
                 $start = true;
 
                 return false;

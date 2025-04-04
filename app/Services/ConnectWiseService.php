@@ -1772,7 +1772,7 @@ class ConnectWiseService
 
             $ticketName = !@$product->project
                 ? $this->generateServiceTicketName($product->company->id, $product->ticket->id, $product->ticket->summary)
-                : $this->generateProjectTicketName($product->project->id, $product->ticket->id, $product->ticket->summary, $product->phase->id ?? null);
+                : (@$product->ticket ? $this->generateProjectTicketName($product->project->id, $product->ticket->id, $product->ticket->summary, $product->phase->id ?? null) : null);
 
             $projectOrCompanyName = @$product->project
                 ? $this->generateProjectName($product->project->id, $product->project->name, $product->company->name)
