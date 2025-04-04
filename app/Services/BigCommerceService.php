@@ -248,7 +248,7 @@ class BigCommerceService
 
     public function getCategoryByName($name)
     {
-        return $this->getCategories(1, 1, name: $name)->data[0] ?? null;
+        return $this->getCategories(1, 1, name: $name)[0] ?? null;
     }
 
     public function getCategoryByNameOrCreate($name)

@@ -36,27 +36,33 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
-        $pickedReport = (cache()->get('pickedReport'))->map(function ($item) {
-            return [
-                'company' => $item['product']->company->name,
-                'project' => @$item['product']->project ? "#{$item['product']->project->id} - {$item['product']->project->name}" : "",
-                'phase' => @$item['product']->phase ? "#{$item['product']->phase->id} - {$item['product']->phase->name}" : "",
-                'ticket' => @$item['product']->ticket ? "#{$item['product']->ticket->id} - {$item['product']->ticket->summary}" : "",
-                'product' => $item['product']->catalogItem->identifier,
-                'picked_quantity' => $item['picked']
-            ];
-        })->toArray();
+//        $pickedReport = (cache()->get('pickedReport'))->map(function ($item) {
+//            return [
+//                'company' => $item['product']->company->name,
+//                'project' => @$item['product']->project ? "#{$item['product']->project->id} - {$item['product']->project->name}" : "",
+//                'phase' => @$item['product']->phase ? "#{$item['product']->phase->id} - {$item['product']->phase->name}" : "",
+//                'ticket' => @$item['product']->ticket ? "#{$item['product']->ticket->id} - {$item['product']->ticket->summary}" : "",
+//                'product' => $item['product']->catalogItem->identifier,
+//                'picked_quantity' => $item['picked']
+//            ];
+//        })->toArray();
+//
+//        $csvFileName = 'storage/app/public/reports/pickedReport.csv';
+//        $csvFile = fopen($csvFileName, 'w');
+//        $headers = array_keys($pickedReport[0]); // Get the column headers from the first row
+//        fputcsv($csvFile, $headers);
+//
+//        foreach ($pickedReport as $row) {
+//            fputcsv($csvFile, (array) $row);
+//        }
+//
+//        fclose($csvFile);
 
-        $csvFileName = 'pickedReport.csv';
-        $csvFile = fopen($csvFileName, 'w');
-        $headers = array_keys($pickedReport[0]); // Get the column headers from the first row
-        fputcsv($csvFile, $headers);
+        $pickedReport = cache()->get('pickedReport') ?: collect();
 
-        foreach ($pickedReport as $row) {
-            fputcsv($csvFile, (array) $row);
-        }
+        $item = $pickedReport->first();
 
-        fclose($csvFile);
+        $connectWiseService->publishProductOnCin7($item['product'], $item['picked'], true);
 
 //        $ids = collect();
 //

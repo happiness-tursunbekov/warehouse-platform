@@ -1795,7 +1795,7 @@ class ConnectWiseService
             ]);
         }
 
-        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
+//        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
 
         if ($onBigCommerceAsWell) {
             $this->publishVariantOnBigCommerce($product, $quantity, $catalogItem);
@@ -1819,7 +1819,7 @@ class ConnectWiseService
                 $this->generateProductFamilySku($catalogItem->identifier),
                 $catalogItem->description,
                 $catalogItem->customerDescription,
-                [$bigCommerceCategory->id],
+                [$bigCommerceCategory->category_id],
                 0,
                 0
             );
