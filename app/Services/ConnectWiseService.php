@@ -1795,13 +1795,13 @@ class ConnectWiseService
             ]);
         }
 
-        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
+//        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
 
         if ($onBigCommerceAsWell) {
             $this->publishVariantOnBigCommerce($product, $quantity, $catalogItem);
         }
 
-        return $adjustment;
+//        return $adjustment;
     }
 
     public function publishProductOnBigCommerce($catalogItemId, $catalogItem=null)
@@ -1877,7 +1877,7 @@ class ConnectWiseService
 
     public function generateProductSku($cin7ProductFamilySku, $projectId, $ticketId, $companyId=null)
     {
-        return $cin7ProductFamilySku . ($projectId ? "-{$projectId}" : ($companyId ? "-COMPANY-{$companyId}" : "")) . ($ticketId ? "-TICKET-{$ticketId}" : "");
+        return $cin7ProductFamilySku . ($projectId ? "-{$projectId}" : ($companyId ? "-C-{$companyId}" : "")) . ($ticketId ? "-T-{$ticketId}" : "");
     }
 
     public function generateProductFamilySku($catalogItemIdentifier)

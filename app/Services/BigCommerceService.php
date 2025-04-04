@@ -77,6 +77,14 @@ class BigCommerceService
         return $this->getProductVariants($id, 1, 1, $sku)->data[0] ?? null;
     }
 
+    public function updateProductVariant($productId, $variantId, array $data) {
+        $result = $this->http->put("catalog/products/{$productId}/variants/{$variantId}", [
+            'json' => $data
+        ]);
+
+        return json_decode($result->getBody()->getContents());
+    }
+
     public function createProductVariantProject(
         $productId,
         $variantSku,
