@@ -58,57 +58,53 @@ class FixUsedCables extends Command
 //
 //        fclose($csvFile);
 
-        $products = collect($cin7Service->products(1, 1000)->Products);
-        sleep(1);
-        $products->map(function ($product) use ($cin7Service, $bigCommerceService) {
-            if (Str::contains($product->SKU, '-PROJECT')) {
-
-                try {
-
-                    $bcProduct = $bigCommerceService->getProductBySku(explode('PROJECT', $product->SKU)[0] . 'PROJECT');
-
-                    $bcVariant = $bigCommerceService->getProductVariantBySku($bcProduct->id, $product->SKU);
-                } catch (\Exception) {}
-
-                $product->SKU = Str::replace('TICKET', 'T', Str::replace('COMPANY', 'C', $product->SKU));
-
-                $cin7Service->updateProduct([
-                    'ID' => $product->ID,
-                    'SKU' => $product->SKU
-                ]);
-
-                try {
-                    $bigCommerceService->updateProductVariant($bcProduct->id, $bcVariant->id, [
-                        'sku' => $product->SKU
-                    ]);
-                } catch (\Exception) {}
-
-                sleep(1);
-            }
-        });
-
-//        $pickedReport = cache()->get('pickedReport') ?: collect();
+//        $products = collect($cin7Service->products(1, 1000)->Products);
+//        sleep(1);
+//        $products->map(function ($product) use ($cin7Service, $bigCommerceService) {
+//            if (Str::contains($product->SKU, '-PROJECT')) {
 //
-//        $start = false;
+//                try {
 //
-//        $pickedReport->where('product.catalogItem.identifier', '!=', '4-EMT')->map(function ($item) use ($connectWiseService, &$start) {
+//                    $bcProduct = $bigCommerceService->getProductBySku(explode('PROJECT', $product->SKU)[0] . 'PROJECT');
 //
-//            if ($item['product']->id == 13936) {
-//                $start = true;
+//                    $bcVariant = $bigCommerceService->getProductVariantBySku($bcProduct->id, $product->SKU);
+//                } catch (\Exception) {}
 //
-//                return false;
+//                $product->SKU = Str::replace('TICKET', 'T', Str::replace('COMPANY', 'C', $product->SKU));
+//
+//                $cin7Service->updateProduct([
+//                    'ID' => $product->ID,
+//                    'SKU' => $product->SKU
+//                ]);
+//
+//                try {
+//                    $bigCommerceService->updateProductVariant($bcProduct->id, $bcVariant->id, [
+//                        'sku' => $product->SKU
+//                    ]);
+//                } catch (\Exception) {}
+//
+//                sleep(1);
 //            }
-//
-//            if (!$start) {
-//                return false;
-//            }
-//
-//            dd($item['product']);
-//
-//            $connectWiseService->publishProductOnCin7($item['product'], $item['picked'], true);
-//            echo "{$item['product']->id}: {$item['product']->catalogItem->identifier}\n";
-//            sleep(7);
 //        });
+
+        $pickedReport = cache()->get('pickedReport') ?: collect();
+
+        $start = false;
+
+        $pickedReport->map(function ($item) use ($connectWiseService, &$start) {
+
+            if ($item['product']->id == 14623) {
+                $start = true;
+            }
+
+            if (!$start) {
+                return false;
+            }
+
+            $connectWiseService->publishProductOnCin7($item['product'], $item['picked'], true);
+            echo "{$item['product']->id}: {$item['product']->catalogItem->identifier}\n";
+            sleep(7);
+        });
 
 //        $ids = collect();
 //

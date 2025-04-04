@@ -1795,13 +1795,13 @@ class ConnectWiseService
             ]);
         }
 
-//        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
+        $adjustment = $this->cin7Service->stockAdd($cin7Product->ID, $quantity, adjustmentId: $cin7AdjustmentId);
 
         if ($onBigCommerceAsWell) {
             $this->publishVariantOnBigCommerce($product, $quantity, $catalogItem);
         }
 
-//        return $adjustment;
+        return $adjustment;
     }
 
     public function publishProductOnBigCommerce($catalogItemId, $catalogItem=null)
