@@ -414,11 +414,7 @@ class ProductController extends Controller
 
         $product = $connectWiseService->getProduct($productId);
 
-        $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
-
-        $productFamilyId = $connectWiseService->extractCin7ProductFamilyId($catalogItem);
-
-//        $bigCommerceService->getVa
+        $connectWiseService->publishProductOnCin7($product, $quantity, true);
 
         return response()->json($request->all());
     }
