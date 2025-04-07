@@ -594,7 +594,7 @@ class ProductController extends Controller
         return $request->all();
     }
 
-    public function moveProductToDifferentProject(Request $request, ConnectWiseService $connectWiseService)
+    public function moveProductToDifferentProject(Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
     {
         $request->validate([
             'productId' => ['required', 'integer'],
@@ -641,8 +641,29 @@ class ProductController extends Controller
             }
         }
 
-        $connectWiseService->unpickProduct($productId, $quantity);
+        $connectWiseService->unpickProduct($product->id, $quantity);
+
+        $sku = $connectWiseService->generateProductSku(
+            $connectWiseService->generateProductFamilySku($product->catalogItem->identifier),
+            $product->project->id ?? null,
+            $product->ticket->id ?? null,
+            $product->company->id
+        );
+
+        $connectWiseService->stockTakeOnBigCommerce(
+            $sku,
+            $quantity
+        );
+
+        $cin7Product = $cin7Service->productBySku($sku);
+
+        if ($cin7Product) {
+            $cin7Service->stockAdd($cin7Product->ID, -1 * $quantity);
+        }
+
         $connectWiseService->pickProduct($newProduct->id ?? $toProductId, $quantity);
+
+        $connectWiseService->publishProductOnCin7($newProduct ?? $connectWiseService->getProduct($toProductId), $quantity, true);
 
         return $newProduct->id ?? $toProductId;
     }

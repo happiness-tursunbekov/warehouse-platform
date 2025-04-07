@@ -1870,9 +1870,15 @@ class ConnectWiseService
     {
         $bigCommerceProduct = $this->bigCommerceService->getProductBySku($this->generateProductFamilySku(Str::before($variantSku, '-PROJECT')));
 
+        if (!$bigCommerceProduct) {
+            return false;
+        }
+
         $bigCommerceProductVariant = $this->bigCommerceService->getProductVariantBySku($bigCommerceProduct->id, $variantSku);
 
         $this->bigCommerceService->adjustVariant($bigCommerceProductVariant->id, $quantity * -1);
+
+        return true;
     }
 
     public function generateProductSku($cin7ProductFamilySku, $projectId, $ticketId, $companyId=null)

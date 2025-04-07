@@ -36,6 +36,10 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
+//        $product = $connectWiseService->getProduct(11191);
+//
+//        $connectWiseService->publishProductOnCin7($product, $product->quantity, true);
+
 //        $pickedReport = (cache()->get('pickedReport'))->map(function ($item) {
 //            return [
 //                'company' => $item['product']->company->name,
@@ -87,24 +91,51 @@ class FixUsedCables extends Command
 //            }
 //        });
 
-        $pickedReport = cache()->get('pickedReport') ?: collect();
+//        $pickedReport = cache()->get('pickedReport') ?: collect();
+//
+//        $start = false;
+//
+//        $lines = $pickedReport->map(function ($item) use ($cin7Service, $connectWiseService, &$start) {
+//
+//            if ($item['product']->id == 14623) {
+//                $start = true;
+//            }
+//
+//            if (!$start) {
+//                return false;
+//            }
+//
+//            $cin7ProductSku = $connectWiseService->generateProductSku(
+//                $item['product']->catalogItem->identifier . '-PROJECT',
+//                $item['product']->project->id ?? null,
+//                $item['product']->ticket->id ?? null,
+//                $item['product']->company->id ?? null
+//            );
+//
+//            $product = $cin7Service->productBySku($cin7ProductSku);
+//            sleep(1);
+//
+//            return [
+//                "ProductID" => $product ? $product->ID : '',
+//                "SKU" => $cin7ProductSku,
+//                "Quantity" => $item['picked'],
+//                "UnitCost" => 0.0001,
+//                "Location" => Cin7Service::INVENTORY_AZAD_MAY
+//            ];
+//        });
+//            $lines = cache()->get('lines')->filter(fn($it) => $it)->where('ProductID', '!=', '') ?: collect();
+//
+//        $groupedByValue = $lines->groupBy('SKU');
+//
+//        $dupes = $groupedByValue->filter(function (Collection $groups) {
+//            return $groups->count() > 1;
+//        });
+//
+//        $newLines = [];
+//
+//        $dupes[] = '2C22/4C22/3P22 FS/4C18-CMP-YW-R-PROJECT-276-T-3871';
 
-        $start = false;
-
-        $pickedReport->map(function ($item) use ($connectWiseService, &$start) {
-
-            if ($item['product']->id == 14623) {
-                $start = true;
-            }
-
-            if (!$start) {
-                return false;
-            }
-
-            $connectWiseService->publishProductOnCin7($item['product'], $item['picked'], true);
-            echo "{$item['product']->id}: {$item['product']->catalogItem->identifier}\n";
-            sleep(7);
-        });
+//        $cin7Service->stockAdjustBulk($newLines);
 
 //        $ids = collect();
 //
