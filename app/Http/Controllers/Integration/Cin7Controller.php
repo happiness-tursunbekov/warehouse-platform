@@ -142,23 +142,18 @@ class Cin7Controller extends Controller
                             return false;
                         }
 
-                        $productPoItems = collect($connectWiseService->getProductPoItems($product->id))
-                            ->where('Received_Qty', '!=', 0)
-                        ;
-
-                        if (!$productPoItems->count()) {
-                            return false;
-                        }
-
                         $productPickAndShips = collect($connectWiseService->getProductPickingShippingDetails($product->id));
 
-                        if ($product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
+                        $shippedQuantity = $productPickAndShips->pluck('shippedQuantity')->sum();
+                        $pickedQuantity = $productPickAndShips->pluck('pickedQuantity')->sum();
+
+                        if ($pickedQuantity == $shippedQuantity) {
                             return false;
                         }
 
-                        $shipAvailableQuantity = $product->quantity - $productPickAndShips->pluck('shippedQuantity')->sum();
+                        $shipAvailableQuantity = $pickedQuantity - $shippedQuantity;
 
-                        $connectWiseService->shipProduct($product->id, $shipQuantity);
+                        $connectWiseService->shipProduct($product->id, min($shipAvailableQuantity, $shipQuantity));
 
                         $shipQuantity = $shipQuantity <= $shipAvailableQuantity ? 0 : $shipQuantity - $shipAvailableQuantity;
 
