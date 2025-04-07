@@ -134,7 +134,7 @@ class Cin7Controller extends Controller
 
                     $catalogItemIdentifier = explode('-PROJECT', $item->sku)[0];
 
-                    $shipQuantity = $item->Quantity;
+                    $shipQuantity = $item->quantity;
 
                     array_map(function ($product) use (&$shipQuantity, $connectWiseService) {
 
