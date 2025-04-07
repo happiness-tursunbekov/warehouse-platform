@@ -101,51 +101,59 @@ class ConnectWiseController extends Controller
             'data' => $request->all()
         ]);
 
-        // If vendor is Azad May
-        if ($entity['vendorCompany']['id'] == ConnectWiseService::AZAD_MAY_ID) {
-
-            if ($entity['status']['name'] != 'Sent to Vendor') {
-                return response()->json(['message' => 'No action']);
-            }
-
-            $purchaseOrder = $connectWiseService->purchaseOrder($id);
-
-            $poItems = $connectWiseService->purchaseOrderItemsOriginal($id);
-
-            $cin7SalesOrderId = $connectWiseService->extractCin7SalesOrderId($purchaseOrder);
-
-            $cin7SalesOrder = $cin7SalesOrderId ? $cin7Service->salesOrder($cin7SalesOrderId) : null;
-
-            if (!$cin7SalesOrder) {
-                $customerName = 'Binyod';
-
-                if (Str::contains($entity['businessUnit']['name'], 'Team')) {
-                    $customerName .= ' Team' . explode('Team', $entity['businessUnit']['name'])[1];
-                }
-
-                if (!$cin7Service->customer($customerName)) {
-                    $cin7Service->createCustomer($customerName);
-                }
-
-                $cin7Sale = $cin7Service->createSale($customerName, "ConnectWise PO: {$entity['poNumber']}");
-
-                $connectWiseService->updatePurchaseOrderCin7SalesOrderId($purchaseOrder, $cin7Sale->ID);
-
-                $cin7Service->createSalesOrder($cin7Sale->ID, $poItems);
-
-                collect($poItems)->map(function ($poItem) use ($purchaseOrder, $connectWiseService) {
-                    $connectWiseService->purchaseOrderItemReceive($purchaseOrder->id, $poItem, $poItem->quantity);
-                    $connectWiseService->pickOrShipPurchaseOrderItem($purchaseOrder->id, $poItem);
-                });
-            }
-
-            return response()->json(['message' => 'Azad May Purchase']);
+        if ($entity['vendorCompany']['id'] == ConnectWiseService::AZAD_MAY_ID && $entity['status']['name'] != 'Sent to Vendor') {
+            return response()->json(['message' => 'No Action']);
         }
 
         /** @var PurchaseOrder $po */
         $po = PurchaseOrder::find($id);
 
         if (!$po) {
+
+            // If vendor is Azad May
+            if ($entity['vendorCompany']['id'] == ConnectWiseService::AZAD_MAY_ID && $entity['status']['name'] == 'Sent to Vendor') {
+
+                $purchaseOrder = $connectWiseService->purchaseOrder($id);
+
+                $poItems = $connectWiseService->purchaseOrderItemsOriginal($id);
+
+                $cin7SalesOrderId = $connectWiseService->extractCin7SalesOrderId($purchaseOrder);
+
+                $cin7SalesOrder = $cin7SalesOrderId ? $cin7Service->salesOrder($cin7SalesOrderId) : null;
+
+                if (!$cin7SalesOrder) {
+
+                    PurchaseOrder::create([
+                        'id' => $id,
+                        'statusId' => $entity['status']['id'],
+                        'closedFlag' => $entity['closedFlag']
+                    ]);
+
+                    $customerName = 'Binyod';
+
+                    if (Str::contains($entity['businessUnit']['name'], 'Team')) {
+                        $customerName .= ' Team' . explode('Team', $entity['businessUnit']['name'])[1];
+                    }
+
+                    if (!$cin7Service->customer($customerName)) {
+                        $cin7Service->createCustomer($customerName);
+                    }
+
+                    $cin7Sale = $cin7Service->createSale($customerName, "ConnectWise PO: {$entity['poNumber']}", true);
+
+                    $connectWiseService->updatePurchaseOrderCin7SalesOrderId($purchaseOrder, $cin7Sale->ID);
+
+                    $cin7Service->createSalesOrder($cin7Sale->ID, $poItems);
+
+                    collect($poItems)->map(function ($poItem) use ($purchaseOrder, $connectWiseService) {
+                        $connectWiseService->purchaseOrderItemReceive($purchaseOrder->id, $poItem, $poItem->quantity);
+                    });
+
+                    return response()->json(['message' => 'Azad May Purchase']);
+                }
+            } else {
+                return response()->json(['message' => 'No Action']);
+            }
 
             if ($action == ConnectWiseService::ACTION_DELETED) {
                 return response()->json(['message', 'Deleted successfully!']);

@@ -549,15 +549,16 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function createSale($customerName, $customerReference=null)
+    public function createSale($customerName, $customerReference=null, $autoship=false)
     {
         $result = $this->http->post('sale', [
             'json' => [
                 'Customer' => $customerName,
                 'Location' => self::INVENTORY_AZAD_MAY,
-                'AutoPickPackShipMode' => "AUTOPICK",
+                'AutoPickPackShipMode' => $autoship ? "AUTOPICKPACKSHIP" : "AUTOPICK",
                 'CustomerReference' => $customerReference,
-                'SkipQuote' => true
+                'SkipQuote' => true,
+                'Carrier' => 'Pick up'
             ]
         ]);
 
