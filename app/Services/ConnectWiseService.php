@@ -2712,4 +2712,31 @@ class ConnectWiseService
         $response = $this->http->delete("procurement/products/{$id}?clientId={$this->clientId}");
         return json_decode($response->getBody()->getContents());
     }
+
+    public function stockTakeFromCin7ByProjectProductId(int $productId, int $quantity, bool $onBigCommerceAsWell=false, \stdClass $product=null)
+    {
+        $product = $product ?: $this->getProduct($productId);
+
+        $sku = $this->generateProductSku(
+            $this->generateProductFamilySku($product->catalogItem->identifier),
+            $product->project->id ?? null,
+            $product->ticket->id ?? null,
+            $product->company->id
+        );
+
+        $cin7Product = $this->cin7Service->productBySku($sku);
+
+        if ($cin7Product) {
+            $this->cin7Service->stockAdd($cin7Product->ID, -1 * $quantity);
+        }
+
+        if ($onBigCommerceAsWell) {
+            $this->stockTakeOnBigCommerce(
+                $sku,
+                $quantity
+            );
+        }
+
+        return $product;
+    }
 }

@@ -384,7 +384,11 @@ class ProductController extends Controller
         $productId = $request->get('productId');
         $quantity = $request->get('quantity');
 
-        return $connectWiseService->shipProduct($productId, $quantity);
+        $pickShips = $connectWiseService->shipProduct($productId, $quantity);
+
+        $connectWiseService->stockTakeFromCin7ByProjectProductId($productId, $quantity, true);
+
+        return $pickShips;
     }
 
     public function pick(Request $request, ConnectWiseService $connectWiseService)
@@ -643,23 +647,7 @@ class ProductController extends Controller
 
         $connectWiseService->unpickProduct($product->id, $quantity);
 
-        $sku = $connectWiseService->generateProductSku(
-            $connectWiseService->generateProductFamilySku($product->catalogItem->identifier),
-            $product->project->id ?? null,
-            $product->ticket->id ?? null,
-            $product->company->id
-        );
-
-        $connectWiseService->stockTakeOnBigCommerce(
-            $sku,
-            $quantity
-        );
-
-        $cin7Product = $cin7Service->productBySku($sku);
-
-        if ($cin7Product) {
-            $cin7Service->stockAdd($cin7Product->ID, -1 * $quantity);
-        }
+        $connectWiseService->stockTakeFromCin7ByProjectProductId($productId, $quantity, true, $product);
 
         $connectWiseService->pickProduct($newProduct->id ?? $toProductId, $quantity);
 
