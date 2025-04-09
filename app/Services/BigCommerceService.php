@@ -505,6 +505,7 @@ class BigCommerceService
 
     public function adjustVariant($variantId, $qty)
     {
+
         $request = $this->http->post("inventory/adjustments/relative", [
             'json' => [
                 "reason" => "Initial count",
@@ -512,7 +513,7 @@ class BigCommerceService
                     [
                         "location_id" => 1,
                         "variant_id" => $variantId,
-                        "quantity" => $qty
+                        "quantity" => (int)$qty
                     ]
                 ]
             ]

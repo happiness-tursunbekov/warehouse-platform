@@ -592,16 +592,19 @@ export default {
         },
         'moveProductForm.toProductId' (val) {
 
-            const available = this.selectedProjectProduct.pickedQuantity - this.selectedProjectProduct.shippedQuantity
+            if (this.selectedProjectProduct) {
 
-            if (val) {
-                const product = this.products.filter(product => product.id === val)[0]
+                const available = this.selectedProjectProduct.pickedQuantity - this.selectedProjectProduct.shippedQuantity
 
-                const max = product.quantity - product.pickedQuantity
+                if (val) {
+                    const product = this.products.filter(product => product.id === val)[0]
 
-                this.$refs.takeProductToDifferentProject.max = (max > available ? available : max) + ""
-            } else {
-                this.$refs.takeProductToDifferentProject.max = available + ""
+                    const max = product.quantity - product.pickedQuantity
+
+                    this.$refs.takeProductToDifferentProject.max = (max > available ? available : max) + ""
+                } else {
+                    this.$refs.takeProductToDifferentProject.max = available + ""
+                }
             }
         },
         'isExistingProduct' (val) {
