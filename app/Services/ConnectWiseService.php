@@ -276,17 +276,26 @@ class ConnectWiseService
 
     public function purchaseOrders($page=null, $conditions=null, $fields=null, $orderBy=null, $pageSize=1000, string $cin7SalesOrderId=null)
     {
-        $response = $this->http->get('procurement/purchaseorders', [
-            'query' => [
-                'page' => $page,
-                'clientId' => $this->clientId,
-                'conditions' => $conditions,
-                'fields' => $fields,
-                'pageSize' => $pageSize,
-                'orderBy' => $orderBy,
-                'customFieldConditions' => $cin7SalesOrderId ? "caption='Cin7 SalesOrder ID' and value='{$cin7SalesOrderId}'" : null
-            ],
-        ]);
+        $query = [
+            'page' => $page,
+            'clientId' => $this->clientId,
+            'conditions' => $conditions,
+            'fields' => $fields,
+            'pageSize' => $pageSize,
+            'orderBy' => $orderBy,
+            'customFieldConditions' => $cin7SalesOrderId ? "caption='Cin7 SalesOrder ID' and value='{$cin7SalesOrderId}'" : null
+        ];
+
+        try {
+            $response = $this->http->get('procurement/purchaseorders', [
+                'query' => $query,
+            ]);
+        } catch (\Exception) {
+            sleep(2);
+            $response = $this->http->get('procurement/purchaseorders', [
+                'query' => $query,
+            ]);
+        }
         return json_decode($response->getBody()->getContents());
     }
 
