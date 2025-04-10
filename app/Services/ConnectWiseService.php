@@ -2291,8 +2291,8 @@ class ConnectWiseService
                     $catalogItem->id,
                     $catalogItem->description,
                     $catalogItem->customerDescription,
-                    $project->id ?? '',
-                    $ticket->id ?? '',
+                    $project->id ?? 0,
+                    $ticket->id ?? 0,
                     $company->id,
                     $price,
                     $cost
