@@ -655,8 +655,8 @@ class ConnectWiseService
                 }
 
                 if ($dynamicQty > $pickShip->shippedQuantity) {
-                    $pickShip->shippedQuantity = 0;
                     $dynamicQty = $dynamicQty - $pickShip->shippedQuantity;
+                    $pickShip->shippedQuantity = 0;
                 } else {
                     $pickShip->shippedQuantity -= $dynamicQty;
                     $dynamicQty = 0;
@@ -665,7 +665,7 @@ class ConnectWiseService
                 return $pickShip;
             })
             ->filter(fn($pickShip) => !!$pickShip)
-            ->map(function ($pickShip) use ($dynamicQty) {
+            ->map(function ($pickShip) use (&$dynamicQty) {
 
                 if ($dynamicQty > 0) {
                     throw new \Exception('Unshipping quantity cannot be greater than shipped quantity');

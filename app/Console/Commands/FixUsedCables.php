@@ -36,7 +36,12 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
-//        $product = $connectWiseService->getProduct(11191);
+//        $product = $connectWiseService->getProduct(22488);
+
+        $connectWiseService->pickProduct(22488, 6);
+
+
+
 //
 //        $connectWiseService->publishProductOnCin7($product, $product->quantity, true);
 
