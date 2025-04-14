@@ -549,13 +549,12 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function createSale($customerName, $customerReference=null, $autoship=false)
+    public function createSale($customerName, $customerReference=null)
     {
         $result = $this->http->post('sale', [
             'json' => [
                 'Customer' => $customerName,
                 'Location' => self::INVENTORY_AZAD_MAY,
-                'AutoPickPackShipMode' => $autoship ? "AUTOPICKPACKSHIP" : "AUTOPICK",
                 'CustomerReference' => $customerReference,
                 'SkipQuote' => true,
                 'Carrier' => 'Pick up'
@@ -611,7 +610,7 @@ class Cin7Service
         return json_decode($result->getBody()->getContents());
     }
 
-    public function createSalesOrder($saleId, array $purchaseOrderItems, string $memo=null)
+    public function createSalesOrder($saleId, array $purchaseOrderItems, string $memo=null, bool $autoship=false)
     {
         try {
             $result = $this->http->post('sale/order', [
@@ -620,6 +619,7 @@ class Cin7Service
                     'Memo' => $memo,
                     'Status' => 'AUTHORISED',
                     'CombineAdditionalCharges' => false,
+                    'AutoPickPackShipMode' => $autoship ? "AUTOPICKPACKSHIP" : "AUTOPICK",
                     'Lines' => array_map(function (\stdClass $poItem) {
 
                         $product = $this->productBySku($poItem->product->identifier);

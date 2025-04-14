@@ -143,11 +143,13 @@ class ConnectWiseController extends Controller
 
                     $connectWiseService->updatePurchaseOrderCin7SalesOrderId($purchaseOrder, $cin7Sale->ID);
 
-                    $cin7Service->createSalesOrder($cin7Sale->ID, $poItems);
+                    $cin7Service->createSalesOrder($cin7Sale->ID, $poItems, autoship: true);
 
                     collect($poItems)->map(function ($poItem) use ($purchaseOrder, $connectWiseService) {
                         $connectWiseService->purchaseOrderItemReceive($purchaseOrder->id, $poItem, $poItem->quantity);
                     });
+
+
 
                     return response()->json(['message' => 'Azad May Purchase']);
                 }
