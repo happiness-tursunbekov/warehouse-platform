@@ -335,19 +335,15 @@ class ConnectWiseService
 
     public function purchaseOrderItemsOriginal($id, $page=null, $conditions=null, $fields=null, $pageSize=1000)
     {
-        try {
-            $response = $this->http->get("procurement/purchaseorders/{$id}/lineitems", [
-                'query' => [
-                    'page' => $page,
-                    'clientId' => $this->clientId,
-                    'conditions' => $conditions,
-                    'pageSize' => $pageSize,
-                    'fields' => $fields
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return [];
-        }
+        $response = $this->http->get("procurement/purchaseorders/{$id}/lineitems", [
+            'query' => [
+                'page' => $page,
+                'clientId' => $this->clientId,
+                'conditions' => $conditions,
+                'pageSize' => $pageSize,
+                'fields' => $fields
+            ],
+        ]);
 
         return json_decode($response->getBody()->getContents());
     }
@@ -2659,61 +2655,71 @@ class ConnectWiseService
             return false;
         }
 
-        $ticket = $this->getPurchaseOrderItemTicketInfo($poId, $poItem->id)[0];
+        $tickets = collect($this->getPurchaseOrderItemTicketInfo($poId, $poItem->id));
 
-        if (!$ticket) {
+        if ($tickets->count() == 0) {
             return false;
         }
 
         $quantity = $poItem->quantity;
 
-        $products = collect($this->getProductsByTicketInfo($ticket));
+        $tickets->map(function ($ticket) use ($callback, $poId, $ship, $pick, &$quantity) {
 
-        return $products->map(function ($product) use ($pick, $ship, &$quantity, $poId) {
+            $products = collect($this->getProductsByTicketInfo($ticket));
 
-            if ($quantity == 0) {
-                return false;
-            }
+            $ticketQuantity = min($ticket->Quantity, $quantity);
 
-            $productPoItems = collect($this->getProductPoItems($product->id))->where('ID', $poId);
+            $quantity -= $ticket->Quantity;
 
-            if (!$productPoItems->count()) {
-                return false;
-            }
+            return $products->map(function ($product) use ($pick, $ship, &$ticketQuantity, $poId, $ticket) {
 
-            $productPickAndShips = collect($this->getProductPickingShippingDetails($product->id));
-
-            if ($product->quantity == $productPickAndShips->pluck('shippedQuantity')->sum()) {
-                return false;
-            }
-
-            $pickOrShipAvailableQuantity = $product->quantity - $productPickAndShips->pluck($ship && !$pick ? 'shippedQuantity' : 'pickedQuantity')->sum();
-
-            $result = [
-                'product' => $product,
-                'quantity' => min($quantity, $pickOrShipAvailableQuantity)
-            ];
-
-            $quantity = $quantity <= $pickOrShipAvailableQuantity ? 0 : $quantity - $pickOrShipAvailableQuantity;
-
-            return $result;
-        })
-            ->filter(fn($results) => !!$results)
-            ->map(function (array $result) use ($pick, $callback, $ship) {
-                if ($pick && $ship) {
-                    $this->pickAndShipProduct($result['product']->id, $result['quantity']);
-                } elseif ($pick) {
-                    $this->pickProduct($result['product']->id, $result['quantity']);
-                } else {
-                    $this->shipProduct($result['product']->id, $result['quantity']);
+                if ($ticketQuantity < 1) {
+                    return false;
                 }
 
-                if ($callback) {
-                    $callback($result['product'], $result['quantity']);
+                $productPoItems = collect($this->getProductPoItems($product->id))->where('ID', $poId);
+
+                if ($productPoItems->count() == 0) {
+                    return false;
                 }
 
-                return $result['product'];
-            });
+                $productPickAndShips = collect($this->getProductPickingShippingDetails($product->id));
+
+                $pickedQuantity = $productPickAndShips->pluck('pickedQuantity')->sum();
+                $shippedQuantity = $productPickAndShips->pluck('shippedQuantity')->sum();
+
+                if ($pickedQuantity > 0 && $pickedQuantity == $shippedQuantity) {
+                    return false;
+                }
+
+                $pickOrShipAvailableQuantity = $ship && !$pick ? $pickedQuantity - $shippedQuantity : min($product->quantity, $ticket->Quantity) - $pickedQuantity;
+
+                $result = [
+                    'product' => $product,
+                    'quantity' => min($ticketQuantity, $pickOrShipAvailableQuantity)
+                ];
+
+                $ticketQuantity = $ticketQuantity <= $pickOrShipAvailableQuantity ? 0 : $ticketQuantity - $pickOrShipAvailableQuantity;
+
+                return $result;
+            })
+                ->filter(fn($results) => !!$results)
+                ->map(function (array $result) use ($pick, $callback, $ship) {
+                    if ($pick && $ship) {
+                        $this->pickAndShipProduct($result['product']->id, $result['quantity']);
+                    } elseif ($pick) {
+                        $this->pickProduct($result['product']->id, $result['quantity']);
+                    } else {
+                        $this->shipProduct($result['product']->id, $result['quantity']);
+                    }
+
+                    if ($callback) {
+                        $callback($result['product'], $result['quantity']);
+                    }
+
+                    return $result['product'];
+                });
+        });
     }
 
     public function deleteProduct($id)
