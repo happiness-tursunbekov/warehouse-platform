@@ -2694,6 +2694,10 @@ class ConnectWiseService
 
                 $pickOrShipAvailableQuantity = $ship && !$pick ? $pickedQuantity - $shippedQuantity : min($product->quantity, $ticket->Quantity) - $pickedQuantity;
 
+                if ($pickOrShipAvailableQuantity == 0) {
+                    return false;
+                }
+
                 $result = [
                     'product' => $product,
                     'quantity' => min($ticketQuantity, $pickOrShipAvailableQuantity)

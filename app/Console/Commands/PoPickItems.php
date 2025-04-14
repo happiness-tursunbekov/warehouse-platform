@@ -42,13 +42,13 @@ class PoPickItems extends Command
 
                 collect($connectWiseService->purchaseOrderItemsOriginal($po->id, 1, 'receivedStatus="FullyReceived"'))->map(function ($poItem) use ($po, $connectWiseService) {
 
-                    try {
+//                    try {
                         $connectWiseService->pickOrShipPurchaseOrderItem($po->id, $poItem, callback: function ($product, $quantity) {
                             echo "{$product->id}: {$quantity}\n";
                         });
-                    } catch (\Exception $e) {
-                        echo "Error msg: {$e->getMessage()}\n";
-                    }
+//                    } catch (\Exception $e) {
+//                        echo "Error msg: {$e->getMessage()}\n";
+//                    }
 
                 });
             });
