@@ -101,7 +101,7 @@ class ConnectWiseController extends Controller
             'data' => $request->all()
         ]);
 
-        if ($entity['vendorCompany']['id'] == ConnectWiseService::AZAD_MAY_ID && $entity['status']['name'] != 'Sent to Vendor') {
+        if ($entity['vendorCompany']['id'] == ConnectWiseService::AZAD_MAY_ID && !in_array($entity['status']['name'], ['Sent to Vendor', 'Closed'])) {
             return response()->json(['message' => 'No Action']);
         }
 
