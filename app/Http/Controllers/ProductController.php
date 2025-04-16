@@ -442,24 +442,37 @@ class ProductController extends Controller
             'images.*' => 'required|image'
         ]);
 
-        $files = [];
-
-        foreach ($request->file('images') as $image) {
-            $files[] = $connectWiseService->systemDocumentUpload(
-                $image,
-                'ProductSetup',
-                $productId,
-                'Product image'
-            );
-        }
-
         $catalogItem = $connectWiseService->getCatalogItem($productId);
 
-        $product = $cin7Service->productBySku($catalogItem->identifier);
+        $catalogItems = collect([$catalogItem]);
 
-        if ($product) {
-            $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, true, isProductFamily: false);
-        }
+        $conditions = "id != {$catalogItem->id} and ((identifier contains '{$catalogItem->identifier}(' and identifier contains 'ft)') or identifier contains '{$catalogItem->identifier}-RF')";
+
+        $connectWiseService->getCatalogItems(1, $conditions);
+
+        $files = [];
+
+        $catalogItems->map(function ($catalogItem, $key) use ($connectWiseService, $cin7Service, $request, $productId, &$files) {
+
+            foreach ($request->file('images') as $image) {
+                $file = $connectWiseService->systemDocumentUpload(
+                    $image,
+                    'ProductSetup',
+                    $productId,
+                    'Product image'
+                );
+
+                if ($key == 0) {
+                    $files[] = $file;
+                }
+            }
+
+            $product = $cin7Service->productBySku($catalogItem->identifier);
+
+            if ($product) {
+                $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, true, isProductFamily: false);
+            }
+        });
 
         return response()->json($files);
     }
