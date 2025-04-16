@@ -448,7 +448,7 @@ class ProductController extends Controller
 
         $conditions = "id != {$catalogItem->id} and ((identifier contains '{$catalogItem->identifier}(' and identifier contains 'ft)') or identifier contains '{$catalogItem->identifier}-RF')";
 
-        $connectWiseService->getCatalogItems(1, $conditions);
+        $catalogItems->push(...$connectWiseService->getCatalogItems(1, $conditions));
 
         $files = [];
 
