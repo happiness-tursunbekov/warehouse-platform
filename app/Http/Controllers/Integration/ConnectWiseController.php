@@ -389,7 +389,7 @@ class ConnectWiseController extends Controller
         $projectId = $request->get('projectId');
         $phaseId = $request->get('phaseId', "null");
 
-        $conditions = "project/id={$projectId} and phase/id={$phaseId}";
+        $conditions = "project/id={$projectId} and phase/id={$phaseId} and (summary contains 'Product' or summary contains 'Procurement' or summary contains 'Material')";
 
         return $connectWiseService->getProjectTickets(1, $conditions, 'id,summary,status,closedFlag');
     }
