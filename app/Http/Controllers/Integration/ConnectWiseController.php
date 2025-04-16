@@ -336,7 +336,7 @@ class ConnectWiseController extends Controller
 
     public function projects(ConnectWiseService $connectWiseService)
     {
-        return response()->json($connectWiseService->getProjects(1, 'status/name != "Cancelled"', 'id,name,company'));
+        return response()->json($connectWiseService->getProjects(1, 'status/name not in ("Cancelled", "Completed")', 'id,name,company'));
     }
 
     public function phases(Request $request, ConnectWiseService $connectWiseService)
