@@ -458,7 +458,7 @@ class ProductController extends Controller
                 $file = $connectWiseService->systemDocumentUpload(
                     $image,
                     'ProductSetup',
-                    $productId,
+                    $catalogItem->id,
                     'Product image'
                 );
 
