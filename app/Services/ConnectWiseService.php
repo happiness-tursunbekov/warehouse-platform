@@ -1702,7 +1702,7 @@ class ConnectWiseService
         if ($toBigCommerceAsWell) {
             $catalogItem = $catalogItem ?: $this->getCatalogItem($catalogItemId);
 
-            $bigCommerceProduct = $this->bigCommerceService->getProductBySku($this->generateProductFamilySku($catalogItem->identifier));
+            $bigCommerceProduct = $this->bigCommerceService->getProductBySku($isProductFamily ? $this->generateProductFamilySku($catalogItem->identifier) : $catalogItem->identifier);
 
             if ($bigCommerceProduct && ($bigCommerceAttachments = collect($this->bigCommerceService->getProductImages($bigCommerceProduct->id)->data))->count() > 0) {
 
