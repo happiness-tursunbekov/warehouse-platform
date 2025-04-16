@@ -458,7 +458,7 @@ class ProductController extends Controller
         $product = $cin7Service->productBySku($catalogItem->identifier);
 
         if ($product) {
-            $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
+            $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, true, isProductFamily: false);
         }
 
         return response()->json($files);
