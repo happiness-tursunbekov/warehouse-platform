@@ -35,6 +35,10 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+
+//        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('OR-576-110-005');
+//
+//        $connectWiseService->catalogItemAdjust($catalogItem, 47, ConnectWiseService::AZAD_MAY_WAREHOUSE);
 //        $page = 2;
 //
 //        collect($cin7Service->products($page, 1000)->Products)->map(function ($product) use ($connectWiseService) {
@@ -264,7 +268,7 @@ class FixUsedCables extends Command
 //
 //        }, $cin7Service->products(16, 50)->Products);
 
-//        $product = $bigCommerceService->getProduct(5431);
+//        $product = $bigCommerceService->getProduct(5718);
 //
 //        if (!Str::contains($product->sku, 'PROJECT')) {
 //            try {

@@ -551,6 +551,8 @@ class ProductController extends Controller
             if (!$isCatalogItem) {
                 $connectWiseService->unpickProduct($product->id, $quantity);
 
+                $connectWiseService->stockTakeFromCin7ByProjectProductId($product->id, $quantity, true, $product);
+
                 $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
 
                 $adjustmentDetails->push($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $quantity));
