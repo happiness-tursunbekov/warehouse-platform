@@ -396,7 +396,7 @@ class ConnectWiseController extends Controller
 
     public function companies(ConnectWiseService $connectWiseService)
     {
-        return response()->json($connectWiseService->getCompanies(1, null, 'id,name,company'));
+        return response()->json($connectWiseService->getCompanies(1, null, 'id,name,company', 1000));
     }
 
     public function bundles(Request $request, ConnectWiseService $connectWiseService)
