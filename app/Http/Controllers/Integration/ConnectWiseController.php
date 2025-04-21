@@ -396,7 +396,7 @@ class ConnectWiseController extends Controller
 
     public function companies(ConnectWiseService $connectWiseService)
     {
-        return response()->json($connectWiseService->getCompanies(1, 'status/name != "Cancelled" and deletedFlag=false', null, 'id,name,company', 1000));
+        return response()->json($connectWiseService->getCompanies(1, 'deletedFlag=false', null, 'id,name,company'));
     }
 
     public function bundles(Request $request, ConnectWiseService $connectWiseService)

@@ -1226,7 +1226,7 @@ class ConnectWiseService
         } catch (GuzzleException $e) {
             return '';
         }
-        return $this->fileResponse($response->getBody()->getContents())->deleteFileAfterSend();
+        return $this->fileResponse($response->getBody()->getContents());
     }
 
     public function downloadAllAttachments($recordType, $recordId)

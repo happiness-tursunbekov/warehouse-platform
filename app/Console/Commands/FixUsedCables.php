@@ -268,7 +268,7 @@ class FixUsedCables extends Command
 //
 //        }, $cin7Service->products(16, 50)->Products);
 
-//        $product = $bigCommerceService->getProduct(5718);
+//        $product = $bigCommerceService->getProduct(5674);
 //
 //        if (!Str::contains($product->sku, 'PROJECT')) {
 //            try {
