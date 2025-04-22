@@ -483,6 +483,35 @@ class ProductController extends Controller
         return response()->json($files);
     }
 
+    public function syncImages($productId, Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
+    {
+
+        $catalogItem = $connectWiseService->getCatalogItem($productId);
+
+        $catalogItems = collect([$catalogItem]);
+
+        $conditions = "id != {$catalogItem->id} and ((identifier contains '{$catalogItem->identifier}(' and identifier contains 'ft)') or identifier contains '{$catalogItem->identifier}-RF')";
+
+        $catalogItems->push(...$connectWiseService->getCatalogItems(1, $conditions));
+
+        $catalogItems->map(function ($catalogItem) use ($connectWiseService, $cin7Service, $request, $productId) {
+
+            $product = $cin7Service->productBySku($catalogItem->identifier);
+
+            if ($product) {
+                $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, true, isProductFamily: false);
+            }
+
+            $productFamily = $cin7Service->productFamilyBySku($connectWiseService->generateProductFamilySku($catalogItem->identifier));
+
+            if ($productFamily) {
+                $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $productFamily->ID, true);
+            }
+        });
+
+        return response()->json(['message' => 'Success']);
+    }
+
     public function createUsedItem($id, Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([

@@ -95,6 +95,7 @@ Route::group([
             Route::post('take-catalog-items-to-azad-may', [ProductController::class, 'takeCatalogItemsToAzadMay']);
             Route::post('move-product-to-different-project', [ProductController::class, 'moveProductToDifferentProject']);
             Route::get('cin7-suppliers', [ProductController::class, 'cin7Suppliers']);
+            Route::post('sync-images', [ProductController::class, 'syncImages']);
         });
     });
 

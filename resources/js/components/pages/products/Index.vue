@@ -68,6 +68,7 @@
                                 <div class="dropdown-menu">
                                     <button @click.prevent="getPos(product)" type="button" class="dropdown-item">Get PO's/Ship</button>
                                     <button @click.prevent="showUploadPhotoModal(product)" type="button" class="dropdown-item" title="Upload a photo">Upload a photo</button>
+                                    <button @click.prevent="syncImages(product.id)" type="button" class="dropdown-item" title="Sync images">Sync images</button>
                                     <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="dropdown-item" title="Add used product">Add used product</button>
                                     <button @click.prevent="selectedProduct=product;uomModal=true" type="button" class="dropdown-item" title="Add used product">Edit unit of measure</button>
                                     <button v-if="user.reportMode" @click.prevent="selectedProduct=product;sellableModal=true" type="button" class="dropdown-item" title="Add used product">Add to sellable products list</button>
@@ -630,6 +631,11 @@ export default {
                 this.moveProductModal = false
                 this.moveProductForm.toProductId = ''
                 this.selectedProjectProduct = null
+            })
+        },
+        syncImages(productId) {
+            axios.post(`/api/products/${productId}/sync-images`).then(() => {
+                this.$snotify.success('Product images synced successfully!')
             })
         },
         fetchProjects() {
