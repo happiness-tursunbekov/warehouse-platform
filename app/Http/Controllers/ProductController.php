@@ -578,7 +578,7 @@ class ProductController extends Controller
 
         $memo = "";
 
-        $purchaseOrderLine = $productsData->filter(fn($productData) => !@$productData['doNotCharge'])->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails, $isCatalogItem) {
+        $purchaseOrderLine = $productsData->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails, $isCatalogItem) {
             $product = $isCatalogItem ? $connectWiseService->getCatalogItem($productData['id']) : $connectWiseService->getProduct($productData['id']);
 
             $quantity = $productData['quantity'];
@@ -596,41 +596,16 @@ class ProductController extends Controller
                         : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} &#13;"));
             }
 
+            if (@$productData['doNotCharge']) {
+                $product->price = 0.0001;
+                $product->cost = 0.0001;
+            }
+
             return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity, $isCatalogItem);
         });
 
         if (!$isCatalogItem) {
             $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Taking to Azad May Inventory');
-        } else {
-            $adjustmentLine = $productsData->filter(fn($productData) => @$productData['doNotCharge'])->map(function ($productData) use ($cin7Service, $connectWiseService) {
-                $catalogItem = $connectWiseService->getCatalogItem($productData['id']);
-
-                $product = $cin7Service->productBySku($catalogItem->identifier);
-
-                if (!$product) {
-
-                    $connectWiseService = new ConnectWiseService();
-
-                    $product = $cin7Service->createProduct(
-                        $catalogItem->identifier,
-                        $connectWiseService->generateProductName($catalogItem->description, $catalogItem->identifier),
-                        $catalogItem->category->name,
-                        $catalogItem->unitOfMeasure->name,
-                        $catalogItem->customerDescription,
-                        $catalogItem->cost
-                    );
-
-                    $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
-                }
-
-                $stock = $cin7Service->productAvailability($product->ID);
-
-                return $cin7Service->convertProductToAdjustmentLine($product->ID, $productData['quantity'] + ($stock->OnHand ?? 0));
-            });
-
-            if ($adjustmentLine->count() > 0) {
-                $cin7Service->stockAdjustBulk($adjustmentLine);
-            }
         }
 
         if ($purchaseOrderLine->count() > 0) {
