@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Setting;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -40,9 +43,43 @@ class ConnectWiseService
     public function __construct()
     {
         $this->clientId = config('cw.client_id');
+
+        // Create a handler stack
+        $stack = HandlerStack::create();
+
+        // Define the retry middleware
+        $retryMiddleware = Middleware::retry(
+            function ($retries, $request, $response, $exception) {
+                // Limit the number of retries to 5
+                if ($retries >= 3) {
+                    return false;
+                }
+
+                // Retry on server errors (5xx HTTP status codes)
+                if ($response && $response->getStatusCode() >= 500) {
+                    return true;
+                }
+
+                // Retry on connection exceptions
+                if ($exception instanceof RequestException && $exception->getCode() === 0) {
+                    return true;
+                }
+
+                return false;
+            },
+            function ($retries) {
+                // Define a delay function (e.g., exponential backoff)
+                return (int) pow(2, $retries) * 1000; // Delay in milliseconds
+            }
+        );
+
+        // Add the retry middleware to the handler stack
+        $stack->push($retryMiddleware);
+
         $this->http = new Client([
             'auth' => [config('cw.company_id') . '+' . config('cw.public_key'), config('cw.private_key')],
             'base_uri' => config('cw.base_uri'),
+            'handler' => $stack
         ]);
 
         $this->systemIO = config('cw.internal_api_uri');
