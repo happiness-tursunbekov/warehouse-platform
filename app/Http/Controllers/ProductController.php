@@ -596,12 +596,7 @@ class ProductController extends Controller
                         : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} &#13;"));
             }
 
-            if (@$productData['doNotCharge']) {
-                $product->price = 0.0001;
-                $product->cost = 0.0001;
-            }
-
-            return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity, $isCatalogItem);
+            return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity, $isCatalogItem, !!@$productData['doNotCharge']);
         });
 
         if (!$isCatalogItem) {

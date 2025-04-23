@@ -669,13 +669,13 @@ class Cin7Service
         return json_decode($result->getBody()->getContents())->CustomerList[0] ?? null;
     }
 
-    public function convertProductToPurchaseOrderLine($cwProduct, $quantity, $isCatalogItem=false)
+    public function convertProductToPurchaseOrderLine($cwProduct, $quantity, $isCatalogItem=false, $doNotCharge=false)
     {
         $sku = $isCatalogItem ? $cwProduct->identifier : $cwProduct->catalogItem->identifier;
 
         $product = $this->productBySku($sku);
 
-        $cost = $cwProduct->cost * 0.9;
+        $cost = $doNotCharge ? 0.001 : $cwProduct->cost * 0.9;
 
         if (!$product) {
 
@@ -689,7 +689,7 @@ class Cin7Service
                 $catalogItem->category->name,
                 $catalogItem->unitOfMeasure->name,
                 $catalogItem->customerDescription,
-                $cost * 1.07
+                $doNotCharge ? $cwProduct->cost : $cost * 1.07
             );
 
             $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
