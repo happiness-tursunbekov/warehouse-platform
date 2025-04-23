@@ -1435,13 +1435,23 @@ class ConnectWiseService
             ];
         }
 
+        $attachments = collect($this->getAttachments(self::RECORD_TYPE_PRODUCT_SETUP, $catalogItem->id));
+
         $catalogItem->id = 0;
 
         $response = $this->http->post('procurement/catalog?clientId=' . $this->clientId, [
             'json' => $catalogItem
         ]);
 
-        return json_decode($response->getBody()->getContents());
+        $catalogItem = json_decode($response->getBody()->getContents());
+
+        $attachments->map(function ($attachment) use ($catalogItem) {
+            $file = $this->downloadAttachment($attachment->id)->getFile()->getContent();
+
+            $this->systemDocumentUploadProduct($file, $catalogItem->id, $attachment->title, true, true);
+        });
+
+        return $catalogItem;
     }
 
     public function updateCatalogItem(\stdClass $item)

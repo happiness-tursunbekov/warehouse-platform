@@ -57,13 +57,9 @@ class Cin7Service
             ],
         ]);
 
-        $product = json_decode($result->getBody()->getContents())->Products[0] ?? null;
+        $products = collect(json_decode($result->getBody()->getContents())->Products);
 
-        if (!$product || Str::lower($product->SKU) != Str::lower($sku)) {
-            return null;
-        }
-
-        return $product;
+        return $products->filter(fn($product) => Str::lower($product->SKU) == Str::lower($sku))->first();
     }
 
     public function product($id)
