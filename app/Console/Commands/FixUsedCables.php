@@ -38,6 +38,10 @@ class FixUsedCables extends Command
 
         collect($bigCommerceService->getProducts(5, 250)->data)->map(function ($product) use ($connectWiseService, $bigCommerceService) {
 
+            if (!Str::contains($product->sku, '-PROJECT')) {
+                return false;
+            }
+
             $images = $bigCommerceService->getProductImages($product->id);
 
             sleep(1);
@@ -46,7 +50,7 @@ class FixUsedCables extends Command
                 return false;
             }
 
-            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($product->sku);
+            $catalogItem = $connectWiseService->getCatalogItemByIdentifier(Str::replace('-PROJECT', '', $product->sku));
 
             if (!$catalogItem) {
                 return false;

@@ -93,7 +93,7 @@ class ConnectWiseController extends Controller
     public function purchaseOrder(Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service, BigCommerceService $bigCommerceService)
     {
         $action = $request->get('Action');
-        $entity = $request->get('Entity');
+//        $entity = $request->get('Entity');
         $id = $request->get('ID');
 
         WebhookLog::create([
@@ -101,7 +101,9 @@ class ConnectWiseController extends Controller
             'data' => $request->all()
         ]);
 
-        if ($entity['vendorCompany']['id'] == ConnectWiseService::AZAD_MAY_ID && !in_array($entity['status']['name'], ['Sent to Vendor', 'Closed'])) {
+        $origPo = $connectWiseService->purchaseOrder($id);
+
+        if ($origPo->vendorCompany->id == ConnectWiseService::AZAD_MAY_ID && !in_array($origPo->status->name, ['Sent to Vendor', 'Closed'])) {
             return response()->json(['message' => 'No Action']);
         }
 
@@ -111,8 +113,8 @@ class ConnectWiseController extends Controller
         if (!$po) {
 
             // If vendor is Azad May
-            if ($entity['vendorCompany']['id'] == ConnectWiseService::AZAD_MAY_ID) {
-                if ($entity['status']['name'] == 'Sent to Vendor') {
+            if ($origPo->vendorCompany->id == ConnectWiseService::AZAD_MAY_ID) {
+                if ($origPo->status->name == 'Sent to Vendor') {
 
                     $purchaseOrder = $connectWiseService->purchaseOrder($id);
 
@@ -126,21 +128,21 @@ class ConnectWiseController extends Controller
 
                         PurchaseOrder::create([
                             'id' => $id,
-                            'statusId' => $entity['status']['id'],
-                            'closedFlag' => $entity['closedFlag']
+                            'statusId' => $origPo->status->id,
+                            'closedFlag' => $origPo->closedFlag
                         ]);
 
                         $customerName = 'Binyod';
 
-                        if (Str::contains($entity['businessUnit']['name'], 'Team')) {
-                            $customerName .= ' Team' . explode('Team', $entity['businessUnit']['name'])[1];
+                        if (Str::contains($origPo->businessUnit->name, 'Team')) {
+                            $customerName .= ' Team' . explode('Team', $origPo->businessUnit->name)[1];
                         }
 
                         if (!$cin7Service->customer($customerName)) {
                             $cin7Service->createCustomer($customerName);
                         }
 
-                        $cin7Sale = $cin7Service->createSale($customerName, "ConnectWise PO: {$entity['poNumber']}", true);
+                        $cin7Sale = $cin7Service->createSale($customerName, "ConnectWise PO: {$origPo->poNumber}", true);
 
                         $connectWiseService->updatePurchaseOrderCin7SalesOrderId($purchaseOrder, $cin7Sale->ID);
 
@@ -163,13 +165,13 @@ class ConnectWiseController extends Controller
 
             $po = PurchaseOrder::create([
                 'id' => $id,
-                'statusId' => $entity['status']['id'],
-                'closedFlag' => $entity['closedFlag']
+                'statusId' => $origPo->status->id,
+                'closedFlag' => $origPo->closedFlag
             ]);
         } else {
             $po->fill([
-                'statusId' => $entity['status']['id'],
-                'closedFlag' => $entity['closedFlag']
+                'statusId' => $origPo->status->id,
+                'closedFlag' => $origPo->closedFlag
             ])->save();
         }
 
