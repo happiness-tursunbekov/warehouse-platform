@@ -36,7 +36,7 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
-        collect($bigCommerceService->getProducts(2, 250)->data)->map(function ($product) use ($connectWiseService, $bigCommerceService) {
+        collect($bigCommerceService->getProducts(5, 250)->data)->map(function ($product) use ($connectWiseService, $bigCommerceService) {
 
             $images = $bigCommerceService->getProductImages($product->id);
 

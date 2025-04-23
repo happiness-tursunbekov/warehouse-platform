@@ -1759,27 +1759,32 @@ class ConnectWiseService
         $cin7Attachments->filter(fn($cin7Attachment) => !$attachments->where('fileName', $cin7Attachment->FileName)->count())
             ->map(fn($cin7Attachment) => $isProductFamily ? $this->cin7Service->deleteProductFamilyAttachment($cin7Attachment->ID) : $this->cin7Service->deleteProductAttachment($cin7Attachment->ID));
 
-        $attachments->filter(fn($attachment) => !$cin7Attachments->where('FileName', $attachment->fileName)->count())
-            ->map(function ($attachment, $index) use ($isProductFamily, $bigCommerceAttachments, $bigCommerceProduct, $toBigCommerceAsWell, $cin7ProductFamilyId) {
+        $attachments->map(function ($attachment, $index) use ($cin7Attachments, $isProductFamily, $bigCommerceAttachments, $bigCommerceProduct, $toBigCommerceAsWell, $cin7ProductFamilyId) {
                 $file = $this->downloadAttachment($attachment->id)->getFile()->getContent();
 
-                if ($isProductFamily) {
-                    $this->cin7Service->uploadProductFamilyAttachment(
-                        $cin7ProductFamilyId,
-                        $attachment->fileName,
-                        base64_encode($file),
-                        $index == 0
-                    );
-                } else {
-                    $this->cin7Service->uploadProductAttachment(
-                        $cin7ProductFamilyId,
-                        $attachment->fileName,
-                        base64_encode($file),
-                        $index == 0
-                    );
+                if (!$cin7Attachments->where('FileName', $attachment->fileName)->count()) {
+                    if ($isProductFamily) {
+                        $this->cin7Service->uploadProductFamilyAttachment(
+                            $cin7ProductFamilyId,
+                            $attachment->fileName,
+                            base64_encode($file),
+                            $index == 0
+                        );
+                    } else {
+                        $this->cin7Service->uploadProductAttachment(
+                            $cin7ProductFamilyId,
+                            $attachment->fileName,
+                            base64_encode($file),
+                            $index == 0
+                        );
+                    }
                 }
 
-                if ($toBigCommerceAsWell && $bigCommerceProduct) {
+                if (
+                    $toBigCommerceAsWell
+                    && $bigCommerceProduct
+                    && $bigCommerceAttachments->filter(fn($bigCommerceAttachment) => Str::contains($bigCommerceAttachment->image_file, pathinfo($attachment->fileName, PATHINFO_FILENAME)))->count() == 0
+                ) {
                     $this->bigCommerceService->uploadProductImage(
                         $bigCommerceProduct->id,
                         $file,
