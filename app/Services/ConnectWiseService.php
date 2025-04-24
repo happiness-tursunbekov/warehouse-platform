@@ -1882,7 +1882,7 @@ class ConnectWiseService
 
             $bigCommerceProduct = $this->bigCommerceService->createProduct(
                 $this->generateProductFamilySku($catalogItem->identifier),
-                $catalogItem->description,
+                $this->generateProductName($catalogItem->description, $catalogItem->identifier, true),
                 $catalogItem->customerDescription,
                 [$bigCommerceCategory->category_id],
                 0,
