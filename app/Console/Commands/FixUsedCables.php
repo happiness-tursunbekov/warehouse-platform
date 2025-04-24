@@ -36,7 +36,7 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
-//        collect($bigCommerceService->getProducts(5, 250)->data)->map(function ($product) use ($connectWiseService, $bigCommerceService) {
+//        collect($bigCommerceService->getProducts(1, 250)->data)->map(function ($product) use ($connectWiseService, $bigCommerceService) {
 //
 //            if (!Str::contains($product->sku, '-PROJECT')) {
 //                return false;
@@ -306,7 +306,7 @@ class FixUsedCables extends Command
 //
 //        }, $cin7Service->products(16, 50)->Products);
 
-//        $product = $bigCommerceService->getProduct(5626);
+//        $product = $bigCommerceService->getProduct(6057);
 //
 //        if (!Str::contains($product->sku, 'PROJECT')) {
 //            try {
