@@ -36,7 +36,16 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
-        dd(scandir(sys_get_temp_dir()));
+        $attachments = collect($connectWiseService->getAttachments(ConnectWiseService::RECORD_TYPE_PRODUCT_SETUP, 2432));
+
+        $attachments->map(function ($attachment) use ($connectWiseService) {
+
+            $file = $connectWiseService->downloadAttachment($attachment->id)->getFile()->getContent();
+
+            $connectWiseService->systemDocumentUploadProduct($file, 4195, $attachment->fileName, true, true);
+        });
+
+//        dd(scandir(sys_get_temp_dir()));
 
 //        foreach (scandir(sys_get_temp_dir()) as $file) {
 //            if (Str::startsWith($file, "TMP_")) unlink(sys_get_temp_dir() . '/' . $file);

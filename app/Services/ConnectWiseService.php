@@ -1275,39 +1275,44 @@ class ConnectWiseService
 
     public function systemDocumentUploadProduct($file, $recordId, $filename, $privateFlag=true, $readonlyFlag=false, $isAvatar=false)
     {
-        $response = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
-            'multipart' => [
-                [
-                    'name'     => 'file',
-                    'contents' => $file,
-                    'filename' => $filename,
-                ],
-                [
-                    'name' => 'recordType',
-                    'contents' => 'ProductSetup'
-                ],
-                [
-                    'name' => 'recordId',
-                    'contents' => $recordId
-                ],
-                [
-                    'name' => 'title',
-                    'contents' => 'Product Image'
-                ],
-                [
-                    'name' => 'privateFlag',
-                    'contents' => $privateFlag ? 1 : 0
-                ],
-                [
-                    'name' => 'readonlyFlag',
-                    'contents' => $readonlyFlag ? 1 : 0
-                ],
-                [
-                    'name' => 'isAvatar',
-                    'contents' => $isAvatar ? 1 : 0
+
+        try {
+            $response = $this->http->post( 'system/documents?clientId=' . $this->clientId, [
+                'multipart' => [
+                    [
+                        'name'     => 'file',
+                        'contents' => $file,
+                        'filename' => $filename,
+                    ],
+                    [
+                        'name' => 'recordType',
+                        'contents' => 'ProductSetup'
+                    ],
+                    [
+                        'name' => 'recordId',
+                        'contents' => $recordId
+                    ],
+                    [
+                        'name' => 'title',
+                        'contents' => 'Product Image'
+                    ],
+                    [
+                        'name' => 'privateFlag',
+                        'contents' => $privateFlag ? 1 : 0
+                    ],
+                    [
+                        'name' => 'readonlyFlag',
+                        'contents' => $readonlyFlag ? 1 : 0
+                    ],
+                    [
+                        'name' => 'isAvatar',
+                        'contents' => $isAvatar ? 1 : 0
+                    ]
                 ]
-            ]
-        ]);
+            ]);
+        } catch (GuzzleException $e) {
+            abort(500, $e->getResponse()->getBody()->getContents());
+        }
 
         return json_decode($response->getBody()->getContents());
     }
@@ -1448,7 +1453,7 @@ class ConnectWiseService
         $attachments->map(function ($attachment) use ($catalogItem) {
             $file = $this->downloadAttachment($attachment->id)->getFile()->getContent();
 
-            $this->systemDocumentUploadProduct($file, $catalogItem->id, $attachment->title, true, true);
+            $this->systemDocumentUploadProduct($file, $catalogItem->id, $attachment->fileName, true, true);
         });
 
         return $catalogItem;
