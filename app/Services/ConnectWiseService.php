@@ -1706,7 +1706,7 @@ class ConnectWiseService
         if (!$productFamily) {
             $productFamily = $this->cin7Service->createProductFamily(
                 $this->generateProductFamilySku($catalogItem->identifier),
-                $this->generateProductName($catalogItem->description, $catalogItem->identifier),
+                $this->generateProductName($catalogItem->description, $catalogItem->identifier, true),
                 $catalogItem->category->name,
                 $catalogItem->unitOfMeasure->name,
                 $catalogItem->customerDescription
@@ -1960,8 +1960,12 @@ class ConnectWiseService
         return "#{$companyId} - {$companyName}";
     }
 
-    public function generateProductName($description, $identifier)
+    public function generateProductName($description, $identifier, $isProject=false)
     {
+        if ($isProject) {
+            $description = "{$description} [PROJECT]";
+        }
+
         if (Str::endsWith($identifier, '-RF')) {
             return "[REFURBISHED] {$description}";
         }
