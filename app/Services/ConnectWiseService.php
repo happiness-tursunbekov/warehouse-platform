@@ -1545,7 +1545,10 @@ class ConnectWiseService
     {
         $temp = tempnam(sys_get_temp_dir(), 'TMP_');
         file_put_contents($temp, $body);
-        return response()->file($temp)->deleteFileAfterSend();
+
+        defer(fn() => unlink($temp));
+
+        return response()->file($temp);
     }
 
     /**
@@ -1728,7 +1731,7 @@ class ConnectWiseService
             $this->publishProductOnBigCommerce($catalogItemId, $catalogItem);
         }
 
-        defer(fn() => $this->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $productFamily->ID, $onBigCommerceAsWell, $catalogItem));
+        $this->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $productFamily->ID, $onBigCommerceAsWell, $catalogItem);
 
         return $productFamily;
     }

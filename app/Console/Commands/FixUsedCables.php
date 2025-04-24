@@ -36,42 +36,21 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
-//        collect($bigCommerceService->getProducts(1, 250)->data)->map(function ($product) use ($connectWiseService, $bigCommerceService) {
+        dd(scandir(sys_get_temp_dir()));
+
+//        foreach (scandir(sys_get_temp_dir()) as $file) {
+//            if (Str::startsWith($file, "TMP_")) unlink(sys_get_temp_dir() . '/' . $file);
+//        }
+
+//        collect($bigCommerceService->getProducts(6, 250)->data)->map(function ($product) use ($connectWiseService, $bigCommerceService) {
 //
 //            if (!Str::contains($product->sku, '-PROJECT')) {
 //                return false;
 //            }
 //
-//            $images = $bigCommerceService->getProductImages($product->id);
-//
-//            sleep(1);
-//
-//            if ($images && count($images->data) > 0) {
-//                return false;
-//            }
-//
-//            $catalogItem = $connectWiseService->getCatalogItemByIdentifier(Str::replace('-PROJECT', '', $product->sku));
-//
-//            if (!$catalogItem) {
-//                return false;
-//            }
-//
-//            $attachments = collect($connectWiseService->getAttachments(ConnectWiseService::RECORD_TYPE_PRODUCT_SETUP, $catalogItem->id));
-//
-//            $c = $attachments->map(function ($attachment, $index) use ($product, $bigCommerceService, $connectWiseService) {
-//
-//                $file = $connectWiseService->downloadAttachment($attachment->id)->getFile()->getContent();
-//
-//                $bigCommerceService->uploadProductImage(
-//                    $product->id,
-//                    $file,
-//                    $attachment->fileName,
-//                    $index == 0);
-//            })->count();
-//
-//            if ($c > 0) {
-//                echo "{$catalogItem->identifier}\n";
-//            }
+//            $bigCommerceService->updateProduct($product->id, [
+//                'name' => $product->name . ' [PROJECT]'
+//            ]);
 //        });
 
 //        $catalogItem = $connectWiseService->getCatalogItemByIdentifier('OR-576-110-005');
