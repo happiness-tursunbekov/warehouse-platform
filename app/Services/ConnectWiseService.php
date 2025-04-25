@@ -2752,10 +2752,6 @@ class ConnectWiseService
                 $pickedQuantity = $productPickAndShips->pluck('pickedQuantity')->sum();
                 $shippedQuantity = $productPickAndShips->pluck('shippedQuantity')->sum();
 
-                if ($pickedQuantity > 0 && $pickedQuantity == $shippedQuantity) {
-                    return false;
-                }
-
                 $pickOrShipAvailableQuantity = $ship && !$pick ? $pickedQuantity - $shippedQuantity : min($product->quantity, $productPoItems->where('Product_Status', 'Received')->pluck('Received_Qty')->sum()) - $pickedQuantity;
 
                 if ($pickOrShipAvailableQuantity < 1) {
