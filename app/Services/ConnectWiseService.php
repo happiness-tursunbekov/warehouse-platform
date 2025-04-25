@@ -2756,7 +2756,7 @@ class ConnectWiseService
                     return false;
                 }
 
-                $pickOrShipAvailableQuantity = $ship && !$pick ? $pickedQuantity - $shippedQuantity : min($product->quantity, $ticket->Quantity) - $pickedQuantity;
+                $pickOrShipAvailableQuantity = $ship && !$pick ? $pickedQuantity - $shippedQuantity : min($product->quantity, $productPoItems->where('Product_Status', 'Received')->pluck('Received_Qty')->sum()) - $pickedQuantity;
 
                 if ($pickOrShipAvailableQuantity < 1) {
                     return false;
