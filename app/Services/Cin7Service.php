@@ -671,8 +671,6 @@ class Cin7Service
 
         $product = $this->productBySku($sku);
 
-        $cost = $doNotCharge ? 0.001 : $cwProduct->cost * 0.9;
-
         if (!$product) {
 
             $connectWiseService = new ConnectWiseService();
@@ -685,11 +683,13 @@ class Cin7Service
                 $catalogItem->category->name,
                 $catalogItem->unitOfMeasure->name,
                 $catalogItem->customerDescription,
-                $doNotCharge ? $cwProduct->cost : $cost * 1.07
+                $cwProduct->cost
             );
 
             $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
         }
+
+        $cost = $doNotCharge ? 0.001 : $cwProduct->cost * 0.93;
 
         return [
             'ProductID' => $product->ID,
