@@ -667,9 +667,9 @@ class ProductController extends Controller
 
         $connectWiseService->unpickProduct($product->id, $quantity);
 
-        $connectWiseService->stockTakeFromCin7ByProjectProductId($productId, $quantity, true, $product);
-
         $connectWiseService->pickProduct($newProduct->id ?? $toProductId, $quantity);
+
+        $connectWiseService->stockTakeFromCin7ByProjectProductId($productId, $quantity, true, $product);
 
         $connectWiseService->publishProductOnCin7($newProduct ?? $connectWiseService->getProduct($toProductId), $quantity, true);
 
