@@ -689,7 +689,7 @@ class Cin7Service
             $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $product->ID, isProductFamily: false);
         }
 
-        $cost = $doNotCharge ? 0.001 : $cwProduct->cost * 0.93;
+        $cost = $doNotCharge ? 0.1 : $cwProduct->cost * 0.93;
 
         return [
             'ProductID' => $product->ID,
