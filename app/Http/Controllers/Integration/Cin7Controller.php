@@ -65,7 +65,7 @@ class Cin7Controller extends Controller
         return response()->json(['message' => 'Product adjusted successfully!']);
     }
 
-    public function saleShipmentAuthorized(Request $request, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
+    public function saleShipmentAuthorized(Request $request, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService, Cin7Service $cin7Service)
     {
         $request->validate([
             'SaleTaskID' => ['required', 'string'],
@@ -114,11 +114,18 @@ class Cin7Controller extends Controller
                     $departmentId = $connectWiseService->getSystemDepartments(1, 'name contains "*Team A*"')[0]->id;
                 }
 
-                $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts, $departmentId, $salesOrderId);
+                $createdPO = null;
+
+                $cwProducts = $connectWiseService->createAzadMayPO($azadMayProducts, $departmentId, $salesOrderId, $createdPO);
 
                 $cwProducts->map(function ($cwProduct) use ($connectWiseService) {
                     $connectWiseService->pickAndShipProduct($cwProduct->id, $cwProduct->quantity);
                 });
+
+                $cin7Service->updateSale([
+                    'ID' => $salesOrderId,
+                    'Note' => 'ConnectWise PO: ' . $createdPO->poNumber
+                ]);
             }
 
             // Shipping project products
