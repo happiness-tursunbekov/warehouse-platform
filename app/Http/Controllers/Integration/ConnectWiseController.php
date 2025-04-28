@@ -26,7 +26,7 @@ class ConnectWiseController extends Controller
             case ConnectWiseService::ACTION_UPDATED:
                 $catalogItem = $connectWiseService->getCatalogItem($id);
 
-                if ($catalogItem->productClass == 'Bundle') {
+                if ($catalogItem->productClass == 'Bundle' || Str::contains(Str::lower($catalogItem->identifier), 'copy')) {
                     break;
                 }
 

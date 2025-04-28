@@ -35,23 +35,33 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        collect($cin7Service->products(2, 1000)->Products)->map(function ($product) use ($connectWiseService) {
+        collect($connectWiseService->getProducts(1, 'project/id=275', pageSize: 1000))->map(function ($product) use ($connectWiseService) {
+            $picked = collect($connectWiseService->getProductPickingShippingDetails($product->id))->filter(fn($item) => $item->pickedQuantity > $item->shippedQuantity)->map(fn($item) => $item->pickedQuantity - $item->shippedQuantity)->sum();
 
-            if (Str::contains($product->SKU, '-PROJECT')) {
+            if ($picked == 0) {
                 return false;
             }
 
-            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($product->SKU);
-            if (!$catalogItem || $catalogItem->id == 1367) {
-                return false;
-            }
-
-            $catalogItem->cost = $catalogItem->price = $product->PriceTier1;
-
-            try {
-                $connectWiseService->updateCatalogItem($catalogItem);
-            } catch (\Exception $e) {}
+            echo "{$product->catalogItem->identifier}: {$picked}\n";
         });
+
+//        collect($cin7Service->products(2, 1000)->Products)->map(function ($product) use ($connectWiseService) {
+//
+//            if (Str::contains($product->SKU, '-PROJECT')) {
+//                return false;
+//            }
+//
+//            $catalogItem = $connectWiseService->getCatalogItemByIdentifier($product->SKU);
+//            if (!$catalogItem || $catalogItem->id == 1367) {
+//                return false;
+//            }
+//
+//            $catalogItem->cost = $catalogItem->price = $product->PriceTier1;
+//
+//            try {
+//                $connectWiseService->updateCatalogItem($catalogItem);
+//            } catch (\Exception $e) {}
+//        });
 
 //        dd(scandir(sys_get_temp_dir()));
 
