@@ -71,7 +71,8 @@ class Cin7Controller extends Controller
             'SaleTaskID' => ['required', 'string'],
             'OrderNumber' => ['required', 'string'],
             'EventType' => ['required', 'string'],
-            'CustomerReference' => ['nullable', 'string']
+            'CustomerReference' => ['nullable', 'string'],
+            'CustomerName' => ['nullable', 'string'],
         ]);
 
         WebhookLog::create([
@@ -81,6 +82,7 @@ class Cin7Controller extends Controller
 
         try {
             $salesOrderId = $request->get('SaleTaskID');
+            $customerName = $request->get('CustomerName');
 
             $bigCommerceOrderId = $request->get('CustomerReference');
 
@@ -124,7 +126,8 @@ class Cin7Controller extends Controller
 
                 $cin7Service->updateSale([
                     'ID' => $salesOrderId,
-                    'Note' => 'ConnectWise PO: ' . $createdPO->poNumber
+                    'Note' => 'ConnectWise PO: ' . $createdPO->poNumber,
+                    'Customer' => $customerName
                 ]);
             }
 
