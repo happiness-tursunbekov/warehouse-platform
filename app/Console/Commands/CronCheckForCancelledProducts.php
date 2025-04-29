@@ -35,15 +35,11 @@ class CronCheckForCancelledProducts extends Command
         $time = "[" .$lastChecked->toDateTimeLocalString() . "Z]";
 
         $adjustmentDetails = collect();
-        $adjustmentLines = collect();
+        $purchaseOrderLines = collect();
 
         collect($connectWiseService->getProducts(1, "cancelledFlag=true and _info/lastUpdated > {$time}", 1000))
-            ->map(function ($product) use ($connectWiseService, $cin7Service, &$adjustmentDetails, &$adjustmentLines) {
+            ->map(function ($product) use ($connectWiseService, $cin7Service, &$adjustmentDetails, &$purchaseOrderLines) {
                 $onHand = $connectWiseService->getCatalogItemOnHand($product->catalogItem->id)->count;
-
-                $cin7Stock = $cin7Service->productAvailabilityBySku($product->catalogItem->identifier);
-
-                sleep(1);
 
                 if ($onHand == 0) {
                     return false;
@@ -59,20 +55,22 @@ class CronCheckForCancelledProducts extends Command
                         $catalogItem->category->name,
                         $catalogItem->unitOfMeasure->name,
                         $catalogItem->customerDescription,
-                        $product->cost * 0.9 * 1.07
+                        $product->cost
                     );
 
                     $connectWiseService->syncCatalogItemAttachmentsWithCin7($catalogItem->id, $cin7Product->ID, isProductFamily: false);
                 }
 
-                $adjustmentLines->push($cin7Service->convertProductToAdjustmentLine($cin7Product->ID, $onHand + ($cin7Stock->OnHand ?? 0), cost: $cin7Product->PriceTier1));
+                $purchaseOrderLines->push($cin7Service->convertProductToPurchaseOrderLine($product, $onHand));
                 $adjustmentDetails->push($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $onHand));
 
                 return true;
             });
 
-        if ($adjustmentLines->count() > 0) {
-            $cin7Service->stockAdjustBulk($adjustmentLines);
+        if ($purchaseOrderLines->count() > 0) {
+            $cin7Service->stockAdjustBulk($purchaseOrderLines);
+
+            $purchaseOrder = $cin7Service->createPurchaseOrder($purchaseOrderLines->toArray(), '6f54ff7f-03cb-4dac-aaa3-6adaa5b92e41', 'Cancelled products on ConnectWise');
         }
 
         if ($adjustmentDetails->count() > 0) {
