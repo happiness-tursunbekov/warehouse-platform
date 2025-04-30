@@ -250,11 +250,7 @@ class ConnectWiseController extends Controller
 
                         $connectWiseService->pickOrShipPurchaseOrderItem($po->id, $poItem, ship: $autoShip, callback: function ($product, $quantity) use ($item, $connectWiseService, $autoShip) {
                             if (!$autoShip) {
-                                $cin7Adjustment = $connectWiseService->publishProductOnCin7($product, $quantity, true, $item->cin7AdjustmentId);
-
-                                if ($cin7Adjustment) {
-                                    $item->fill(['cin7AdjustmentId' => $cin7Adjustment->TaskID])->save();
-                                }
+                                $connectWiseService->publishProductOnCin7($product, $quantity, true);
                             }
                         });
                     }
@@ -296,18 +292,7 @@ class ConnectWiseController extends Controller
 
                             $connectWiseService->unpickProduct($product->id, $quantity);
 
-                            if ($item->cin7AdjustmentId) {
-                                $cin7Service->undoStockAdjustment($item->cin7AdjustmentId);
-                            }
-                            $connectWiseService->stockTakeOnBigCommerce(
-                                $connectWiseService->generateProductSku(
-                                    $connectWiseService->generateProductFamilySku($product->catalogItem->identifier),
-                                    $product->project->id ?? null,
-                                    $product->ticket->id ?? null,
-                                    $product->company->id ?? null,
-                                ),
-                                $quantity
-                            );
+                            $connectWiseService->stockTakeFromCin7ByProjectProductId($product->id, $quantity, true, $product);
 
                             $quantity = $quantity <= $unpickAvailableQuantity ? 0 : $quantity - $unpickAvailableQuantity;
 

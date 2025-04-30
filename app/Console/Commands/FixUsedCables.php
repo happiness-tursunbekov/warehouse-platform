@@ -35,15 +35,29 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
-        collect($connectWiseService->getProducts(1, 'project/id=275', pageSize: 1000))->map(function ($product) use ($connectWiseService) {
-            $picked = collect($connectWiseService->getProductPickingShippingDetails($product->id))->filter(fn($item) => $item->pickedQuantity > $item->shippedQuantity)->map(fn($item) => $item->pickedQuantity - $item->shippedQuantity)->sum();
 
-            if ($picked == 0) {
-                return false;
+        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand>0', pageSize: 1000))->map(function ($onHand) use ($cin7Service, $connectWiseService) {
+            $availability = $cin7Service->productAvailabilityBySku(Str::upper($onHand->catalogItem->identifier));
+            sleep(1);
+            if (!$availability || $availability->Available != $onHand->onHand) {
+
+                $available = !$availability ? 0 : $availability->Available;
+
+                echo "{$onHand->catalogItem->identifier}: {$onHand->onHand}: {$available}\n";
             }
-
-            echo "{$product->catalogItem->identifier}: {$picked}\n";
         });
+
+//        collect($connectWiseService->getProducts(1, 'project/id=275', pageSize: 1000))->map(function ($product) use ($connectWiseService) {
+//            $picked = collect($connectWiseService->getProductPickingShippingDetails($product->id))->filter(fn($item) => $item->pickedQuantity > $item->shippedQuantity)->map(fn($item) => $item->pickedQuantity - $item->shippedQuantity)->sum();
+//
+//            if ($picked == 0) {
+//                return false;
+//            }
+//
+//            echo "{$product->catalogItem->identifier}: {$picked}\n";
+//        });
+
+
 
 //        collect($cin7Service->products(2, 1000)->Products)->map(function ($product) use ($connectWiseService) {
 //
