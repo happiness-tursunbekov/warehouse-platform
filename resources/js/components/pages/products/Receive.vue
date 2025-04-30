@@ -112,6 +112,11 @@
                 <li v-if="selectedItem.cancelledFlag" class="list-group-item"><strong>Status:</strong> Cancelled</li>
             </ul>
             <template v-if="!selectedItem.closedFlag && !selectedItem.cancelledFlag">
+                <div class="mb-3">
+                    <label for="exampleFormControlInput12" class="form-label">Quantity to receive</label>
+                    <input v-model="quantity" type="number" class="form-control" id="exampleFormControlInput12" placeholder="Qty" min="1" required>
+                </div>
+
                 <div class="form-check">
                     <input v-model="autoShip" class="form-check-input" type="checkbox" value="" id="checkDefaultAuto">
                     <label class="form-check-label" for="checkDefaultAuto">
@@ -119,10 +124,6 @@
                     </label>
                 </div>
 
-                <div class="mb-3">
-                    <label for="exampleFormControlInput12" class="form-label">Quantity to receive</label>
-                    <input v-model="quantity" type="number" class="form-control" id="exampleFormControlInput12" placeholder="Qty" min="1" required>
-                </div>
                 <button class="btn btn-success btn-sm" type="submit">Receive</button>
             </template>
         </form>
