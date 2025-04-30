@@ -117,11 +117,13 @@
                     <input v-model="quantity" type="number" class="form-control" id="exampleFormControlInput12" placeholder="Qty" min="1" required>
                 </div>
 
-                <div class="form-check">
-                    <input v-model="autoShip" class="form-check-input" type="checkbox" value="" id="checkDefaultAuto">
-                    <label class="form-check-label" for="checkDefaultAuto">
-                        Ship automatically after receiving
-                    </label>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input v-model="autoShip" class="form-check-input" type="checkbox" value="" id="checkDefaultAuto">
+                        <label class="form-check-label" for="checkDefaultAuto">
+                            Ship automatically after receiving
+                        </label>
+                    </div>
                 </div>
 
                 <button class="btn btn-success btn-sm" type="submit">Receive</button>
