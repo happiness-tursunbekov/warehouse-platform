@@ -115,15 +115,18 @@ class ProductController extends Controller
     {
         $request->validate([
             'quantity' => ['required', 'integer', 'min:1'],
-            'id' => ['required', 'integer']
+            'id' => ['required', 'integer'],
+            'autoShip' => ['nullable', 'boolean']
         ]);
 
         $id = $request->get('id');
 
         $quantity = $request->get('quantity');
 
+        $autoShip = $request->get('autoShip', false);
+
         try {
-            $item = $connectWiseService->purchaseOrderItemReceiveUsingCache($id, $quantity);
+            $item = $connectWiseService->purchaseOrderItemReceiveUsingCache($id, $quantity, $autoShip);
         } catch (GuzzleException $e) {
             return response()->json(['code' => 'ERROR', 'message' => json_decode($e->getResponse()->getBody()->getContents())->errors[0]->message]);
         }

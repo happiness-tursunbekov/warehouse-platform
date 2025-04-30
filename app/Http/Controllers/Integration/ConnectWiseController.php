@@ -245,11 +245,16 @@ class ConnectWiseController extends Controller
                         && $poItem->receivedStatus == PurchaseOrderItem::RECEIVED_STATUS_WAITING;
 
                     if ($picking) {
-                        $connectWiseService->pickOrShipPurchaseOrderItem($po->id, $poItem, callback: function ($product, $quantity) use ($item, $connectWiseService) {
-                            $cin7Adjustment = $connectWiseService->publishProductOnCin7($product, $quantity, true, $item->cin7AdjustmentId);
 
-                            if ($cin7Adjustment) {
-                                $item->fill(['cin7AdjustmentId' => $cin7Adjustment->TaskID])->save();
+                        $autoShip = $connectWiseService->extractPurchaseOrderItemAutoShip($poItem);
+
+                        $connectWiseService->pickOrShipPurchaseOrderItem($po->id, $poItem, ship: $autoShip, callback: function ($product, $quantity) use ($item, $connectWiseService, $autoShip) {
+                            if (!$autoShip) {
+                                $cin7Adjustment = $connectWiseService->publishProductOnCin7($product, $quantity, true, $item->cin7AdjustmentId);
+
+                                if ($cin7Adjustment) {
+                                    $item->fill(['cin7AdjustmentId' => $cin7Adjustment->TaskID])->save();
+                                }
                             }
                         });
                     }

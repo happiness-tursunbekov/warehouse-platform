@@ -456,7 +456,7 @@ class ConnectWiseService
     /**
      * @throws GuzzleException
      */
-    public function purchaseOrderItemReceiveUsingCache(int $itemId, $quantity)
+    public function purchaseOrderItemReceiveUsingCache(int $itemId, $quantity, bool $autoShip=false)
     {
         try {
             $item = $this->getOpenPoItems()->where('id', $itemId)->first();
@@ -469,6 +469,12 @@ class ConnectWiseService
         }
 
         $putItem = $this->purchaseOrderItem($poId, $itemId);
+
+        if ($autoShip) {
+            $putItem = $this->setPurchseOrderItemAutoShip($putItem, true);
+
+            $putItem = $this->updatePurchaseOrderItem($putItem);
+        }
 
         if ($item->quantity != $quantity) {
             $putItem->receivedStatus = 'PartiallyReceiveCloneRest';
@@ -2058,6 +2064,10 @@ class ConnectWiseService
         return json_decode($response->getBody()->getContents());
     }
 
+    public function extractPurchaseOrderItemAutoShip(\stdClass $purchaseOrderItem) {
+        return $this->extractCustomFieldValueByName($purchaseOrderItem, 'Ship automatically') || false;
+    }
+
     public function extractCustomFieldValueByName(\stdClass $record, $fieldName)
     {
         $field = collect($record->customFields)->where('caption', $fieldName)->first();
@@ -2085,7 +2095,12 @@ class ConnectWiseService
         return $this->setCustomFieldValue($record, 'BigCommerce Option ID', $value);
     }
 
-    public function setCustomFieldValue(\stdClass $record, string $fieldCaption, string $value)
+    public function setPurchseOrderItemAutoShip(\stdClass $purchaseOrderItem, bool $value)
+    {
+        return $this->setCustomFieldValue($purchaseOrderItem, 'Ship automatically', $value);
+    }
+
+    public function setCustomFieldValue(\stdClass $record, string $fieldCaption, string|bool $value)
     {
         $customFields = collect($record->customFields);
 
@@ -2702,6 +2717,19 @@ class ConnectWiseService
         $response = $this->http->put("procurement/purchaseorders/{$purchaseOrder->id}?clientId={$this->clientId}", [
             'json' => $purchaseOrder
         ]);
+
+        return json_decode($response->getBody()->getContents());
+    }
+
+    public function updatePurchaseOrderItem(\stdClass $purchaseOrderItem)
+    {
+        try {
+            $response = $this->http->put("procurement/purchaseorders/{$purchaseOrderItem->purchaseOrderId}/lineitems/{$purchaseOrderItem->id}?clientId={$this->clientId}", [
+                'json' => $purchaseOrderItem
+            ]);
+        } catch (GuzzleException $e) {
+            dd(json_decode($e->getResponse()->getBody()->getContents()));
+        }
 
         return json_decode($response->getBody()->getContents());
     }

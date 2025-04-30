@@ -112,6 +112,13 @@
                 <li v-if="selectedItem.cancelledFlag" class="list-group-item"><strong>Status:</strong> Cancelled</li>
             </ul>
             <template v-if="!selectedItem.closedFlag && !selectedItem.cancelledFlag">
+                <div class="form-check">
+                    <input v-model="autoShip" class="form-check-input" type="checkbox" value="" id="checkDefaultAuto">
+                    <label class="form-check-label" for="checkDefaultAuto">
+                        Ship automatically after receiving
+                    </label>
+                </div>
+
                 <div class="mb-3">
                     <label for="exampleFormControlInput12" class="form-label">Quantity to receive</label>
                     <input v-model="quantity" type="number" class="form-control" id="exampleFormControlInput12" placeholder="Qty" min="1" required>
@@ -153,6 +160,7 @@ export default {
             items: [],
             identifier: '',
             quantity: 0,
+            autoShip: false,
             poNumber: '',
             selectedItem: null,
             barcode: this.$route.query.barcode || '',
@@ -199,7 +207,8 @@ export default {
         receive() {
             axios.post('/api/products/receive', {
                 quantity: this.quantity,
-                id: this.selectedItem.id
+                id: this.selectedItem.id,
+                autoShip: this.autoShip
             }).then(res => {
                 switch (res.data.code) {
                     case 'SUCCESS':
