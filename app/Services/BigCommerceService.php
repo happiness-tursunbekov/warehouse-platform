@@ -42,33 +42,27 @@ class BigCommerceService
 
     public function getProducts($page=null, $limit=null, $sku=null)
     {
-        try {
-            $result = $this->http->get('catalog/products', [
-                'query' => [
-                    'page' => $page,
-                    'limit' => $limit,
-                    'sku' => $sku
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return new \stdClass();
-        }
+        $result = $this->http->get('catalog/products', [
+            'query' => [
+                'page' => $page,
+                'limit' => $limit,
+                'sku' => $sku
+            ],
+        ]);
+
         return json_decode($result->getBody()->getContents());
     }
 
     public function getProductVariants($id, $page=null, $limit=null, $sku=null)
     {
-        try {
-            $result = $this->http->get("catalog/products/{$id}/variants", [
-                'query' => [
-                    'page' => $page,
-                    'limit' => $limit,
-                    'sku' => $sku
-                ],
-            ]);
-        } catch (GuzzleException $e) {
-            return new \stdClass();
-        }
+        $result = $this->http->get("catalog/products/{$id}/variants", [
+            'query' => [
+                'page' => $page,
+                'limit' => $limit,
+                'sku' => $sku
+            ],
+        ]);
+
         return json_decode($result->getBody()->getContents());
     }
 

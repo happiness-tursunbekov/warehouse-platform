@@ -570,9 +570,13 @@ class ConnectWiseService
 
     public function updateProduct(\stdClass $product)
     {
-        $response = $this->http->put("procurement/products/{$product->id}?clientId={$this->clientId}", [
-            'json' => $product,
-        ]);
+        try {
+            $response = $this->http->put("procurement/products/{$product->id}?clientId={$this->clientId}", [
+                'json' => $product,
+            ]);
+        } catch (GuzzleException $e) {
+            dd(json_decode($e->getResponse()->getBody()->getContents()));
+        }
 
         return json_decode($response->getBody()->getContents());
     }
@@ -2456,8 +2460,13 @@ class ConnectWiseService
             "autoUpdateUnitPriceFlag" => false
         ];
 
+        return $this->createCatalogItemJson($json);
+    }
+
+    public function createCatalogItemJson(\stdClass|array $data) {
+
         $response = $this->http->post("procurement/catalog?clientId={$this->clientId}", [
-            'json' => $json
+            'json' => $data
         ]);
 
         return json_decode($response->getBody()->getContents());

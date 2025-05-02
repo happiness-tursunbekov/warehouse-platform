@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\ConnectWiseService;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Console\Command;
 
 class PoPickItems extends Command
@@ -42,13 +43,13 @@ class PoPickItems extends Command
 
                 collect($connectWiseService->purchaseOrderItemsOriginal($po->id, 1, 'receivedStatus="FullyReceived"'))->map(function ($poItem) use ($po, $connectWiseService) {
 
-//                    try {
+                    try {
                         $connectWiseService->pickOrShipPurchaseOrderItem($po->id, $poItem, callback: function ($product, $quantity) {
                             echo "{$product->id}: {$quantity}\n";
                         });
-//                    } catch (\Exception $e) {
-//                        echo "Error msg: {$e->getMessage()}\n";
-//                    }
+                    } catch (GuzzleException $e) {
+                        echo "Error msg: {$e->getMessage()} {$e->getResponse()->getBody()->getContents()}\n";
+                    }
 
                 });
             });

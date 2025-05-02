@@ -35,17 +35,164 @@ class FixUsedCables extends Command
      */
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
+//        $pickedProducts = cache()->get('pickedProducts') ?: collect();
+//        $lines = cache()->get('lines') ?: collect();
+//
+//        $groups = $lines->groupBy('ProductID')->filter(function ($group) {
+//            return $group->count() > 1;
+//        })->map(function ($group) {
+//
+//            $gr = $group->first();
+//
+//            $gr['Quantity'] = $group->sum('Quantity');
+//
+//            return $gr;
+//        })->filter(function ($group) {
+//            if (!$group['ProductID']) {
+//                return false;
+//            }
+//
+//            return true;
+//        });
+//
+//        $cin7Service->stockAdjustBulk($groups->values()->toArray());
 
-        collect($connectWiseService->getProductCatalogOnHand(1, 'onHand>0', pageSize: 1000))->map(function ($onHand) use ($cin7Service, $connectWiseService) {
-            $availability = $cin7Service->productAvailabilityBySku(Str::upper($onHand->catalogItem->identifier));
-            sleep(1);
-            if (!$availability || $availability->Available != $onHand->onHand) {
+//        $start = false;
+//
+//        $pickedProducts->map(function ($product) use ($connectWiseService, &$start, &$lines) {
+//
+//            if ($product->id == 11836) {
+//                $start = true;
+//            }
+//
+//            if (!$start) {
+//                return false;
+//            }
+//
+//            echo "{$product->id} - {$product->catalogItem->identifier}: {$product->picked}\n";
+//
+//            try {
+//                $productId = $connectWiseService->publishProductOnCin7($product, $product->picked);
+//            } catch (GuzzleException) {
+//                sleep(60);
+//
+//                $productId = $connectWiseService->publishProductOnCin7($product, $product->picked);
+//            }
+//
+//            $lines->push([
+//                'ProductID' => $productId,
+//                'SKU' => $connectWiseService->generateProductSku($connectWiseService->generateProductFamilySku($product->catalogItem->identifier), $product->project->id ?? null, $product->ticket->id ?? null, $product->company->id),
+//                'Quantity' => $product->picked,
+//                'UnitCost' => 0.0001,
+//                'Location' => Cin7Service::INVENTORY_AZAD_MAY
+//            ]);
+//
+//            cache()->put('lines', $lines);
+//
+//        });
 
-                $available = !$availability ? 0 : $availability->Available;
+//        $page = 1;
+//
+//        while (true) {
+//            $products = collect($connectWiseService->getProducts($page, pageSize: 1000))->map(function ($product) use ($connectWiseService, &$pickedProducts) {
+//
+//                $picked = collect($connectWiseService->getProductPickingShippingDetails($product->id))->filter(fn($item) => $item->pickedQuantity > $item->shippedQuantity)->map(fn($item) => $item->pickedQuantity - $item->shippedQuantity)->sum();
+//
+//                if ($picked == 0) {
+//                    return false;
+//                }
+//
+//                $product->picked = $picked;
+//
+//                $pickedProducts->push($product);
+//            });
+//
+//            if ($products->count() < 1000) {
+//                break;
+//            }
+//
+//            $page++;
+//        }
+//
+//        cache()->put('pickedProducts', $pickedProducts);
 
-                echo "{$onHand->catalogItem->identifier}: {$onHand->onHand}: {$available}\n";
-            }
-        });
+//        $products = collect($bigCommerceService->getProducts(14, 125)->data)->map(function ($product) use ($bigCommerceService) {
+//            if (!Str::contains($product->sku, '-PROJECT')) {
+//                return false;
+//            }
+//
+//            try {
+//                collect($bigCommerceService->getProductVariants($product->id)->data)->map(function ($variant) use ($product, $bigCommerceService) {
+//                    if ($variant->inventory_level == 0) {
+//                        return false;
+//                    }
+//
+//                    $bigCommerceService->adjustVariant($variant->id, -1*$variant->inventory_level);
+//                });
+//            } catch (\Exception $e) {
+//
+//                sleep(5);
+//
+//                collect($bigCommerceService->getProductVariants($product->id)->data)->map(function ($variant) use ($product, $bigCommerceService) {
+//                    if ($variant->inventory_level == 0) {
+//                        return false;
+//                    }
+//
+//                    $bigCommerceService->adjustVariant($variant->id, -1*$variant->inventory_level);
+//                });
+//            }
+//        });
+
+//        $lines = [];
+//        $page=1;
+//        while (true) {
+//            $products = collect($cin7Service->products($page, 1000)->Products)->map(function ($product) use ($cin7Service, &$lines) {
+//                if (!Str::contains($product->SKU, '-PROJECT')) {
+//                    return false;
+//                }
+//
+//                $lines[] = [
+//                    "ProductID" => $product->ID,
+//                    "Quantity" => 0,
+//                    "UnitCost" => 0.0001,
+//                    "Location" => Cin7Service::INVENTORY_AZAD_MAY
+//                ];
+//            });
+//
+//            if ($products->count() < 1000) {
+//                break;
+//            }
+//
+//            $page++;
+//        }
+//
+//        $cin7Service->stockAdjustBulk($lines);
+
+//        $catalogItemOrig = $connectWiseService->getCatalogItemByIdentifier('NPOE-EXT-2X1G30');
+//
+//        $catalogItem = clone $catalogItemOrig;
+//
+//        $catalogItem->id = 0;
+//        $catalogItem->productClass = 'Inventory';
+//
+//        $catalogItemOrig->identifier .= '.';
+//        $catalogItemOrig->inactiveFlag = true;
+//
+//        $connectWiseService->updateCatalogItem($catalogItemOrig);
+//
+//        $connectWiseService->createCatalogItemJson($catalogItem);
+
+//        $product = $connectWiseService->getProduct(23301);
+//
+//        dd($product);
+//
+//        $product->project = new \stdClass();
+//
+//        $product->project->id = 350;
+//
+//        $connectWiseService->updateProduct($product);
+
+
 
 //        collect($connectWiseService->getProducts(1, 'project/id=275', pageSize: 1000))->map(function ($product) use ($connectWiseService) {
 //            $picked = collect($connectWiseService->getProductPickingShippingDetails($product->id))->filter(fn($item) => $item->pickedQuantity > $item->shippedQuantity)->map(fn($item) => $item->pickedQuantity - $item->shippedQuantity)->sum();
