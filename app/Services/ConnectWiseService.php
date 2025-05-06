@@ -2132,6 +2132,8 @@ class ConnectWiseService
         $quantity=1
     )
     {
+
+        $product = clone $product;
         if (@$product->project) {
             unset($product->project);
         }
