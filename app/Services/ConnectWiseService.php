@@ -519,7 +519,7 @@ class ConnectWiseService
         return $poItems->where('productIdentifier', $itemIdentifier)->values();
     }
 
-    public function findItemFromPosById($productId)
+    public function findItemFromPosById(int $productId)
     {
         if (cache()->has('poItems')) {
             $poItems =  cache()->get('poItems');

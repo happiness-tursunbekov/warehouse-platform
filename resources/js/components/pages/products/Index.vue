@@ -853,7 +853,7 @@ export default {
         getPos(item) {
             this.getProductOnHand(item)
             this.selectedProduct = item
-            axios.get(`/api/products/find-po-by-product?productIdentifier=${item.identifier}`).then(res => {
+            axios.get(`/api/products/find-po-by-product?catalogItemId=${item.id}`).then(res => {
                 this.pos = res.data.items
                 this.products = res.data.products
                 this.posModal = true

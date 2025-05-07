@@ -246,14 +246,14 @@ class ProductController extends Controller
     public function findPoByProduct(Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
-            'productIdentifier' => ['required', 'string']
+            'catalogItemId' => ['required', 'string']
         ]);
 
-        $productIdentifier = $request->get('productIdentifier');
+        $catalogItemId = $request->get('catalogItemId');
 
         return response()->json([
-            'items' => $connectWiseService->findItemFromPos($productIdentifier),
-            'products' => collect($connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/identifier='{$productIdentifier}'", 50))
+            'items' => $connectWiseService->findItemFromPosById($catalogItemId),
+            'products' => collect($connectWiseService->getProducts(null, "cancelledFlag=false and catalogItem/id='{$catalogItemId}'", 50))
                 ->map(function ($product) use ($connectWiseService) {
 
                     $pickShip = collect($connectWiseService->getProductPickingShippingDetails($product->id));
