@@ -527,7 +527,7 @@ class ConnectWiseService
             $poItems = $this->cachePos();
         }
 
-        return $poItems->where('id', $productId)->values();
+        return $poItems->where('productId', $productId)->values();
     }
 
     public function cachePos()
