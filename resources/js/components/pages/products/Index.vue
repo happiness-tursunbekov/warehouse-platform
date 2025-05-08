@@ -177,23 +177,39 @@
             </div>
         </modal>
         <modal v-model:show="usedItemModal" modal-title="Adding used catalog item">
-            <form @submit.prevent="createUsedItem($refs.usedItemQty.value, $refs.usedItemCost.value)">
+            <form @submit.prevent="createUsedItem($refs.usedItemCost.value)">
                 <ul class="list-group">
                     <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
                     <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
                 </ul>
                 <div class="mb-3">
                     <label class="form-label">Quantity</label>
-                    <div class="input-group">
-                        <input ref="usedItemQty" type="number" min="1" class="form-control" required>
+                    <div v-for="(item, key) in usedItemQuantities" :key="key" class="input-group">
+                        <input v-model="usedItemQuantities[key]" type="number" min="1" class="form-control" required>
                         <span class="input-group-text">{{ (selectedProduct.unitOfMeasure.name.toLowerCase().replace(/\s/g, '').trim().includes('usedcable') || selectedProduct.unitOfMeasure.name.toLowerCase().replace(/\s/g, '').includes('ft)')) ? 'Ft' : 'Pcs'  }}</span>
+                        <button @click="usedItemQuantities.splice(key, 1)" type="button" class="btn btn-danger">X</button>
                     </div>
+                    <button @click="usedItemQuantities.push(0)" type="button" class="btn btn-sm btn-success">+</button>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Cost</label>
                     <div class="input-group">
                         <input ref="usedItemCost" type="number" :value="selectedProduct.cost" class="form-control" required>
                         <span class="input-group-text">$</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input ref="usedItemAddToAzadMayList" class="form-check-input" type="checkbox" id="flexCheckChecked-usedItemAddToAzadMayList">
+                        <label class="form-check-label" for="flexCheckChecked-usedItemAddToAzadMayList">
+                            Add to Azad May list
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input ref="usedItemAddToAzadMayListDoNotCharge" class="form-check-input" type="checkbox" id="flexCheckChecked-usedItemAddToAzadMayListDoNotCharge">
+                        <label class="form-check-label" for="flexCheckChecked-usedItemAddToAzadMayListDoNotCharge">
+                            Do not charge
+                        </label>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -555,7 +571,8 @@ export default {
             companies: [],
             bundles: [],
             cin7Suppliers: [],
-            supplierId: ''
+            supplierId: '',
+            usedItemQuantities: [0]
         }
     },
 
@@ -927,16 +944,23 @@ export default {
                 })
         },
 
-        createUsedItem(qty, cost) {
+        createUsedItem(cost) {
             axios.post(`/api/products/${this.selectedProduct.id}/create-used-item`, {
-                quantity: qty,
+                quantities: this.usedItemQuantities,
                 cost
             }).then(res => {
-                this.$snotify.success('New used product added successfully!')
+                this.$snotify.success('New used products added successfully!')
                 this.clearFilter()
-                this.filter.identifier = res.data.identifier
                 this.getProducts()
                 this.usedItemModal = false
+
+                if (this.$refs.usedItemAddToAzadMayList.checked) {
+                    for (let i = 0; i < res.data.length; i++) {
+                        this.addToNeedsToBeTakenCatalogItems(this.usedItemQuantities[i], cost, res.data[i], this.$refs.usedItemAddToAzadMayListDoNotCharge.checked)
+                    }
+                }
+
+                this.usedItemQuantities = [0]
             })
         },
 
@@ -952,11 +976,11 @@ export default {
             this.takeProductToAzadMayModal = false
         },
 
-        addToNeedsToBeTakenCatalogItems(qty, cost) {
+        addToNeedsToBeTakenCatalogItems(qty, cost, catalogItem, doNotCharge) {
             this.needsToBeTakenCatalogItems.push({
-                catalogItem: this.selectedProduct,
+                catalogItem: catalogItem || this.selectedProduct,
                 quantity: qty,
-                doNotCharge: this.$refs.takeCatalogItemToAzadMayDoNotCharge.checked,
+                doNotCharge: typeof doNotCharge === 'undefined' ? this.$refs.takeCatalogItemToAzadMayDoNotCharge.checked : doNotCharge,
                 cost
             })
 

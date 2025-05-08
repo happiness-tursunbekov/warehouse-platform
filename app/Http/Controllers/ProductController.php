@@ -518,11 +518,12 @@ class ProductController extends Controller
     public function createUsedItem($id, Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
-            'quantity' => ['required', 'integer', 'min:1'],
-            'cost' => ['required', 'float'],
+            'quantities' => ['required', 'array', 'min:1'],
+            'quantities.*' => ['required', 'integer', 'min:1'],
+            'cost' => ['required', 'numeric'],
         ]);
 
-        return $connectWiseService->createUsedCatalogItem($id, $request->get('quantity'), $request->get('cost'));
+        return array_map(fn($quantity) => $connectWiseService->createUsedCatalogItem($id, $quantity, $request->get('cost')), $request->get('quantities'));
     }
 
     public function poReport(Request $request, ConnectWiseService $connectWiseService)
@@ -569,7 +570,7 @@ class ProductController extends Controller
             'products' => ['required', 'array'],
             'products.*.id' => ['required', 'integer'],
             'products.*.quantity' => ['required', 'min:1'],
-            'products.*.cost' => ['required', 'float'],
+            'products.*.cost' => ['required', 'numeric'],
             'isCatalogItem' => ['nullable', 'boolean']
         ]);
 
