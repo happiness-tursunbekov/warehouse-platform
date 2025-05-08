@@ -428,7 +428,7 @@ class ConnectWiseService
         $item->poNumber = $po->poNumber;
         $item->poStatus = $po->status;
         $item->poClosedFlag = $po->closedFlag;
-        $item->cost = $po->cost;
+        $item->cost = $poItem->cost;
 
         return $item;
     }
