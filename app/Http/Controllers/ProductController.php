@@ -518,10 +518,11 @@ class ProductController extends Controller
     public function createUsedItem($id, Request $request, ConnectWiseService $connectWiseService)
     {
         $request->validate([
-            'quantity' => ['required', 'integer', 'min:1']
+            'quantity' => ['required', 'integer', 'min:1'],
+            'cost' => ['required', 'float'],
         ]);
 
-        return $connectWiseService->createUsedCatalogItem($id, $request->get('quantity'));
+        return $connectWiseService->createUsedCatalogItem($id, $request->get('quantity'), $request->get('cost'));
     }
 
     public function poReport(Request $request, ConnectWiseService $connectWiseService)
@@ -568,6 +569,7 @@ class ProductController extends Controller
             'products' => ['required', 'array'],
             'products.*.id' => ['required', 'integer'],
             'products.*.quantity' => ['required', 'min:1'],
+            'products.*.cost' => ['required', 'float'],
             'isCatalogItem' => ['nullable', 'boolean']
         ]);
 
@@ -598,6 +600,8 @@ class ProductController extends Controller
                 $memo .= $catalogItem->identifier . ' - Unpicked from' . (@$product->project ? " project: #{$product->project->id}"
                         : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} &#13;"));
             }
+
+            $product->cost = $productData['cost'];
 
             return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity, $isCatalogItem, !!@$productData['doNotCharge']);
         });

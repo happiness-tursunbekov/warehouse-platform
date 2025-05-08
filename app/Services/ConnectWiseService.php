@@ -428,6 +428,7 @@ class ConnectWiseService
         $item->poNumber = $po->poNumber;
         $item->poStatus = $po->status;
         $item->poClosedFlag = $po->closedFlag;
+        $item->cost = $po->cost;
 
         return $item;
     }
@@ -814,7 +815,7 @@ class ConnectWiseService
     {
         if ($used) {
             $product = $this->getProduct($id);
-            $product->catalogItem = $this->createUsedCatalogItem($product->catalogItem->id, $quantity);
+            $product->catalogItem = $this->createUsedCatalogItem($product->catalogItem->id, $quantity, $product->catalogItem->cost);
 
             $this->addToReport('CatalogProductUsed', $product, 'unshipped/returned as used');
             return $product;
@@ -1406,9 +1407,11 @@ class ConnectWiseService
         return $this->catalogItemAdjustBulk(collect([$adjustmentDetail]));
     }
 
-    public function createUsedCatalogItem(int $catalogItemId, int $qty)
+    public function createUsedCatalogItem(int $catalogItemId, int $qty, float $cost)
     {
         $catalogItem = $this->getCatalogItem($catalogItemId);
+
+        $catalogItem->price = $catalogItem->cost = $cost;
 
         $uom = Str::replace(' ', '', Str::lower($catalogItem->unitOfMeasure->name));
 

@@ -92,6 +92,7 @@
                         <th>PO Number</th>
                         <th>Product Status</th>
                         <th>Quantity</th>
+                        <th>Cost</th>
                         <th>Received Date</th>
                     </tr>
                     </thead>
@@ -103,6 +104,7 @@
                             <span v-else>{{ po.receivedStatus }}</span>
                         </td>
                         <td>{{ po.quantity }}</td>
+                        <td>{{ po.cost }}</td>
                         <td>{{ po.dateReceived }}</td>
                     </tr>
                     </tbody>
@@ -175,7 +177,7 @@
             </div>
         </modal>
         <modal v-model:show="usedItemModal" modal-title="Adding used catalog item">
-            <form @submit.prevent="createUsedItem($refs.usedItemQty.value)">
+            <form @submit.prevent="createUsedItem($refs.usedItemQty.value, $refs.usedItemCost.value)">
                 <ul class="list-group">
                     <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
                     <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
@@ -188,12 +190,19 @@
                     </div>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label">Cost</label>
+                    <div class="input-group">
+                        <input ref="usedItemCost" type="number" min="1" class="form-control" required>
+                        <span class="input-group-text">$</span>
+                    </div>
+                </div>
+                <div class="mb-3">
                     <button type="submit" class="btn btn-success">Save</button>
                 </div>
             </form>
         </modal>
         <modal v-model:show="takeProductToAzadMayModal" modal-title="Taking product to Azad May list">
-            <form v-if="selectedProjectProduct" @submit.prevent="addToNeedsToBeTakenProducts($refs.takeProductToAzadMay.value)">
+            <form v-if="selectedProjectProduct" @submit.prevent="addToNeedsToBeTakenProducts($refs.takeProductToAzadMay.value, $refs.takeProductToAzadMayCost.value)">
                 <ul class="list-group">
                     <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProjectProduct.catalogItem.identifier }}</li>
                     <li class="list-group-item"><strong>Description:</strong> {{ selectedProjectProduct.description }}</li>
@@ -206,12 +215,19 @@
                     </div>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label">Cost</label>
+                    <div class="input-group">
+                        <input ref="takeProductToAzadMayCost" type="number" min="1" class="form-control" :value="selectedProjectProduct.cost" required>
+                        <span class="input-group-text">$</span>
+                    </div>
+                </div>
+                <div class="mb-3">
                     <button type="submit" class="btn btn-success">Add to list</button>
                 </div>
             </form>
         </modal>
         <modal v-model:show="takeCatalogItemToAzadMayModal" modal-title="Selling to/listing on Azad May">
-            <form v-if="selectedProduct" @submit.prevent="addToNeedsToBeTakenCatalogItems($refs.takeCatalogItemToAzadMay.value)">
+            <form v-if="selectedProduct" @submit.prevent="addToNeedsToBeTakenCatalogItems($refs.takeCatalogItemToAzadMay.value, $refs.takeCatalogItemToAzadMayCost.value)">
                 <ul class="list-group">
                     <li class="list-group-item"><strong>Product ID:</strong> {{ selectedProduct.identifier }}</li>
                     <li class="list-group-item"><strong>Description:</strong> {{ selectedProduct.description }}</li>
@@ -221,6 +237,13 @@
                     <div class="input-group">
                         <input ref="takeCatalogItemToAzadMay" type="number" min="1" class="form-control" value="1" required>
                         <span class="input-group-text">{{ selectedProduct.unitOfMeasure.name }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Cost</label>
+                    <div class="input-group">
+                        <input ref="takeCatalogItemToAzadMayCost" type="number" min="1" class="form-control" :value="selectedProduct.cost" required>
+                        <span class="input-group-text">$</span>
                     </div>
                 </div>
                 <div class="form-check mb-3">
@@ -398,6 +421,7 @@
                                 <th>Product ID</th>
                                 <th>Category</th>
                                 <th>Quantity</th>
+                                <th>Cost</th>
                                 <th>Do Not Charge</th>
                                 <th>Action</th>
                             </tr>
@@ -407,6 +431,7 @@
                                 <td>{{ item.catalogItem.identifier }}</td>
                                 <td>{{ item.catalogItem.category.name }}</td>
                                 <td>{{ item.quantity }}</td>
+                                <td>{{ item.cost }}</td>
                                 <td>{{ item.doNotCharge }}</td>
                                 <td>
                                     <button @click="needsToBeTakenCatalogItems=needsToBeTakenCatalogItems.filter(it => it.catalogItem.id !== item.catalogItem.id)" type="button" class="btn btn-sm btn-outline-danger">
@@ -432,6 +457,7 @@
                                 <th>Ticket</th>
                                 <th>Sales Order</th>
                                 <th>Quantity</th>
+                                <th>Cost</th>
                                 <th>Action</th>
                             </tr>
                             </thead>
@@ -443,6 +469,7 @@
                                 <td>{{ item.product.ticket ? item.product.ticket.id : '' }}</td>
                                 <td>{{ item.product.salesOrder ? item.product.salesOrder.id : '' }}</td>
                                 <td>{{ item.quantity }}</td>
+                                <td>{{ item.cost }}</td>
                                 <td>
                                     <button @click="needsToBeTakenProducts=needsToBeTakenProducts.filter(it => it.product.id !== item.product.id)" type="button" class="btn btn-sm btn-outline-danger">
                                         <i class="bi-trash"></i>
@@ -900,9 +927,10 @@ export default {
                 })
         },
 
-        createUsedItem(qty) {
+        createUsedItem(qty, cost) {
             axios.post(`/api/products/${this.selectedProduct.id}/create-used-item`, {
-                quantity: qty
+                quantity: qty,
+                cost
             }).then(res => {
                 this.$snotify.success('New used product added successfully!')
                 this.clearFilter()
@@ -912,10 +940,11 @@ export default {
             })
         },
 
-        addToNeedsToBeTakenProducts(qty) {
+        addToNeedsToBeTakenProducts(qty, cost) {
             this.needsToBeTakenProducts.push({
                 product: this.selectedProjectProduct,
-                quantity: qty
+                quantity: qty,
+                cost
             })
 
             this.$snotify.success('Product added to the list!')
@@ -923,11 +952,12 @@ export default {
             this.takeProductToAzadMayModal = false
         },
 
-        addToNeedsToBeTakenCatalogItems(qty) {
+        addToNeedsToBeTakenCatalogItems(qty, cost) {
             this.needsToBeTakenCatalogItems.push({
                 catalogItem: this.selectedProduct,
                 quantity: qty,
-                doNotCharge: this.$refs.takeCatalogItemToAzadMayDoNotCharge.checked
+                doNotCharge: this.$refs.takeCatalogItemToAzadMayDoNotCharge.checked,
+                cost
             })
 
             this.$snotify.success('CatalogItem added to the list!')
