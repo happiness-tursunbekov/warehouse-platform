@@ -192,7 +192,7 @@
                 <div class="mb-3">
                     <label class="form-label">Cost</label>
                     <div class="input-group">
-                        <input ref="usedItemCost" type="number" min="1" class="form-control" required>
+                        <input ref="usedItemCost" type="number" :value="selectedProduct.cost" class="form-control" required>
                         <span class="input-group-text">$</span>
                     </div>
                 </div>
