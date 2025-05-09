@@ -958,7 +958,7 @@ export default {
 
                 if (this.$refs.usedItemAddToAzadMayList.checked) {
                     for (let i = 0; i < res.data.length; i++) {
-                        this.addToNeedsToBeTakenCatalogItems(this.usedItemQuantities[i], res.data[i].cost, res.data[i], this.$refs.usedItemAddToAzadMayListDoNotCharge.checked)
+                        this.addToNeedsToBeTakenCatalogItems(res.data[i].unitOfMeasure.name.toLowerCase().includes('used cable') ? 1 : this.usedItemQuantities[i], res.data[i].cost, res.data[i], this.$refs.usedItemAddToAzadMayListDoNotCharge.checked)
                     }
                 }
 
