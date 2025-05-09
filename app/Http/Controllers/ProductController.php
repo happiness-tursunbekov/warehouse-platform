@@ -439,6 +439,15 @@ class ProductController extends Controller
         ]);
     }
 
+    public function deletePhoto(Request $request, ConnectWiseService $connectWiseService)
+    {
+        $request->validate([
+            'id' => ['required', 'integer']
+        ]);
+
+        return $connectWiseService->systemDocumentDelete($request->get('id'));
+    }
+
     public function upload($productId, Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
     {
         $request->validate([

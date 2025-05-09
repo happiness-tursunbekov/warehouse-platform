@@ -299,9 +299,9 @@ class ConnectWiseController extends Controller
                             return $product;
                         });
 
-                        $item->fill(['receivedStatus' => $poItem->receivedStatus])->save();
-
                     }
+
+                    $item->fill(['receivedStatus' => $poItem->receivedStatus])->save();
 
                     return false;
                 });

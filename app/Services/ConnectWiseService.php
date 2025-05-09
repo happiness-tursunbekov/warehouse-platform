@@ -645,8 +645,7 @@ class ConnectWiseService
     public function pickAndShipProduct($id, $quantity)
     {
         $pickShip = json_decode('{"warehouseBin":{},"productItem":{}}');
-        $pickShip->pickedQuantity = (int)$quantity;
-        $pickShip->shippedQuantity = (int)$quantity;
+        $pickShip->shippedQuantity = $pickShip->pickedQuantity = (int)$quantity;
         $pickShip->id = 0;
         $pickShip->quantity = (int)$quantity;
         $pickShip->warehouseBin->id = 1;
@@ -2859,5 +2858,10 @@ class ConnectWiseService
         }
 
         return $product;
+    }
+
+    public function systemDocumentDelete($id) {
+        $response = $this->http->delete("system/documents/{$id}?clientId={$this->clientId}");
+        return json_decode($response->getBody()->getContents());
     }
 }

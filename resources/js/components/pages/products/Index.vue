@@ -68,6 +68,7 @@
                                 <div class="dropdown-menu">
                                     <button @click.prevent="getPos(product)" type="button" class="dropdown-item">Get PO's/Ship</button>
                                     <button @click.prevent="showUploadPhotoModal(product)" type="button" class="dropdown-item" title="Upload a photo">Upload a photo</button>
+                                    <button @click.prevent="getProductImages(product);selectedProduct=product;deletePhotoModal=true" type="button" class="dropdown-item" title="Upload a photo">Delete a photo</button>
                                     <button @click.prevent="syncImages(product.id)" type="button" class="dropdown-item" title="Sync images">Sync images</button>
                                     <button @click.prevent="selectedProduct=product;usedItemModal=true" type="button" class="dropdown-item" title="Add used product">Add used product</button>
                                     <button @click.prevent="selectedProduct=product;uomModal=true" type="button" class="dropdown-item" title="Add used product">Edit unit of measure</button>
@@ -417,6 +418,9 @@
                 </div>
             </form>
         </modal>
+        <modal v-model:show="moveProductModal" :modal-title="`Delete a photo: ${selectedProduct.identifier}`">
+
+        </modal>
         <div class="position-fixed bg-white p-3" style="right:0;bottom:0;max-height: 100%;max-width: 100%;overflow: auto; z-index: 1021">
             <form @submit.prevent="handleAzadMayList">
                 <div v-if="needsToBeTakenCatalogItems.length || needsToBeTakenProducts.length > 0" class="mb-3">
@@ -572,7 +576,8 @@ export default {
             bundles: [],
             cin7Suppliers: [],
             supplierId: '',
-            usedItemQuantities: [0]
+            usedItemQuantities: [0],
+            deletePhotoModal: false
         }
     },
 
