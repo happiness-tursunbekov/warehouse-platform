@@ -817,7 +817,8 @@ export default {
             return axios.post(`/api/products/take-products-to-azad-may`, {
                 products: this.needsToBeTakenProducts.map(item => ({
                     id: item.product.id,
-                    quantity: item.quantity
+                    quantity: item.quantity,
+                    cost: item.cost
                 })),
                 supplierId: this.supplierId
             }).then(() => {
@@ -833,6 +834,7 @@ export default {
                     id: item.catalogItem.id,
                     quantity: item.quantity,
                     doNotCharge: item.doNotCharge,
+                    cost: item.cost
                 })),
                 isCatalogItem: true,
                 supplierId: this.supplierId
