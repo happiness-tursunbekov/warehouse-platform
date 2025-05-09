@@ -194,7 +194,7 @@
                 <div class="mb-3">
                     <label class="form-label">Cost</label>
                     <div class="input-group">
-                        <input ref="usedItemCost" type="number" :value="selectedProduct.cost" class="form-control" required>
+                        <input ref="usedItemCost" step="0.0001" type="number" :value="selectedProduct.cost" class="form-control" required>
                         <span class="input-group-text">$</span>
                     </div>
                 </div>
@@ -233,7 +233,7 @@
                 <div class="mb-3">
                     <label class="form-label">Cost</label>
                     <div class="input-group">
-                        <input ref="takeProductToAzadMayCost" type="number" min="1" class="form-control" :value="selectedProjectProduct.cost" required>
+                        <input ref="takeProductToAzadMayCost" step="0.0001" type="number" min="1" class="form-control" :value="selectedProjectProduct.cost" required>
                         <span class="input-group-text">$</span>
                     </div>
                 </div>
@@ -258,7 +258,7 @@
                 <div class="mb-3">
                     <label class="form-label">Cost</label>
                     <div class="input-group">
-                        <input ref="takeCatalogItemToAzadMayCost" type="number" min="1" class="form-control" :value="selectedProduct.cost" required>
+                        <input ref="takeCatalogItemToAzadMayCost" step="0.0001" type="number" min="1" class="form-control" :value="selectedProduct.cost" required>
                         <span class="input-group-text">$</span>
                     </div>
                 </div>
@@ -956,7 +956,7 @@ export default {
 
                 if (this.$refs.usedItemAddToAzadMayList.checked) {
                     for (let i = 0; i < res.data.length; i++) {
-                        this.addToNeedsToBeTakenCatalogItems(this.usedItemQuantities[i], cost, res.data[i], this.$refs.usedItemAddToAzadMayListDoNotCharge.checked)
+                        this.addToNeedsToBeTakenCatalogItems(this.usedItemQuantities[i], res.data[i].cost, res.data[i], this.$refs.usedItemAddToAzadMayListDoNotCharge.checked)
                     }
                 }
 
