@@ -207,6 +207,7 @@ class ConnectWiseController extends Controller
 
             case ConnectWiseService::ACTION_UPDATED:
 
+                sleep(2);
                 $poItems = collect($connectWiseService->purchaseOrderItemsOriginal($po->id))
                     ->filter(function ($poItem) use (&$po) {
 
