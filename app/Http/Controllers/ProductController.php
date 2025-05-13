@@ -439,13 +439,17 @@ class ProductController extends Controller
         ]);
     }
 
-    public function deletePhoto(Request $request, ConnectWiseService $connectWiseService)
+    public function deletePhoto($id, Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
     {
         $request->validate([
             'id' => ['required', 'integer']
         ]);
 
-        return $connectWiseService->systemDocumentDelete($request->get('id'));
+        $res = $connectWiseService->systemDocumentDelete($request->get('id'));
+
+        $this->syncImages($id, $connectWiseService, $cin7Service);
+
+        return $res;
     }
 
     public function upload($productId, Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
@@ -495,7 +499,7 @@ class ProductController extends Controller
         return response()->json($files);
     }
 
-    public function syncImages($productId, Request $request, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
+    public function syncImages($productId, ConnectWiseService $connectWiseService, Cin7Service $cin7Service)
     {
 
         $catalogItem = $connectWiseService->getCatalogItem($productId);
@@ -506,7 +510,7 @@ class ProductController extends Controller
 
         $catalogItems->push(...$connectWiseService->getCatalogItems(1, $conditions));
 
-        $catalogItems->map(function ($catalogItem) use ($connectWiseService, $cin7Service, $request, $productId) {
+        $catalogItems->map(function ($catalogItem) use ($connectWiseService, $cin7Service, $productId) {
 
             $product = $cin7Service->productBySku($catalogItem->identifier);
 

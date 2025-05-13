@@ -418,8 +418,15 @@
                 </div>
             </form>
         </modal>
-        <modal v-model:show="moveProductModal" :modal-title="`Delete a photo: ${selectedProduct.identifier}`">
-
+        <modal v-if="selectedProduct" v-model:show="deletePhotoModal" :modal-title="`Delete a photo: ${selectedProduct.identifier}`">
+            <ul class="list-group">
+                <li v-for="(file, key) in productImages[selectedProduct.id]" :key="key" class="list-group-item d-flex justify-content-between">
+                    <img style="height: 100px" :src="`/api/products/image/${file.id}/${file.fileName}`" alt="..." />
+                    <div>
+                        <button @click="deletePhoto(file.id)" type="button" class="btn btn-danger">X</button>
+                    </div>
+                </li>
+            </ul>
         </modal>
         <div class="position-fixed bg-white p-3" style="right:0;bottom:0;max-height: 100%;max-width: 100%;overflow: auto; z-index: 1021">
             <form @submit.prevent="handleAzadMayList">
@@ -1004,6 +1011,14 @@ export default {
             if (this.needsToBeTakenProducts.length > 0) {
                 this.takeProductsToAzadMay()
             }
+        },
+
+        deletePhoto(id) {
+            axios.delete(`/api/products/${this.selectedProduct.id}/photo?id=${id}`).then(() => {
+                this.$snotify.success('Product photo deleted successfully!')
+
+                this.productImages[this.selectedProduct.id] = this.productImages[this.selectedProduct.id].filter(file => file.id !== id)
+            })
         }
     }
 }

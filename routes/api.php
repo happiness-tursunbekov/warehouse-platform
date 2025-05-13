@@ -96,7 +96,7 @@ Route::group([
             Route::post('move-product-to-different-project', [ProductController::class, 'moveProductToDifferentProject']);
             Route::get('cin7-suppliers', [ProductController::class, 'cin7Suppliers']);
             Route::post('{id}/sync-images', [ProductController::class, 'syncImages']);
-            Route::delete('photo', [ProductController::class, 'deletePhoto']);
+            Route::delete('{id}/photo', [ProductController::class, 'deletePhoto']);
         });
     });
 
