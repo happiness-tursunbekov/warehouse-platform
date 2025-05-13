@@ -1819,7 +1819,7 @@ class ConnectWiseService
                         $bigCommerceProduct->id,
                         $file,
                         $attachment->fileName,
-                        !$index && $bigCommerceAttachments->where('is_thumbnail', true)->count() == 0);
+                        $index == 0 && $bigCommerceAttachments->where('is_thumbnail', true)->count() == 0);
                 }
             });
 
