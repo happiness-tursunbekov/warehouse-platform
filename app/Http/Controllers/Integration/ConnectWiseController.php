@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Integration;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\ProcessSomethingLong;
 use App\Jobs\PublishProducts;
 use App\Jobs\UnpublishProducts;
 use App\Models\PurchaseOrder;
@@ -12,7 +11,6 @@ use App\Models\WebhookLog;
 use App\Services\BigCommerceService;
 use App\Services\Cin7Service;
 use App\Services\ConnectWiseService;
-use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
