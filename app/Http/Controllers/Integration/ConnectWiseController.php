@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Integration;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProcessSomethingLong;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\WebhookLog;
@@ -235,7 +236,10 @@ class ConnectWiseController extends Controller
 
                 $po->load('items');
 
-                $poItems->map(function ($poItem) use ($bigCommerceService, $cin7Service, $po, $connectWiseService) {
+                $cin7PublishProducts = collect();
+                $cin7StockTakeProducts = collect();
+
+                $poItems->map(function ($poItem) use ($bigCommerceService, $cin7Service, $po, $connectWiseService, &$cin7PublishProducts, &$cin7StockTakeProducts) {
 
                     $item = $po->items->where('id', $poItem->id)->first();
 
@@ -249,9 +253,12 @@ class ConnectWiseController extends Controller
 
                         $autoShip = $connectWiseService->extractPurchaseOrderItemAutoShip($poItem);
 
-                        $connectWiseService->pickOrShipPurchaseOrderItem($po->id, $poItem, ship: $autoShip, callback: function ($product, $quantity) use ($item, $connectWiseService, $autoShip) {
+                        $connectWiseService->pickOrShipPurchaseOrderItem($po->id, $poItem, ship: $autoShip, callback: function ($product, $quantity) use (&$cin7PublishProducts, $autoShip) {
                             if (!$autoShip) {
-                                $connectWiseService->publishProductOnCin7($product, $quantity, true);
+                                $cin7PublishProducts->push([
+                                    'product' => $product,
+                                    'quantity' => $quantity
+                                ]);
                             }
                         });
                     }
@@ -270,7 +277,7 @@ class ConnectWiseController extends Controller
 
                         $products = collect($connectWiseService->getProductsByTicketInfo($ticket));
 
-                        $products->map(function ($product) use ($item, $unpicking, $picking, $bigCommerceService, $cin7Service, &$quantity, $connectWiseService, $po) {
+                        $products->map(function ($product) use (&$cin7StockTakeProducts, $item, $unpicking, $picking, $bigCommerceService, $cin7Service, &$quantity, $connectWiseService, $po) {
 
                             if ($quantity == 0) {
                                 return false;
@@ -293,7 +300,10 @@ class ConnectWiseController extends Controller
 
                             $connectWiseService->unpickProduct($product->id, $quantity);
 
-                            $connectWiseService->stockTakeFromCin7ByProjectProductId($product->id, $quantity, true, $product);
+                            $cin7StockTakeProducts->push([
+                                'product' => $product,
+                                'quantity' => $quantity
+                            ]);
 
                             $quantity = $quantity <= $unpickAvailableQuantity ? 0 : $quantity - $unpickAvailableQuantity;
 
@@ -306,6 +316,23 @@ class ConnectWiseController extends Controller
 
                     return false;
                 });
+
+                defer(fn() => ProcessSomethingLong::dispatch(function () use ($cin7PublishProducts, $cin7StockTakeProducts, $connectWiseService) {
+
+                    if ($cin7PublishProducts->count() > 0) {
+
+                        $connectWiseService->setCin7HandleApiLimitation(true);
+
+                        $cin7PublishProducts->map(fn($item) => $connectWiseService->publishProductOnCin7($item['product'], $item['quantity'], true));
+                    }
+
+                    if ($cin7StockTakeProducts->count() > 0) {
+
+                        $connectWiseService->setCin7HandleApiLimitation(true);
+
+                        $cin7StockTakeProducts->map(fn($item) => $connectWiseService->stockTakeFromCin7ByProjectProductId($item['product']->id, $item['quantity'], true, $item['product']));
+                    }
+                }));
 
                 return response()->json(['message' => 'Updated successfully']);
 

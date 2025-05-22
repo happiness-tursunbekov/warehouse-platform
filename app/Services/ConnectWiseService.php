@@ -127,6 +127,11 @@ class ConnectWiseService
         return http_build_query($query);
     }
 
+    public function setCin7HandleApiLimitation(bool $on) : void
+    {
+        $this->cin7Service->handleLimitation = $on;
+    }
+
     public function addToReport($type, \stdClass $item, $action, $additional=null)
     {
         $user = \request()->user();

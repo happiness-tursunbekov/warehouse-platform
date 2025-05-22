@@ -24,57 +24,44 @@ class Cin7Service
     */
     const PRODUCT_FAMILY_INACTIVE = '[INACTIVE]';
 
-//    private bool $useSecondaryApi = false;
+    public bool $handleLimitation = false;
+
     private Client $http;
     public function __construct()
     {
         // Create a handler stack
-//        $stack = HandlerStack::create();
+        $stack = HandlerStack::create();
 
-        // Define the retry middleware
-//        $retryMiddleware = Middleware::retry(
-//            function ($retries, $request, $response, $exception) {
-//                // Limit the number of retries to 5
-//                if ($retries >= 1) {
-//                    return false;
-//                }
-//
-//                // Retry on server errors (5xx HTTP status codes)
-//                if ($response && $response->getStatusCode() >= 500) {
-//
-//                    $this->useSecondaryApi = !$this->useSecondaryApi;
-//
-//                    return true;
-//                }
-//
-//                // Retry on connection exceptions
-//                if ($exception instanceof RequestException && $exception->getCode() === 0) {
-//                    return true;
-//                }
-//
-//                return false;
-//            },
-//            function ($retries) {
-//                // Define a delay function (e.g., exponential backoff)
-//                return (int) pow(2, $retries) * 1000; // Delay in milliseconds
-//            }
-//        );
+        if ($this->handleLimitation) {
+            // Define the retry middleware
+            $retryMiddleware = Middleware::retry(
+                function ($retries, $request, $response, $exception) {
+                    // Limit the number of retries to 5
+                    if ($retries >= 5) {
+                        return false;
+                    }
 
-        // Add the retry middleware to the handler stack
-//        $stack->push($retryMiddleware);
+                    // Retry on api limitation
+                    if ($response && $response->getStatusCode() === 503 && Str::contains((string) $response->getBody(), 'You have reached 60 calls per 60 seconds API limit')) {
+                        return true;
+                    }
 
-        // Using secondary api in case limit is reached
-//        $stack->push(function (callable $handler)
-//        {
-//            return function (RequestInterface $request, array $options) use ($handler)
-//            {
-//                if($this->useSecondaryApi) {
-//                    $request = $request->withHeader('api-auth-applicationkey', config('cin7.api_key_secondary'));
-//                }
-//
-//                return $handler($request, $options);
-//            };
-//        });
+                    // Retry on connection exceptions
+                    if ($exception instanceof RequestException && $exception->getCode() === 0) {
+                        return true;
+                    }
+
+                    return false;
+                },
+                function () {
+                    // Define a delay function (e.g., exponential backoff)
+                    return 60000; // Delay in milliseconds
+                }
+            );
+
+            // Add the retry middleware to the handler stack
+            $stack->push($retryMiddleware);
+        }
 
         $this->http = new Client([
             'headers' => [
@@ -82,7 +69,7 @@ class Cin7Service
                 'api-auth-applicationkey' => config('cin7.api_key')
             ],
             'base_uri' => config('cin7.base_uri'),
-//            'handler' => $stack
+            'handler' => $stack
         ]);
     }
 
