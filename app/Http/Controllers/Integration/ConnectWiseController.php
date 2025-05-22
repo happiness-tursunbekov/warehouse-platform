@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Integration;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessSomethingLong;
+use App\Jobs\PublishProducts;
+use App\Jobs\UnpublishProducts;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\WebhookLog;
@@ -317,22 +319,13 @@ class ConnectWiseController extends Controller
                     return false;
                 });
 
-                defer(fn() => ProcessSomethingLong::dispatch(function () use ($cin7PublishProducts, $cin7StockTakeProducts, $connectWiseService) {
+                if ($cin7PublishProducts->count() > 0) {
+                    defer(fn() => PublishProducts::dispatch($cin7PublishProducts));
+                }
 
-                    if ($cin7PublishProducts->count() > 0) {
-
-                        $connectWiseService->setCin7HandleApiLimitation(true);
-
-                        $cin7PublishProducts->map(fn($item) => $connectWiseService->publishProductOnCin7($item['product'], $item['quantity'], true));
-                    }
-
-                    if ($cin7StockTakeProducts->count() > 0) {
-
-                        $connectWiseService->setCin7HandleApiLimitation(true);
-
-                        $cin7StockTakeProducts->map(fn($item) => $connectWiseService->stockTakeFromCin7ByProjectProductId($item['product']->id, $item['quantity'], true, $item['product']));
-                    }
-                }));
+                if ($cin7StockTakeProducts->count() > 0) {
+                    defer(fn() => UnpublishProducts::dispatch($cin7StockTakeProducts));
+                }
 
                 return response()->json(['message' => 'Updated successfully']);
 
