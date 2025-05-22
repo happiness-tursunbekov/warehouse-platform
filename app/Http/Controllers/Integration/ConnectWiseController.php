@@ -318,11 +318,11 @@ class ConnectWiseController extends Controller
                 });
 
                 if ($cin7PublishProducts->count() > 0) {
-                    defer(fn() => PublishProducts::dispatch($cin7PublishProducts));
+                    defer(fn() => PublishProducts::dispatchSync($cin7PublishProducts));
                 }
 
                 if ($cin7StockTakeProducts->count() > 0) {
-                    defer(fn() => UnpublishProducts::dispatch($cin7StockTakeProducts));
+                    defer(fn() => UnpublishProducts::dispatchSync($cin7StockTakeProducts));
                 }
 
                 return response()->json(['message' => 'Updated successfully']);
