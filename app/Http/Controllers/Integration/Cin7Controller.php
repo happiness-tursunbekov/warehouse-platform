@@ -90,9 +90,9 @@ class Cin7Controller extends Controller
 
             $purchaseOrder = $connectWiseService->purchaseOrders(1, cin7SalesOrderId: $salesOrderId)[0] ?? null;
 
-//            if ($purchaseOrder) {
-//                return response()->json(['message' => 'Purchase order for this sales order already exists!']);
-//            }
+            if ($purchaseOrder) {
+                return response()->json(['message' => 'Purchase order for this sales order already exists!']);
+            }
 
             if (!$bigCommerceOrderId || !$bigCommerceOrder || $bigCommerceOrder->channel_id != 1) {
                 return response()->json(['message' => "Sales order doesn't belong to Binyod!"]);
