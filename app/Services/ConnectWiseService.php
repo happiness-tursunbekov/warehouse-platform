@@ -2206,7 +2206,8 @@ class ConnectWiseService
                     $ticket->id ?? '',
                     $companyId,
                     $product->price,
-                    $product->cost
+                    $product->cost,
+                    $quantity
                 );
             }
 
@@ -2237,6 +2238,7 @@ class ConnectWiseService
         $companyId=null,
         float $price=0,
         float $cost=0,
+        int $quantity=1
     )
     {
         $payload = [
@@ -2261,7 +2263,7 @@ class ConnectWiseService
                 "warehouse_RecID" => 1,
                 "discount_Amount" => 0,
                 "list_Price" => $price,
-                "quantity" => 1,
+                "quantity" => $quantity,
                 "unit_Cost" => $cost,
                 "unit_Price" => $price,
                 "description" => $catalogItemCustomerDescription,
@@ -2392,7 +2394,8 @@ class ConnectWiseService
                     $ticket->id ?? 0,
                     $company->id,
                     $price,
-                    $cost
+                    $cost,
+                    $quantity
                 );
             }
 
