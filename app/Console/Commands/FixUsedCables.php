@@ -36,6 +36,89 @@ class FixUsedCables extends Command
     public function handle(Cin7Service $cin7Service, ConnectWiseService $connectWiseService, BigCommerceService $bigCommerceService)
     {
 
+//        $json = Storage::disk('public')->get('InventoryList.json');
+//        $data = collect(json_decode($json));
+//
+//        $start = false;
+//
+//        $data->map(function ($item) use ($connectWiseService, &$start) {
+//
+//            if ($item->ProductCode == 'MR52-HW') {
+//                $start = true;
+//            }
+//
+//            if (!$start) {
+//                return false;
+//            }
+//
+//            try {
+//                $catalogItem = $connectWiseService->getCatalogItems(1, "identifier='{$item->ProductCode}'")[0] ?? null;
+//
+//                if ($catalogItem) {
+//                    $catalogItem->price = $catalogItem->cost = $item->PriceTier1;
+//
+//                    $connectWiseService->updateCatalogItem($catalogItem);
+//
+//                    echo "{$item->ProductCode}\n";
+//                }
+//            } catch (\Exception) {}
+//        });
+
+//        $reportProducts = cache()->get('reportProducts') ?: collect();
+//
+//        $handle = fopen('export.csv', 'w');
+//
+//        fputcsv($handle, [
+//            'Product ID',
+//            'PO',
+//            'PO Status',
+//            'PO Date',
+//            'Received Qty',
+//            'Picked',
+//            'Shipped'
+//        ]);
+//
+//        $reportProducts->map(function ($product) use (&$handle) {
+//
+//            $poItem = $product->poItems->first();
+//
+//            fputcsv($handle, [
+//                $product->catalogItem->identifier,
+//                $poItem->PO_Number ?? '',
+//                $poItem->PO_Status ?? '',
+//                @$poItem->PO_Date ? date('m/d/Y', $poItem->PO_Date) : '',
+//                $product->poItems->pluck('Received_Qty')->sum(),
+//                $product->picked,
+//                $product->shipped
+//            ]);
+//        });
+//
+//        fclose($handle);
+
+//        collect($connectWiseService->getProducts(1, 'project/id=278', 1000))->map(function ($product) use ($connectWiseService, &$reportProducts) {
+//
+//            $poItems = collect($connectWiseService->getProductPoItems($product->id));
+//
+//            $pickShip = collect($connectWiseService->getProductPickingShippingDetails($product->id));
+//
+//            $picked = $pickShip->pluck('pickedQuantity')->sum();
+//            $shipped = $pickShip->pluck('shippedQuantity')->sum();
+//
+//            if ($picked == 0 && $poItems->count() == 0) {
+//                return false;
+//            }
+//
+//            $product->picked = $picked;
+//            $product->shipped = $shipped;
+//            $product->poItems = $poItems;
+//
+//            $reportProducts->push($product);
+//        });
+//
+//        cache()->put('reportProducts', $reportProducts);
+//
+//        dd($reportProducts->count());
+
 //        dd($connectWiseService->getProductCatalogOnHand(1, 'onHand>0', pageSize: 1000, warehouseBinId: ConnectWiseService::DEFAULT_WAREHOUSE_DEFAULT_BIN));
 
 //        $pickedProducts = cache()->get('pickedProducts') ?: collect();

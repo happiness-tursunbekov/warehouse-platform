@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 
+use App\Jobs\TakeProductsToAzadMay;
 use App\Models\User;
 use App\Services\BigCommerceService;
 use App\Services\Cin7Service;
@@ -587,53 +588,10 @@ class ProductController extends Controller
             'isCatalogItem' => ['nullable', 'boolean']
         ]);
 
-        $supplierId = $request->get('supplierId');
-
-        $isCatalogItem = $request->get('isCatalogItem', false);
-
-        $productsData = collect($request->get('products'));
-
-        $adjustmentDetails = collect();
-
-        $memo = "";
-
-        $purchaseOrderLine = $productsData->map(function ($productData) use ($cin7Service, $connectWiseService, &$memo, &$adjustmentDetails, $isCatalogItem) {
-            $product = $isCatalogItem ? $connectWiseService->getCatalogItem($productData['id']) : $connectWiseService->getProduct($productData['id']);
-
-            $quantity = $productData['quantity'];
-
-            if (!$isCatalogItem) {
-                $connectWiseService->unpickProduct($product->id, $quantity);
-
-                $connectWiseService->stockTakeFromCin7ByProjectProductId($product->id, $quantity, true, $product);
-
-                $catalogItem = $connectWiseService->getCatalogItem($product->catalogItem->id);
-
-                $adjustmentDetails->push($connectWiseService->convertCatalogItemToAdjustmentDetail($catalogItem, -1 * $quantity));
-
-                $memo .= $catalogItem->identifier . ' - Unpicked from' . (@$product->project ? " project: #{$product->project->id} &#13;\n"
-                        : (@$product->ticket ? " service ticket: #{$product->ticket->id}" : " sales order: #{$product->salesOrder->id} &#13;\n"));
-            }
-
-            $product->cost = $productData['cost'];
-
-            return $cin7Service->convertProductToPurchaseOrderLine($product, $quantity, $isCatalogItem, !!@$productData['doNotCharge']);
-        });
-
-        if (!$isCatalogItem) {
-            $connectWiseService->catalogItemAdjustBulk($adjustmentDetails, 'Taking to Azad May Inventory');
-        }
-
-        if ($purchaseOrderLine->count() > 0) {
-            $purchaseOrder = $cin7Service->createPurchaseOrder($purchaseOrderLine->toArray(), $supplierId, $memo);
-
-            $cin7Service->receivePurchaseOrderItems($purchaseOrder->TaskID, array_map(fn($line) => ([
-                'ProductID' => $line->ProductID,
-                'Quantity' => $line->Quantity,
-                'Date' => date('Y-m-d H:i:s'),
-                'Received' => true,
-                'Location' => Cin7Service::INVENTORY_AZAD_MAY
-            ]), $purchaseOrder->Lines));
+        if (count($request->get('products')) > 10) {
+            defer(fn() => TakeProductsToAzadMay::dispatchSync($request->all()));
+        } else {
+            TakeProductsToAzadMay::dispatchSync($request->all());
         }
 
         return $request->all();
